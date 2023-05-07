@@ -148,7 +148,7 @@ contract Router is Ownable {
         if (!success) revert Router__RefundToken0Failed();
 
         idToRfs[_id].removed = true;
-        
+
         emit RfsRemoved(_id);
     }
 

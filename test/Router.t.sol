@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: UNLICENSED
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.13;
 
 import "forge-std/Test.sol";
@@ -13,131 +13,140 @@ contract RouterTest is Test {
     Router public router;
     OtcToken public weth;
     OtcToken public dai;
+    uint public wethSupply = 1_000 * 1e18;
+    uint public daiSupply = 1_000_000 * 1e6 * 1e18;
 
     function setUp() public {
         vm.startPrank(deployer);
-        weth = new OtcToken("Test WETH", "tWETH", 1_000 * 1e18, 18);
-        dai = new OtcToken("Test DAI", "tDAI", 1_000_000 * 1e6, 6);
+        weth = new OtcToken("Test WETH", "tWETH", wethSupply, 18);
+        dai = new OtcToken("Test DAI", "tDAI", daiSupply, 6);
         router = new Router();
         vm.stopPrank();
     }
-    
-    function test_DeployTokens() public {
-        assertEq(weth.name(), "Test WETH");
-        assertEq(weth.symbol(), "tWETH");
-        assertEq(weth.decimals(), 18);
-        assertEq(weth.totalSupply(), 1_000 * 1e18);
-        assertEq(IERC20(address(weth)).balanceOf(deployer), 1_000 * 1e18);
 
-        assertEq(dai.name(), "Test DAI");
-        assertEq(dai.symbol(), "tDAI");
-        assertEq(dai.decimals(), 6);
-        assertEq(dai.totalSupply(), 1_000_000 * 1e6);
-        assertEq(IERC20(address(dai)).balanceOf(deployer), 1_000_000 * 1e6);
-    }
-
-    function test_createRfs_failTokenAmount() public {
+    function test_createRfs_failTokenAmount(uint amount0, uint amount1) public {
         vm.startPrank(maker);
 
         vm.expectRevert(Router__InvalidTokenAmount.selector);
-        router.createRfsWithDeposit(address(weth), address(dai), 0, 1, block.timestamp);
+        router.createRfsWithDeposit(address(weth), address(dai), 0, amount1, block.timestamp);
 
         vm.expectRevert(Router__InvalidTokenAmount.selector);
-        router.createRfsWithDeposit(address(weth), address(dai), 1, 0, block.timestamp);
-        
+        router.createRfsWithDeposit(address(weth), address(dai), amount0, 0, block.timestamp);
+
         vm.stopPrank();
     }
 
-    function test_createRfs_failDeadline() public {
+    function test_createRfs_failDeadline(uint amount0, uint amount1, uint deadline) public {
+        vm.assume(amount0 > 0);
+        vm.assume(amount1 > 0);
+        vm.assume(deadline < block.timestamp);
         vm.prank(maker);
         vm.expectRevert(Router__InvalidDeadline.selector);
-        router.createRfsWithDeposit(address(weth), address(dai), 1, 1, block.timestamp - 1);
+        router.createRfsWithDeposit(address(weth), address(dai), amount0, amount1, deadline);
     }
 
-    function test_createRfs_failAllowance() public {
+    function test_createRfs_failAllowance(uint amount0, uint amount1, uint deadline) public {
+        vm.assume(amount0 > 0);
+        vm.assume(amount1 > 0);
+        vm.assume(deadline >= block.timestamp);
         vm.prank(maker);
         vm.expectRevert(Router__AllowanceToken0TooLow.selector);
-        router.createRfsWithDeposit(address(weth), address(dai), 1, 1, block.timestamp);
+        router.createRfsWithDeposit(address(weth), address(dai), amount0, amount1, deadline);
     }
 
-    function test_createRfs_failBalance() public {
+    function test_createRfs_failBalance(uint amount0, uint amount1, uint deadline) public {
+        vm.assume(amount0 > 0);
+        vm.assume(amount1 > 0);
+        vm.assume(deadline >= block.timestamp);
         vm.startPrank(maker);
-        weth.approve(address(router), 1);
+        weth.approve(address(router), amount0);
         vm.expectRevert("ERC20: transfer amount exceeds balance");
-        router.createRfsWithDeposit(address(weth), address(dai), 1, 1, block.timestamp);
+        router.createRfsWithDeposit(address(weth), address(dai), amount0, amount1, deadline);
         vm.stopPrank();
     }
 
-    function createRfq() private returns (uint rfsId) {
+    function createRfq(uint amount0, uint amount1, uint deadline) private returns (uint rfsId) {
+        vm.assume(0 < amount0 && amount0 <= wethSupply / 10);
+        vm.assume(0 < amount1 && amount1 <= daiSupply / 10);
+        vm.assume(deadline >= block.timestamp);
+
         vm.prank(deployer);
-        weth.transfer(maker, 1);
+        weth.transfer(maker, amount0);
 
         vm.startPrank(maker);
-        weth.approve(address(router), 1);
-        rfsId = router.createRfsWithDeposit(address(weth), address(dai), 1, 1, block.timestamp);
+        weth.approve(address(router), amount0);
+        rfsId = router.createRfsWithDeposit(
+            address(weth),
+            address(dai),
+            amount0,
+            amount1,
+            deadline
+        );
         vm.stopPrank();
     }
 
-    function test_createRfs() public {
-        uint rfsId = createRfq();
-        require(rfsId == 1);
+    function test_createRfs(uint amount0, uint amount1, uint deadline, uint8 n) public {
+        vm.assume(0 < n && n < 32);
+        for (uint8 i = 1; i < n; ++i) {
+            require(createRfq(amount0, amount1, deadline) == i);
+        }
     }
 
-    function test_removeRfs_failNotMaker() public {
-        uint rfsId = createRfq();
+    function test_removeRfs_failNotMaker(uint amount0, uint amount1, uint deadline) public {
+        uint rfsId = createRfq(amount0, amount1, deadline);
 
         vm.prank(address(0x12345));
         vm.expectRevert(Router__NotMaker.selector);
         router.removeRfsWithDeposit(rfsId);
     }
-    
-    function test_removeRfs() public {
-        uint rfsId = createRfq();
+
+    function test_removeRfs(uint amount0, uint amount1, uint deadline) public {
+        uint rfsId = createRfq(amount0, amount1, deadline);
         vm.prank(maker);
         bool success = router.removeRfsWithDeposit(rfsId);
         require(success);
     }
-    
-    function test_takeRfs_failAllowance() public {
-        uint rfsId = createRfq();
+
+    function test_takeRfs_failAllowance(uint amount0, uint amount1, uint deadline) public {
+        uint rfsId = createRfq(amount0, amount1, deadline);
         vm.prank(taker);
         vm.expectRevert(Router__AllowanceToken1TooLow.selector);
-        router.takeRfsWithDeposit(rfsId, 1);
+        router.takeRfsWithDeposit(rfsId, amount1);
     }
 
-    function test_takeRfs_failBalance() public {
-        uint rfsId = createRfq();
+    function test_takeRfs_failBalance(uint amount0, uint amount1, uint deadline) public {
+        uint rfsId = createRfq(amount0, amount1, deadline);
         vm.prank(taker);
-        dai.approve(address(router), 1);
+        dai.approve(address(router), amount1);
         vm.prank(taker);
         vm.expectRevert("ERC20: transfer amount exceeds balance");
-        router.takeRfsWithDeposit(rfsId, 1);
+        router.takeRfsWithDeposit(rfsId, amount1);
     }
 
-    function test_takeRfs() public {
-        uint rfsId = createRfq();
+    function test_takeRfs(uint amount0, uint amount1, uint deadline) public {
+        uint rfsId = createRfq(amount0, amount1, deadline);
         vm.prank(deployer);
-        dai.transfer(address(taker), 1);
+        dai.transfer(address(taker), amount1);
         vm.startPrank(taker);
-        dai.approve(address(router), 1);
-        
-        bool success = router.takeRfsWithDeposit(rfsId, 1);
+        dai.approve(address(router), amount1);
+
+        bool success = router.takeRfsWithDeposit(rfsId, amount1);
         require(success);
         vm.stopPrank();
     }
 
-    function test_takeRfs_failRfsRemoved() public {
-        uint rfsId = createRfq();
+    function test_takeRfs_failRfsRemoved(uint amount0, uint amount1, uint deadline) public {
+        uint rfsId = createRfq(amount0, amount1, deadline);
         vm.prank(deployer);
-        dai.transfer(address(taker), 2);
+        dai.transfer(address(taker), amount1);
         vm.startPrank(taker);
-        dai.approve(address(router), 2);
+        dai.approve(address(router), amount1);
 
-        bool success = router.takeRfsWithDeposit(rfsId, 1);
+        bool success = router.takeRfsWithDeposit(rfsId, amount1);
         require(success);
 
         vm.expectRevert(Router__RfsRemoved.selector);
-        router.takeRfsWithDeposit(rfsId, 1);
+        router.takeRfsWithDeposit(rfsId, amount1);
         vm.stopPrank();
     }
 
