@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.13;
 
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
+error Router__InvalidTokenAmount();
 error Router__InvalidDeadline();
 error Router__AllowanceToken0TooLow();
 error Router__AllowanceToken1TooLow();
@@ -53,7 +54,7 @@ contract Router is Ownable {
      * @param _amount0 amount of token offered
      * @param _amount1 amount of token requested
      * @param _deadline timestamp after which the RFS expires
-     * @return success
+     * @return rfsId
      */
     function createRfsWithDeposit(
         address _token0,
@@ -61,16 +62,15 @@ contract Router is Ownable {
         uint _amount0,
         uint _amount1,
         uint _deadline
-    ) external returns (bool success) {
-        ERC20 token0 = ERC20(_token0);
-
-        // check deadline
+    ) external returns (uint rfsId) {
+        // sanity checks
+        if (_amount0 == 0 || _amount1 == 0) revert Router__InvalidTokenAmount();
         if (_deadline < block.timestamp) revert Router__InvalidDeadline();
-        if (token0.allowance(msg.sender, address(this)) < _amount0)
+        if (IERC20(_token0).allowance(msg.sender, address(this)) < _amount0)
             revert Router__AllowanceToken0TooLow();
 
         // transfer sell token to contract
-        success = token0.transferFrom(msg.sender, address(this), _amount0);
+        bool success = IERC20(_token0).transferFrom(msg.sender, address(this), _amount0);
         if (!success) revert Router__DepositToken0Failed();
 
         // create RFS
@@ -87,7 +87,7 @@ contract Router is Ownable {
 
         emit RfsCreated(rfsIdCounter, msg.sender, _token0, _token1, _amount0, _amount1, _deadline);
 
-        ++rfsIdCounter;
+        return rfsIdCounter++;
     }
 
     /**
@@ -102,22 +102,22 @@ contract Router is Ownable {
         // check RFS is not removed
         if (rfs.removed) revert Router__RfsRemoved();
 
-        // todo allow for _amount1 <= rfs.amount1
-        if (_amount1 > rfs.amount1) revert Router__Amount1TooHigh();
+        // todo allow for _amount1 <= rfs.amount1 (partial fill)
+        if (_amount1 != rfs.amount1) revert Router__Amount1TooHigh();
 
         // check allowance
-        if (ERC20(rfs.token1).allowance(msg.sender, address(this)) < rfs.amount1)
+        if (IERC20(rfs.token1).allowance(msg.sender, address(this)) < _amount1)
             revert Router__AllowanceToken1TooLow();
 
         // transfer token1 to the maker
-        success = ERC20(rfs.token1).transferFrom(msg.sender, rfs.maker, _amount1);
+        success = IERC20(rfs.token1).transferFrom(msg.sender, rfs.maker, _amount1);
         if (!success) revert Router__TransferToken1Failed();
 
         // todo compute _amount0 based on _amount1 and implied quote, and update RFS amounts
         uint _amount0 = rfs.amount0;
 
         // transfer token0 to the taker
-        success = ERC20(rfs.token0).transfer(msg.sender, _amount0);
+        success = IERC20(rfs.token0).transfer(msg.sender, _amount0);
         if (!success) revert Router__TransferToken0Failed();
 
         // update RFS
@@ -144,11 +144,11 @@ contract Router is Ownable {
         if (msg.sender != rfs.maker) revert Router__NotMaker();
 
         // refund deposited tokens to the maker
-        success = ERC20(rfs.token0).transfer(rfs.maker, rfs.amount0);
+        success = IERC20(rfs.token0).transfer(rfs.maker, rfs.amount0);
         if (!success) revert Router__RefundToken0Failed();
 
         idToRfs[_id].removed = true;
-
+        
         emit RfsRemoved(_id);
     }
 
