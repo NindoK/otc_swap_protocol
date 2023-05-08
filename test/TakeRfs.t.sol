@@ -35,6 +35,7 @@ contract TakeRfsTest is RouterTest {
     }
 
     function test_takeRfs_failAllowance(uint amount0, uint amount1, uint deadline) public {
+        vm.assume(amount1 > 0);
         uint rfsId = createRfs(amount0, amount1, deadline);
         vm.prank(taker);
         vm.expectRevert(Router__AllowanceToken1TooLow.selector);
@@ -42,6 +43,7 @@ contract TakeRfsTest is RouterTest {
     }
 
     function test_takeRfs_failBalance(uint amount0, uint amount1, uint deadline) public {
+        vm.assume(amount1 > 0);
         uint rfsId = createRfs(amount0, amount1, deadline);
         vm.prank(taker);
         token1.approve(address(router), amount1);
@@ -50,7 +52,17 @@ contract TakeRfsTest is RouterTest {
         router.takeRfsWithDeposit(rfsId, amount1);
     }
 
+    function test_takeRfs_failTokekAmount(uint amount0, uint amount1, uint deadline) public {
+        uint rfsId = createRfs(amount0, amount1, deadline);
+        vm.prank(taker);
+        token1.approve(address(router), amount1);
+        vm.prank(taker);
+        vm.expectRevert(Router__InvalidTokenAmount.selector);
+        router.takeRfsWithDeposit(rfsId, 0);
+    }
+
     function test_takeRfs(uint amount0, uint amount1, uint deadline) public {
+        vm.assume(amount1 > 0);
         uint rfsId = createRfs(amount0, amount1, deadline);
 
         uint startMakertoken0Balance = token0.balanceOf(maker);
@@ -74,6 +86,7 @@ contract TakeRfsTest is RouterTest {
     }
 
     function test_takeRfs_failRfsRemoved(uint amount0, uint amount1, uint deadline) public {
+        vm.assume(amount1 > 0);
         uint rfsId = createRfs(amount0, amount1, deadline);
         vm.prank(deployer);
         token1.transfer(address(taker), amount1);

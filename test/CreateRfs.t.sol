@@ -78,7 +78,14 @@ contract CreateRfsTest is RouterTest {
     function test_createRfs(uint amount0, uint amount1, uint deadline, uint8 n) public {
         vm.assume(0 < n && n < 32);
         for (uint8 i = 1; i < n; ++i) {
-            require(createRfs(amount0, amount1, deadline) == i);
+            uint rfsId = createRfs(amount0, amount1, deadline);
+            require(rfsId == i);
+            Router.RFS memory rfs = router.getRfs(rfsId);
+            assertEq(rfs.token0, address(token0));
+            assertEq(rfs.token1, address(token1));
+            assertEq(rfs.amount0, amount0);
+            assertEq(rfs.amount1, amount1);
+            assertEq(rfs.deadline, deadline);
         }
     }
 

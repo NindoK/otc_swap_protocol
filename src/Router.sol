@@ -99,13 +99,10 @@ contract Router is Ownable {
     function takeRfsWithDeposit(uint _id, uint _amount1) external returns (bool success) {
         RFS memory rfs = getRfs(_id);
 
-        // check RFS is not removed
+        // sanity checks
         if (rfs.removed) revert Router__RfsRemoved();
-
-        // todo allow for _amount1 <= rfs.amount1 (partial fill)
-        if (_amount1 != rfs.amount1) revert Router__Amount1TooHigh();
-
-        // check allowance
+        if (_amount1 == 0) revert Router__InvalidTokenAmount();
+        if (_amount1 > rfs.amount1) revert Router__Amount1TooHigh();
         if (IERC20(rfs.token1).allowance(msg.sender, address(this)) < _amount1)
             revert Router__AllowanceToken1TooLow();
 
@@ -114,6 +111,8 @@ contract Router is Ownable {
         if (!success) revert Router__TransferToken1Failed();
 
         // todo compute _amount0 based on _amount1 and implied quote, and update RFS amounts
+        // uint impliedQuote = rfs.amount0 / rfs.amount1;
+        // uint _amount0 = _amount1 * impliedQuote;
         uint _amount0 = rfs.amount0;
 
         // transfer token0 to the taker
