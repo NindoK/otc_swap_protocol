@@ -52,7 +52,7 @@ contract TakeRfsTest is RouterTest {
         router.takeRfsWithDeposit(rfsId, amount1);
     }
 
-    function test_takeRfs_failTokekAmount(uint amount0, uint amount1, uint deadline) public {
+    function test_takeRfs_failTokenAmount(uint amount0, uint amount1, uint deadline) public {
         uint rfsId = createRfs(amount0, amount1, deadline);
         vm.prank(taker);
         token1.approve(address(router), amount1);
@@ -65,10 +65,10 @@ contract TakeRfsTest is RouterTest {
         vm.assume(amount1 > 0);
         uint rfsId = createRfs(amount0, amount1, deadline);
 
-        uint startMakertoken0Balance = token0.balanceOf(maker);
-        uint startMakertoken1Balance = token1.balanceOf(maker);
-        uint startTakertoken0Balance = token0.balanceOf(taker);
-        uint startTakertoken1Balance = token1.balanceOf(taker);
+        uint startMakerToken0Balance = token0.balanceOf(maker);
+        uint startMakerToken1Balance = token1.balanceOf(maker);
+        uint startTakerToken0Balance = token0.balanceOf(taker);
+        uint startTakerToken1Balance = token1.balanceOf(taker);
 
         vm.prank(deployer);
         token1.transfer(address(taker), amount1);
@@ -79,10 +79,12 @@ contract TakeRfsTest is RouterTest {
         require(success);
         vm.stopPrank();
 
-        assertEq(token0.balanceOf(maker), startMakertoken0Balance);
-        assertEq(token1.balanceOf(maker), startMakertoken1Balance + amount1);
-        assertEq(token0.balanceOf(taker), startTakertoken0Balance + amount0);
-        assertEq(token1.balanceOf(taker), startTakertoken1Balance);
+        assertEq(token0.balanceOf(maker), startMakerToken0Balance);
+        assertEq(token1.balanceOf(maker), startMakerToken1Balance + amount1);
+        assertEq(token0.balanceOf(taker), startTakerToken0Balance + amount0);
+        assertEq(token1.balanceOf(taker), startTakerToken1Balance);
+
+        assertTrue(router.getRfs(rfsId).removed);
     }
 
     function test_takeRfs_failRfsRemoved(uint amount0, uint amount1, uint deadline) public {
@@ -101,5 +103,70 @@ contract TakeRfsTest is RouterTest {
         vm.stopPrank();
     }
 
-    // todo test partial fills
+    function takeRfsPartial(uint rfsId, uint takerAmount1) private {
+        uint startMakerToken0Balance = token0.balanceOf(maker);
+        uint startMakerToken1Balance = token1.balanceOf(maker);
+        uint startTakerToken0Balance = token0.balanceOf(taker);
+        uint startTakerToken1Balance = token1.balanceOf(taker);
+
+        Router.RFS memory rfs = router.getRfs(rfsId);
+        uint makerAmount0 = rfs.amount0;
+        uint makerAmount1 = rfs.amount1;
+
+        vm.prank(taker);
+        bool success = router.takeRfsWithDeposit(rfsId, takerAmount1);
+        require(success);
+
+        uint takerAmount0 = OtcMath.getTakerAmount0(makerAmount0, makerAmount1, takerAmount1);
+
+        rfs = router.getRfs(rfsId);
+        assertEq(rfs.amount0, makerAmount0 - takerAmount0);
+        assertEq(rfs.amount1, makerAmount1 - takerAmount1);
+
+        assertEq(token0.balanceOf(maker), startMakerToken0Balance);
+        assertEq(token1.balanceOf(maker), startMakerToken1Balance + takerAmount1);
+        assertEq(token0.balanceOf(taker), startTakerToken0Balance + takerAmount0);
+        assertEq(token1.balanceOf(taker), startTakerToken1Balance - takerAmount1);
+    }
+
+    function test_takeRfs_partial(
+        uint makerAmount0,
+        uint makerAmount1,
+        uint deadline,
+        uint takerAmount1
+    ) public {
+        vm.assume(0 < takerAmount1 && takerAmount1 < makerAmount1);
+
+        uint rfsId = createRfs(makerAmount0, makerAmount1, deadline);
+
+        vm.prank(deployer);
+        token1.transfer(address(taker), takerAmount1);
+        vm.prank(taker);
+        token1.approve(address(router), takerAmount1);
+
+        takeRfsPartial(rfsId, takerAmount1);
+        assertFalse(router.getRfs(rfsId).removed);
+    }
+
+    function test_takeRfs_partials(uint makerAmount0, uint makerAmount1, uint deadline) public {
+        uint rfsId = createRfs(makerAmount0, makerAmount1, deadline);
+        vm.assume(makerAmount0 >= 3);
+        vm.assume(makerAmount1 >= 3);
+
+        vm.prank(deployer);
+        token1.transfer(address(taker), makerAmount1);
+        vm.prank(taker);
+        token1.approve(address(router), makerAmount1);
+
+        uint takerAmountA = makerAmount1 / 3;
+        uint takerAmountB = makerAmount1 / 3;
+        uint takerAmountC = makerAmount1 - takerAmountA - takerAmountB;
+
+        takeRfsPartial(rfsId, takerAmountA);
+        assertFalse(router.getRfs(rfsId).removed);
+        takeRfsPartial(rfsId, takerAmountB);
+        assertFalse(router.getRfs(rfsId).removed);
+        takeRfsPartial(rfsId, takerAmountC);
+        assertTrue(router.getRfs(rfsId).removed);
+    }
 }

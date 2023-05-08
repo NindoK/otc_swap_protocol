@@ -3,6 +3,7 @@ pragma solidity ^0.8.13;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "./OtcMath.sol";
 
 error Router__InvalidTokenAmount();
 error Router__InvalidDeadline();
@@ -110,10 +111,8 @@ contract Router is Ownable {
         success = IERC20(rfs.token1).transferFrom(msg.sender, rfs.maker, _amount1);
         if (!success) revert Router__TransferToken1Failed();
 
-        // todo compute _amount0 based on _amount1 and implied quote, and update RFS amounts
-        // uint impliedQuote = rfs.amount0 / rfs.amount1;
-        // uint _amount0 = _amount1 * impliedQuote;
-        uint _amount0 = rfs.amount0;
+        // compute _amount0 based on _amount1 and implied quote, and update RFS amounts
+        uint _amount0 = OtcMath.getTakerAmount0(rfs.amount0, rfs.amount1, _amount1);
 
         // transfer token0 to the taker
         success = IERC20(rfs.token0).transfer(msg.sender, _amount0);

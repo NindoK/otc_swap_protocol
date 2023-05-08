@@ -91,10 +91,10 @@ contract CreateRfsTest is RouterTest {
 
     function test_removeRfs_failNotMaker(uint amount0, uint amount1, uint deadline) public {
         uint rfsId = createRfs(amount0, amount1, deadline);
-
         vm.prank(address(new TestAddress()));
         vm.expectRevert(Router__NotMaker.selector);
         router.removeRfsWithDeposit(rfsId);
+        assertFalse(router.getRfs(rfsId).removed);
     }
 
     function test_removeRfs(uint amount0, uint amount1, uint deadline) public {
@@ -104,5 +104,6 @@ contract CreateRfsTest is RouterTest {
         bool success = router.removeRfsWithDeposit(rfsId);
         require(success);
         assertEq(token0.balanceOf(maker), startBalance + amount0);
+        assertTrue(router.getRfs(rfsId).removed);
     }
 }
