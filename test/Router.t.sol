@@ -5,11 +5,12 @@ import "forge-std/Test.sol";
 import "../src/Router.sol";
 import "../src/OtcToken.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "./util.sol";
 
 contract RouterTest is Test {
-    address public deployer = address(0x1);
-    address public maker = address(0x2);
-    address public taker = address(0x3);
+    address public deployer = address(new TestAddress());
+    address public maker = address(new TestAddress());
+    address public taker = address(new TestAddress());
     Router public router;
     OtcToken public weth;
     OtcToken public dai;
@@ -65,9 +66,9 @@ contract RouterTest is Test {
         vm.stopPrank();
     }
 
-    function createRfq(uint amount0, uint amount1, uint deadline) private returns (uint rfsId) {
-        vm.assume(0 < amount0 && amount0 <= wethSupply / 10);
-        vm.assume(0 < amount1 && amount1 <= daiSupply / 10);
+    function createRfs(uint amount0, uint amount1, uint deadline) private returns (uint rfsId) {
+        vm.assume(0 < amount0 && amount0 <= wethSupply / 100);
+        vm.assume(0 < amount1 && amount1 <= daiSupply / 100);
         vm.assume(deadline >= block.timestamp);
 
         vm.prank(deployer);
@@ -75,6 +76,10 @@ contract RouterTest is Test {
 
         vm.startPrank(maker);
         weth.approve(address(router), amount0);
+
+        uint startBalance = weth.balanceOf(maker);
+
+        // create RFS
         rfsId = router.createRfsWithDeposit(
             address(weth),
             address(dai),
@@ -83,39 +88,44 @@ contract RouterTest is Test {
             deadline
         );
         vm.stopPrank();
+
+        // check final balance
+        assertEq(weth.balanceOf(maker), startBalance - amount0);
     }
 
     function test_createRfs(uint amount0, uint amount1, uint deadline, uint8 n) public {
         vm.assume(0 < n && n < 32);
         for (uint8 i = 1; i < n; ++i) {
-            require(createRfq(amount0, amount1, deadline) == i);
+            require(createRfs(amount0, amount1, deadline) == i);
         }
     }
 
     function test_removeRfs_failNotMaker(uint amount0, uint amount1, uint deadline) public {
-        uint rfsId = createRfq(amount0, amount1, deadline);
+        uint rfsId = createRfs(amount0, amount1, deadline);
 
-        vm.prank(address(0x12345));
+        vm.prank(address(new TestAddress()));
         vm.expectRevert(Router__NotMaker.selector);
         router.removeRfsWithDeposit(rfsId);
     }
 
     function test_removeRfs(uint amount0, uint amount1, uint deadline) public {
-        uint rfsId = createRfq(amount0, amount1, deadline);
+        uint rfsId = createRfs(amount0, amount1, deadline);
+        uint startBalance = weth.balanceOf(maker);
         vm.prank(maker);
         bool success = router.removeRfsWithDeposit(rfsId);
         require(success);
+        assertEq(weth.balanceOf(maker), startBalance + amount0);
     }
 
     function test_takeRfs_failAllowance(uint amount0, uint amount1, uint deadline) public {
-        uint rfsId = createRfq(amount0, amount1, deadline);
+        uint rfsId = createRfs(amount0, amount1, deadline);
         vm.prank(taker);
         vm.expectRevert(Router__AllowanceToken1TooLow.selector);
         router.takeRfsWithDeposit(rfsId, amount1);
     }
 
     function test_takeRfs_failBalance(uint amount0, uint amount1, uint deadline) public {
-        uint rfsId = createRfq(amount0, amount1, deadline);
+        uint rfsId = createRfs(amount0, amount1, deadline);
         vm.prank(taker);
         dai.approve(address(router), amount1);
         vm.prank(taker);
@@ -124,7 +134,13 @@ contract RouterTest is Test {
     }
 
     function test_takeRfs(uint amount0, uint amount1, uint deadline) public {
-        uint rfsId = createRfq(amount0, amount1, deadline);
+        uint rfsId = createRfs(amount0, amount1, deadline);
+
+        uint startMakerWethBalance = weth.balanceOf(maker);
+        uint startMakerDaiBalance = dai.balanceOf(maker);
+        uint startTakerWethBalance = weth.balanceOf(taker);
+        uint startTakerDaiBalance = dai.balanceOf(taker);
+
         vm.prank(deployer);
         dai.transfer(address(taker), amount1);
         vm.startPrank(taker);
@@ -133,10 +149,15 @@ contract RouterTest is Test {
         bool success = router.takeRfsWithDeposit(rfsId, amount1);
         require(success);
         vm.stopPrank();
+
+        assertEq(weth.balanceOf(maker), startMakerWethBalance);
+        assertEq(dai.balanceOf(maker), startMakerDaiBalance + amount1);
+        assertEq(weth.balanceOf(taker), startTakerWethBalance + amount0);
+        assertEq(dai.balanceOf(taker), startTakerDaiBalance);
     }
 
     function test_takeRfs_failRfsRemoved(uint amount0, uint amount1, uint deadline) public {
-        uint rfsId = createRfq(amount0, amount1, deadline);
+        uint rfsId = createRfs(amount0, amount1, deadline);
         vm.prank(deployer);
         dai.transfer(address(taker), amount1);
         vm.startPrank(taker);
