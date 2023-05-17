@@ -81,7 +81,7 @@ contract OTCNexus is Ownable {
         uint256 _usdPrice,
         uint256 _deadline,
         bool _isDeposited
-    ) external returns (uint256 rfsId) {
+    ) external returns (uint256) {
         if (_amount1 != 0 && _usdPrice != 0) revert Router__OnlyFixedPriceOrAmountAllowed();
         return
             _createRfs(
@@ -115,7 +115,7 @@ contract OTCNexus is Ownable {
         uint8 _priceMultiplier,
         uint256 _deadline,
         bool _isDeposited
-    ) external returns (uint256 rfsId) {
+    ) external returns (uint256) {
         if (_priceMultiplier == 0) revert Router__InvalidPriceMultiplier();
         return
             _createRfs(
@@ -142,7 +142,7 @@ contract OTCNexus is Ownable {
      * @param _deadline The timestamp after which the RFS expires.
      * @param _isDynamic If true, it's a dynamic RFS else it's fixed RFS.
      * @param _isDeposited If true, the tokens are deposited; if false, the tokens are approved to be spent.
-     * @return rfsId The ID of the newly created RFS.
+     * @return The ID of the newly created RFS.
      */
     function _createRfs(
         address _token0,
@@ -154,7 +154,7 @@ contract OTCNexus is Ownable {
         uint256 _deadline,
         bool _isDynamic,
         bool _isDeposited
-    ) private returns (uint256 rfsId) {
+    ) private returns (uint256) {
         // sanity checks
         if (_deadline < block.timestamp) revert Router__InvalidDeadline();
         if (_amount0 == 0) revert Router__InvalidTokenAmount();
