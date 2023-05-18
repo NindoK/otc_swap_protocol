@@ -23,6 +23,7 @@ error Router__NotMaker();
 error Router__RefundToken0Failed();
 error Router__OnlyFixedOrDynamicAllowed();
 error Router__OnlyFixedPriceOrAmountAllowed();
+error Router__OnlyOneTokenAccepted();
 
 /**
  * @title OTCNexus
@@ -83,6 +84,7 @@ contract OTCNexus is Ownable {
         bool _isDeposited
     ) external returns (uint256) {
         if (_amount1 != 0 && _usdPrice != 0) revert Router__OnlyFixedPriceOrAmountAllowed();
+        if (_amount1 != 0 && _tokensAccepted.length != 1) revert Router__OnlyOneTokenAccepted();
         return
             _createRfs(
                 _token0,
