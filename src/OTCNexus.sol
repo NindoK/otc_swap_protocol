@@ -34,19 +34,28 @@ contract OTCNexus is Ownable {
     mapping(uint256 => RFS) private idToRfs;
     mapping(address => RFS[]) private makerRfs;
 
+    enum RfsType {
+        DYNAMIC,
+        FIXED
+    }
+    enum TokenInteractionType {
+        TOKEN_DEPOSITED,
+        TOKEN_APPROVED
+    }
+
     struct RFS {
         uint256 id;
-        address maker;
-        address token0;
-        address[] tokensAccepted;
         uint256 amount0;
         uint256 amount1;
         uint256 usdPrice; // Implies the fixed price per token0
-        uint256 priceMultiplier;
         uint256 deadline;
-        bool isDynamic;
-        bool isDeposited;
+        address maker;
+        uint8 priceMultiplier;
+        RfsType typeRfs;
+        TokenInteractionType interactionType;
         bool removed;
+        address token0;
+        address[] tokensAccepted;
     }
 
     event RfsUpdated(uint256 rfsId, uint256 amount0, uint256 amount1, uint256 deadline);
@@ -81,7 +90,7 @@ contract OTCNexus is Ownable {
         uint256 _amount1,
         uint256 _usdPrice,
         uint256 _deadline,
-        bool _isDeposited
+        TokenInteractionType _isDeposited
     ) external returns (uint256) {
         if (_amount1 != 0 && _usdPrice != 0) revert Router__OnlyFixedPriceOrAmountAllowed();
         if (_amount1 != 0 && _tokensAccepted.length != 1) revert Router__OnlyOneTokenAccepted();
@@ -94,7 +103,7 @@ contract OTCNexus is Ownable {
                 _usdPrice,
                 0,
                 _deadline,
-                false,
+                RfsType.FIXED,
                 _isDeposited
             );
     }
@@ -116,7 +125,7 @@ contract OTCNexus is Ownable {
         uint256 _amount0,
         uint8 _priceMultiplier,
         uint256 _deadline,
-        bool _isDeposited
+        TokenInteractionType _isDeposited
     ) external returns (uint256) {
         if (_priceMultiplier == 0) revert Router__InvalidPriceMultiplier();
         return
@@ -128,7 +137,7 @@ contract OTCNexus is Ownable {
                 0,
                 _priceMultiplier,
                 _deadline,
-                true,
+                RfsType.DYNAMIC,
                 _isDeposited
             );
     }
@@ -154,8 +163,8 @@ contract OTCNexus is Ownable {
         uint256 _usdPrice,
         uint8 _priceMultiplier,
         uint256 _deadline,
-        bool _isDynamic,
-        bool _isDeposited
+        RfsType _isDynamic,
+        TokenInteractionType _isDeposited
     ) private returns (uint256) {
         // sanity checks
         if (_deadline < block.timestamp) revert Router__InvalidDeadline();
@@ -164,7 +173,7 @@ contract OTCNexus is Ownable {
         if (IERC20(_token0).allowance(msg.sender, address(this)) < _amount0)
             revert Router__AllowanceToken0TooLow();
 
-        if (_isDeposited) {
+        if (_isDeposited == TokenInteractionType.TOKEN_DEPOSITED) {
             // transfer sell token to contract
             bool success = IERC20(_token0).transferFrom(msg.sender, address(this), _amount0);
             if (!success) revert Router__DepositToken0Failed();
@@ -173,33 +182,35 @@ contract OTCNexus is Ownable {
         // create RFS
         idToRfs[rfsIdCounter] = RFS(
             rfsIdCounter, // id
-            msg.sender, // maker
-            _token0, // token0
-            _tokensAccepted, // tokensAccepted
             _amount0, // amount0
             _amount1, // amount1
             _usdPrice, // price
-            _priceMultiplier, // discount
             _deadline, // deadline
+            msg.sender, // maker
+            _priceMultiplier, // priceMultiplier
             _isDynamic, // isDynamic
             _isDeposited, // isDeposited
-            false // removed
+            false, // removed
+            _token0, // token0
+            _tokensAccepted // tokensAccepted
         );
 
         makerRfs[msg.sender].push(idToRfs[rfsIdCounter]);
 
-        emit RfsCreated(
-            rfsIdCounter,
-            msg.sender,
-            _token0,
-            _tokensAccepted,
-            _amount0,
-            _usdPrice,
-            _priceMultiplier,
-            _deadline
-        );
+        unchecked {
+            emit RfsCreated(
+                rfsIdCounter++,
+                msg.sender,
+                _token0,
+                _tokensAccepted,
+                _amount0,
+                _usdPrice,
+                _priceMultiplier,
+                _deadline
+            );
+        }
 
-        return rfsIdCounter++;
+        return rfsIdCounter;
     }
 
     // //TODO TO BE UPDATED WITH NEW LOGIC
@@ -260,7 +271,7 @@ contract OTCNexus is Ownable {
         // only the maker can remove the RFS
         if (msg.sender != rfs.maker) revert Router__NotMaker();
 
-        if (rfs.isDeposited) {
+        if (rfs.interactionType == TokenInteractionType.TOKEN_DEPOSITED) {
             // refund deposited tokens to the maker
             success = IERC20(rfs.token0).transfer(rfs.maker, rfs.amount0);
             if (!success) revert Router__RefundToken0Failed();
