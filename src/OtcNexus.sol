@@ -26,10 +26,10 @@ error Router__OnlyFixedPriceOrAmountAllowed();
 error Router__OnlyOneTokenAccepted();
 
 /**
- * @title OTCNexus
+ * @title OtcNexus
  * @notice core swap functionality
  */
-contract OTCNexus is Ownable {
+contract OtcNexus is Ownable {
     uint256 public rfsIdCounter;
     mapping(uint256 => RFS) private idToRfs;
     mapping(address => RFS[]) private makerRfs;
@@ -80,7 +80,7 @@ contract OTCNexus is Ownable {
      * @param _amount1 amount of token requested
      * @param _usdPrice fixed price of the asset
      * @param _deadline timestamp after which the RFS expires
-     * @param _isDeposited if the tokens are deposited or approved
+     * @param interactionType if the tokens are deposited or approved
      * @return rfsId
      */
     function createFixedRfs(
@@ -90,7 +90,7 @@ contract OTCNexus is Ownable {
         uint256 _amount1,
         uint256 _usdPrice,
         uint256 _deadline,
-        TokenInteractionType _isDeposited
+        TokenInteractionType interactionType
     ) external returns (uint256) {
         if (_amount1 != 0 && _usdPrice != 0) revert Router__OnlyFixedPriceOrAmountAllowed();
         if (_amount1 != 0 && _tokensAccepted.length != 1) revert Router__OnlyOneTokenAccepted();
@@ -104,7 +104,7 @@ contract OTCNexus is Ownable {
                 0,
                 _deadline,
                 RfsType.FIXED,
-                _isDeposited
+                interactionType
             );
     }
 
@@ -116,7 +116,7 @@ contract OTCNexus is Ownable {
      * @param _amount0 amount of token offered
      * @param _priceMultiplier priceMultiplier compared to the current price of the asset
      * @param _deadline timestamp after which the RFS expires
-     * @param _isDeposited if the token is deposited or approved
+     * @param interactionType if the token is deposited or approved to be spent
      * @return rfsId
      */
     function createDynamicRfs(
@@ -125,7 +125,7 @@ contract OTCNexus is Ownable {
         uint256 _amount0,
         uint8 _priceMultiplier,
         uint256 _deadline,
-        TokenInteractionType _isDeposited
+        TokenInteractionType interactionType
     ) external returns (uint256) {
         if (_priceMultiplier == 0) revert Router__InvalidPriceMultiplier();
         return
@@ -138,7 +138,7 @@ contract OTCNexus is Ownable {
                 _priceMultiplier,
                 _deadline,
                 RfsType.DYNAMIC,
-                _isDeposited
+                interactionType
             );
     }
 
@@ -151,8 +151,8 @@ contract OTCNexus is Ownable {
      * @param _usdPrice The USD price of the asset if set.
      * @param _priceMultiplier The price multiplier to apply to the current price of the asset.
      * @param _deadline The timestamp after which the RFS expires.
-     * @param _isDynamic If true, it's a dynamic RFS else it's fixed RFS.
-     * @param _isDeposited If true, the tokens are deposited; if false, the tokens are approved to be spent.
+     * @param typeRfs dynamic or fixed
+     * @param interactionType if the token is deposited or approved to be spent
      * @return The ID of the newly created RFS.
      */
     function _createRfs(
@@ -163,8 +163,8 @@ contract OTCNexus is Ownable {
         uint256 _usdPrice,
         uint8 _priceMultiplier,
         uint256 _deadline,
-        RfsType _isDynamic,
-        TokenInteractionType _isDeposited
+        RfsType typeRfs,
+        TokenInteractionType interactionType
     ) private returns (uint256) {
         // sanity checks
         if (_deadline < block.timestamp) revert Router__InvalidDeadline();
@@ -173,7 +173,7 @@ contract OTCNexus is Ownable {
         if (IERC20(_token0).allowance(msg.sender, address(this)) < _amount0)
             revert Router__AllowanceToken0TooLow();
 
-        if (_isDeposited == TokenInteractionType.TOKEN_DEPOSITED) {
+        if (interactionType == TokenInteractionType.TOKEN_DEPOSITED) {
             // transfer sell token to contract
             bool success = IERC20(_token0).transferFrom(msg.sender, address(this), _amount0);
             if (!success) revert Router__DepositToken0Failed();
@@ -188,8 +188,8 @@ contract OTCNexus is Ownable {
             _deadline, // deadline
             msg.sender, // maker
             _priceMultiplier, // priceMultiplier
-            _isDynamic, // isDynamic
-            _isDeposited, // isDeposited
+            typeRfs, // is dynamic or fixed
+            interactionType, // is deposited or approved to be spent
             false, // removed
             _token0, // token0
             _tokensAccepted // tokensAccepted

@@ -3,11 +3,22 @@ pragma solidity ^0.8.13;
 
 import "forge-std/Test.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "./Router.sol";
-import "./util.sol";
+import "./helpers/util.sol";
+import "./helpers/OtcNexusTestSetup.sol";
 
-contract CreateRfsTest is RouterTest {
-    function createRfs(uint amount0, uint amount1, uint deadline) private returns (uint rfsId) {
+contract OtcNexusCreateRfsTest is OtcNexusTestSetup {
+    function createDynamicApprovedRfs(uint amount0, uint amount1, uint deadline) private returns (uint rfsId) {
+        return 0; //todo
+    }
+    
+    function createDynamicDepositedRfs(uint amount0, uint amount1, uint deadline) private returns (uint rfsId) {
+        return 0; //todo
+    }
+    function createFixedApprovedRfs(uint amount0, uint amount1, uint deadline) private returns (uint rfsId) {
+        return 0; //todo
+    }
+    
+    function createFixedDepositedRfs(uint amount0, uint amount1, uint deadline) private returns (uint rfsId) {
         vm.assume(0 < amount0 && amount0 <= supplyToken0 / 100);
         vm.assume(0 < amount1 && amount1 <= supplyToken1 / 100);
         vm.assume(deadline >= block.timestamp);
@@ -16,17 +27,19 @@ contract CreateRfsTest is RouterTest {
         token0.transfer(maker, amount0);
 
         vm.startPrank(maker);
-        token0.approve(address(router), amount0);
+        token0.approve(address(otcNexus), amount0);
 
         uint startBalance = token0.balanceOf(maker);
 
         // create RFS
-        rfsId = router.createRfsWithDeposit(
+        rfsId = otcNexus.createFixedRfs(
             address(token0),
-            address(token1),
+            _tokensAcceptedToken1,
             amount0,
             amount1,
-            deadline
+            0,
+            deadline,
+            OtcNexus.TokenInteractionType.TOKEN_DEPOSITED
         );
         vm.stopPrank();
 
@@ -38,10 +51,10 @@ contract CreateRfsTest is RouterTest {
         vm.startPrank(maker);
 
         vm.expectRevert(Router__InvalidTokenAmount.selector);
-        router.createRfsWithDeposit(address(token0), address(token1), 0, amount1, block.timestamp);
+        otcNexus.createFixedRfs(address(token0), _tokensAcceptedToken1, 0, amount1, 0, block.timestamp, OtcNexus.TokenInteractionType.TOKEN_DEPOSITED);
 
         vm.expectRevert(Router__InvalidTokenAmount.selector);
-        router.createRfsWithDeposit(address(token0), address(token1), amount0, 0, block.timestamp);
+        otcNexus.createFixedRfs(address(token0), _tokensAcceptedToken1, amount0, 0, 0, block.timestamp, OtcNexus.TokenInteractionType.TOKEN_DEPOSITED);
 
         vm.stopPrank();
     }
@@ -52,7 +65,7 @@ contract CreateRfsTest is RouterTest {
         vm.assume(deadline < block.timestamp);
         vm.prank(maker);
         vm.expectRevert(Router__InvalidDeadline.selector);
-        router.createRfsWithDeposit(address(token0), address(token1), amount0, amount1, deadline);
+        otcNexus.createFixedRfs(address(token0), _tokensAcceptedToken1, amount0, amount1, 0, deadline, OtcNexus.TokenInteractionType.TOKEN_DEPOSITED);
     }
 
     function test_createRfs_failAllowance(uint amount0, uint amount1, uint deadline) public {
@@ -61,7 +74,7 @@ contract CreateRfsTest is RouterTest {
         vm.assume(deadline >= block.timestamp);
         vm.prank(maker);
         vm.expectRevert(Router__AllowanceToken0TooLow.selector);
-        router.createRfsWithDeposit(address(token0), address(token1), amount0, amount1, deadline);
+        otcNexus.createFixedRfs(address(token0), _tokensAcceptedToken1, amount0, amount1, 0, deadline, OtcNexus.TokenInteractionType.TOKEN_DEPOSITED);
     }
 
     function test_createRfs_failBalance(uint amount0, uint amount1, uint deadline) public {
@@ -69,20 +82,20 @@ contract CreateRfsTest is RouterTest {
         vm.assume(amount1 > 0);
         vm.assume(deadline >= block.timestamp);
         vm.startPrank(maker);
-        token0.approve(address(router), amount0);
+        token0.approve(address(otcNexus), amount0);
         vm.expectRevert("ERC20: transfer amount exceeds balance");
-        router.createRfsWithDeposit(address(token0), address(token1), amount0, amount1, deadline);
+        otcNexus.createFixedRfs(address(token0), _tokensAcceptedToken1, amount0, amount1, 0, deadline, OtcNexus.TokenInteractionType.TOKEN_DEPOSITED);
         vm.stopPrank();
     }
 
     function test_createRfs(uint amount0, uint amount1, uint deadline, uint8 n) public {
         vm.assume(0 < n && n < 32);
         for (uint8 i = 1; i < n; ++i) {
-            uint rfsId = createRfs(amount0, amount1, deadline);
+            uint rfsId = createFixedDepositedRfs(amount0, amount1, deadline);
             require(rfsId == i);
-            Router.RFS memory rfs = router.getRfs(rfsId);
+            OtcNexus.RFS memory rfs = otcNexus.getRfs(rfsId);
             assertEq(rfs.token0, address(token0));
-            assertEq(rfs.token1, address(token1));
+            assertEq(rfs.tokensAccepted[0], address(token1));
             assertEq(rfs.amount0, amount0);
             assertEq(rfs.amount1, amount1);
             assertEq(rfs.deadline, deadline);
@@ -90,20 +103,20 @@ contract CreateRfsTest is RouterTest {
     }
 
     function test_removeRfs_failNotMaker(uint amount0, uint amount1, uint deadline) public {
-        uint rfsId = createRfs(amount0, amount1, deadline);
+        uint rfsId = createFixedDepositedRfs(amount0, amount1, deadline);
         vm.prank(address(new TestAddress()));
         vm.expectRevert(Router__NotMaker.selector);
-        router.removeRfsWithDeposit(rfsId);
-        assertFalse(router.getRfs(rfsId).removed);
+        otcNexus.removeRfs(rfsId, true);
+        assertFalse(otcNexus.getRfs(rfsId).removed);
     }
 
     function test_removeRfs(uint amount0, uint amount1, uint deadline) public {
-        uint rfsId = createRfs(amount0, amount1, deadline);
+        uint rfsId = createFixedDepositedRfs(amount0, amount1, deadline);
         uint startBalance = token0.balanceOf(maker);
         vm.prank(maker);
-        bool success = router.removeRfsWithDeposit(rfsId);
+        bool success = otcNexus.removeRfs(rfsId, true);
         require(success);
         assertEq(token0.balanceOf(maker), startBalance + amount0);
-        assertTrue(router.getRfs(rfsId).removed);
+        assertTrue(otcNexus.getRfs(rfsId).removed);
     }
 }
