@@ -3,6 +3,7 @@ pragma solidity 0.8.13;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
 import "./OtcMath.sol";
 
 error Router__InvalidTokenAmount();
@@ -24,6 +25,8 @@ error Router__RefundToken0Failed();
 error Router__OnlyFixedOrDynamicAllowed();
 error Router__OnlyFixedPriceOrAmountAllowed();
 error Router__OnlyOneTokenAccepted();
+error Router__InvalidTokenIndex();
+error Router__InvalidAggregatorAddress();
 
 /**
  * @title OtcNexus
@@ -31,8 +34,12 @@ error Router__OnlyOneTokenAccepted();
  */
 contract OtcNexus is Ownable {
     uint256 public rfsIdCounter;
+
     mapping(uint256 => RFS) private idToRfs;
     mapping(address => RFS[]) private makerRfs;
+
+    //Given a token, return the price feed aggregator (Skipping the second token since we only need to know the price in USD)
+    mapping(address => address) public priceFeeds;
 
     enum RfsType {
         DYNAMIC,
@@ -60,7 +67,7 @@ contract OtcNexus is Ownable {
 
     event RfsUpdated(uint256 rfsId, uint256 amount0, uint256 amount1, uint256 deadline);
     event RfsFilled(uint256 rfsId, address taker, uint256 amount0, uint256 amount1);
-    event RfsRemoved(uint256 rfsId);
+    event RfsRemoved(uint256 rfsId, bool permanentlyDeleted);
     event RfsCreated(
         uint256 rfsId,
         address maker,
@@ -92,7 +99,8 @@ contract OtcNexus is Ownable {
         uint256 _deadline,
         TokenInteractionType interactionType
     ) external returns (uint256) {
-        if (_amount1 != 0 && _usdPrice != 0) revert Router__OnlyFixedPriceOrAmountAllowed();
+        if ((_amount1 != 0 && _usdPrice != 0) || (_amount1 == 0 && _usdPrice == 0))
+            revert Router__OnlyFixedPriceOrAmountAllowed();
         if (_amount1 != 0 && _tokensAccepted.length != 1) revert Router__OnlyOneTokenAccepted();
         return
             _createRfs(
@@ -213,52 +221,97 @@ contract OtcNexus is Ownable {
         return rfsIdCounter;
     }
 
-    // //TODO TO BE UPDATED WITH NEW LOGIC
-    // // /**
-    // //  * @notice take an RFS with deposit
-    // //  * @param _id ID of the RFS
-    // //  * @param _amount1 amount of token1
-    // //  * @return success
-    // //  */
-    // function takeFixedRfs(
-    //     uint256 _id,
-    //     uint256 _amount1,
-    //     uint256 index
-    // ) external returns (bool success) {
-    //     RFS memory rfs = getRfs(_id);
+    /**
+     * @notice take a fixed price RFS
+     * @param _id id of the RFS
+     * @param _paymentTokenAmount amount of tokens used to pay for the RFS
+     * @param index index of the token used to buy
+     * @return success
+     */
+    function takeFixedRfs(
+        uint256 _id,
+        uint256 _paymentTokenAmount,
+        uint256 index
+    ) external returns (bool success) {
+        RFS memory rfs = getRfs(_id);
 
-    //     // sanity checks
-    //     if (rfs.removed || rfs.token0 == address(0)) revert Router__RfsRemoved();
-    //     if (_amount1 == 0) revert Router__InvalidTokenAmount();
-    //     if (_amount1 > rfs.amount1) revert Router__Amount1TooHigh();
+        // sanity checks
+        if (rfs.removed) revert Router__RfsRemoved();
+        if (_paymentTokenAmount == 0) revert Router__InvalidTokenAmount();
+        if (index >= rfs.tokensAccepted.length) revert Router__InvalidTokenIndex();
+        if (
+            IERC20(rfs.tokensAccepted[index]).allowance(msg.sender, address(this)) <
+            _paymentTokenAmount
+        ) revert Router__AllowanceToken1TooLow();
 
-    //     //Maybe we can just switch and ask directly for approve instead of checking the allowance.
-    //     if (IERC20(rfs.tokensAccepted[index]).allowance(msg.sender, address(this)) < _amount1)
-    //         revert Router__AllowanceToken1TooLow();
+        uint256 _amount0;
+        if (rfs.usdPrice == 0) {
+            // compute _amount0 based on _paymentTokenAmount and implied quote, and update RFS amounts
+            _amount0 = OtcMath.getTakerAmount0(rfs.amount0, rfs.amount1, _paymentTokenAmount);
+            if (_paymentTokenAmount > rfs.amount1) revert Router__Amount1TooHigh();
+        } else {
+            // compute _amount0 based on _paymentTokenAmount and usdPrice, and update RFS amounts using ChainLink by getting the price of the chosen token (So we can't have a RFS with a token that is not indexed by ChainLink)
+            address aggregator = priceFeeds[rfs.tokensAccepted[index]];
+            //If it is never been set, it will be 0x00...00
+            if (aggregator == address(0)) revert Router__InvalidAggregatorAddress();
+            (, int256 price, , , ) = AggregatorV3Interface(aggregator).latestRoundData();
 
-    //     // transfer token1 to the maker
-    //     success = IERC20(rfs.tokensAccepted[index]).transferFrom(msg.sender, rfs.maker, _amount1);
-    //     if (!success) revert Router__TransferToken1Failed();
+            //since the pair X/USD has always 8 decimals, we can just multiply by 1e8 the requested price so we get a better precision
+            //Reusing the same function as above, but even if the amount are different, math is the same
+            _amount0 = OtcMath.getTakerAmount0(
+                _paymentTokenAmount,
+                rfs.usdPrice * 1e8,
+                uint256(price)
+            );
+            if (_amount0 > rfs.amount0) revert Router__Amount1TooHigh();
+        }
 
-    //     // compute _amount0 based on _amount1 and implied quote, and update RFS amounts
-    //     uint256 _amount0 = OtcMath.getTakerAmount0(rfs.amount0, rfs.amount1, _amount1);
+        // transfer token1 to the maker
+        success = IERC20(rfs.tokensAccepted[index]).transferFrom(
+            msg.sender,
+            rfs.maker,
+            _paymentTokenAmount
+        );
+        if (!success) revert Router__TransferToken1Failed();
 
-    //     // transfer token0 to the taker
-    //     success = IERC20(rfs.token0).transfer(msg.sender, _amount0);
-    //     if (!success) revert Router__TransferToken0Failed();
+        // transfer token0 to the taker
+        address from;
+        if (rfs.interactionType == TokenInteractionType.TOKEN_DEPOSITED) {
+            from = address(this);
+        } else {
+            from = rfs.maker;
+        }
+        success = IERC20(rfs.token0).transferFrom(from, msg.sender, _amount0);
+        if (!success) revert Router__TransferToken0Failed();
 
-    //     // update RFS
-    //     // todo use function updateRfs and emit RfsUpdated event
-    //     rfs.amount0 -= _amount0;
-    //     rfs.amountsToPay[index] -= _amount1;
-    //     if (rfs.amount0 == 0 || rfs.amountsToPay[index] == 0) {
-    //         rfs.removed = true;
-    //         emit RfsRemoved(_id);
-    //     }
-    //     idToRfs[_id] = rfs;
+        // update RFS
+        updateRfs(rfs, _amount0, _paymentTokenAmount, rfs.usdPrice != 0);
+        emit RfsFilled(_id, msg.sender, _amount0, _paymentTokenAmount);
+    }
 
-    //     emit RfsFilled(_id, msg.sender, _amount0, _amount1);
-    // }
+    //TODO : Add a function to take a dynamic price RFS
+    /*
+  function takeDynamicRfs(
+        uint256 _id,
+        ... //TODO : Add the parameters
+    ) external returns (bool success) {
+}
+    */
+
+    function updateRfs(RFS memory rfs, uint256 _amount0, uint256 _amount1, bool usdPriced) private {
+        rfs.amount0 -= _amount0;
+        if (!usdPriced) {
+            rfs.amount1 -= _amount1;
+        }
+        if (rfs.amount0 == 0 || (rfs.amount1 == 0 && !usdPriced)) {
+            rfs.removed = true;
+            delete idToRfs[rfs.id];
+            emit RfsRemoved(rfs.id, true);
+        } else {
+            idToRfs[rfs.id] = rfs;
+            emit RfsUpdated(rfs.id, rfs.amount0, rfs.amount1, rfs.deadline);
+        }
+    }
 
     /**
      * @notice remove an RFS
@@ -273,14 +326,16 @@ contract OtcNexus is Ownable {
 
         if (rfs.interactionType == TokenInteractionType.TOKEN_DEPOSITED) {
             // refund deposited tokens to the maker
-            success = IERC20(rfs.token0).transfer(rfs.maker, rfs.amount0);
-            if (!success) revert Router__RefundToken0Failed();
+            // No need to check for revert as transferFrom revert automatically
+            success = IERC20(rfs.token0).transferFrom(address(this), rfs.maker, rfs.amount0);
+            if (!success) revert Router__TransferToken0Failed();
         }
         idToRfs[_id].removed = true;
-        emit RfsRemoved(_id);
 
         //Privacy and gas refund
+
         if (_permanentlyDelete) delete idToRfs[_id];
+        emit RfsRemoved(_id, _permanentlyDelete);
     }
 
     /**
@@ -290,5 +345,15 @@ contract OtcNexus is Ownable {
      */
     function getRfs(uint256 _id) public view returns (RFS memory) {
         return idToRfs[_id];
+    }
+
+    /**
+     * @notice set the pricefeeds aggregator for a token
+     * @dev this is used to get the price of a token in USD
+     * @dev this is only callable by the owner, since after deployment
+     * @dev we need to set the pricefeeds manually (algorithmically)
+     */
+    function setPriceFeeds(address _address1, address _aggregator) public onlyOwner {
+        priceFeeds[_address1] = _aggregator;
     }
 }
