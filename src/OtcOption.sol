@@ -5,6 +5,13 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
 
+error Option__InvalidUnderlyingToken();
+error Option__InvalidQuoteToken();
+error Option__InvalidStrike();
+error Option__InvalidMaturity();
+error Option__InvalidAmount();
+error Option__InvalidPremium();
+
 error Option__PriceFeedNotFound();
 error Option__DepositPremiumFailed();
 error Option__DepositMarginFailed();
@@ -87,6 +94,13 @@ contract OtcOption is Ownable {
         uint _premium,
         bool _isMakerBuyer
     ) external returns (uint) {
+        if (_underlyingToken == address(0)) revert Option__InvalidUnderlyingToken();
+        if (_quoteToken == address(0)) revert Option__InvalidQuoteToken();
+        if (_strike == 0) revert Option__InvalidStrike();
+        if (_maturity <= block.timestamp) revert Option__InvalidMaturity();
+        if (_amount == 0) revert Option__InvalidAmount();
+        if (_premium == 0) revert Option__InvalidPremium();
+
         Deal memory deal = Deal(
             _dealCounter,
             _underlyingToken,
