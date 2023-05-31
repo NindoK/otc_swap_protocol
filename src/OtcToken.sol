@@ -8,7 +8,7 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
  * @notice Test token
  */
 contract OtcToken is ERC20 {
-    uint8 immutable _decimals;
+    uint8 immutable i_decimals;
 
     constructor(
         string memory _name,
@@ -16,11 +16,11 @@ contract OtcToken is ERC20 {
         uint _initialSupply,
         uint8 _nDecimals
     ) ERC20(_name, _symbol) {
-        _decimals = _nDecimals;
+        i_decimals = _nDecimals;
         _mint(msg.sender, _initialSupply);
     }
 
     function decimals() public view virtual override returns (uint8) {
-        return _decimals;
+        return i_decimals;
     }
 }

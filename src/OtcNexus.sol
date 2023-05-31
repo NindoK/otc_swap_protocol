@@ -18,6 +18,7 @@ error Router__ApproveToken0Failed();
 error Router__DepositToken0Failed();
 error Router__RfsRemoved();
 error Router__Amount1TooHigh();
+error Router__Amount0TooHigh();
 error Router__TransferToken0Failed();
 error Router__TransferToken1Failed();
 error Router__NotMaker();
@@ -27,6 +28,7 @@ error Router__OnlyFixedPriceOrAmountAllowed();
 error Router__OnlyOneTokenAccepted();
 error Router__InvalidTokenIndex();
 error Router__InvalidAggregatorAddress();
+error Router__InvalidRfsType();
 
 /**
  * @title OtcNexus
@@ -180,7 +182,10 @@ contract OtcNexus is Ownable {
         if (_tokensAccepted.length == 0) revert Router__InvalidTokenAddresses();
         if (IERC20(_token0).allowance(msg.sender, address(this)) < _amount0)
             revert Router__AllowanceToken0TooLow();
-
+        for (uint i = 0; i < _tokensAccepted.length; i++) {
+            if (priceFeeds[_tokensAccepted[i]] == address(0))
+                revert Router__InvalidAggregatorAddress();
+        }
         if (interactionType == TokenInteractionType.TOKEN_DEPOSITED) {
             // transfer sell token to contract
             bool success = IERC20(_token0).transferFrom(msg.sender, address(this), _amount0);
@@ -233,9 +238,42 @@ contract OtcNexus is Ownable {
         uint256 _paymentTokenAmount,
         uint256 index
     ) external returns (bool success) {
+        return takeRfs(_id, _paymentTokenAmount, index, RfsType.FIXED);
+    }
+
+    /**
+     * @notice take a dynamic price RFS
+     * @param _id id of the RFS
+     * @param _paymentTokenAmount amount of tokens used to pay for the RFS
+     * @param index index of the token used to buy
+     * @return success
+     */
+    function takeDynamicRfs(
+        uint256 _id,
+        uint256 _paymentTokenAmount,
+        uint256 index
+    ) external returns (bool success) {
+        return takeRfs(_id, _paymentTokenAmount, index, RfsType.DYNAMIC);
+    }
+
+    /**
+     * @notice take a fixed price RFS
+     * @param _id id of the RFS
+     * @param _paymentTokenAmount amount of tokens used to pay for the RFS
+     * @param index index of the token used to buy
+     * @param expectedRfsType type of the Rfs: FIXED or DYNAMIC
+     * @return success
+     */
+    function takeRfs(
+        uint256 _id,
+        uint256 _paymentTokenAmount,
+        uint256 index,
+        RfsType expectedRfsType
+    ) internal returns (bool success) {
         RFS memory rfs = getRfs(_id);
 
         // sanity checks
+        if (rfs.typeRfs != expectedRfsType) revert Router__InvalidRfsType();
         if (rfs.removed) revert Router__RfsRemoved();
         if (_paymentTokenAmount == 0) revert Router__InvalidTokenAmount();
         if (index >= rfs.tokensAccepted.length) revert Router__InvalidTokenIndex();
@@ -244,27 +282,9 @@ contract OtcNexus is Ownable {
             _paymentTokenAmount
         ) revert Router__AllowanceToken1TooLow();
 
-        uint256 _amount0;
-        if (rfs.usdPrice == 0) {
-            // compute _amount0 based on _paymentTokenAmount and implied quote, and update RFS amounts
-            _amount0 = OtcMath.getTakerAmount0(rfs.amount0, rfs.amount1, _paymentTokenAmount);
-            if (_paymentTokenAmount > rfs.amount1) revert Router__Amount1TooHigh();
-        } else {
-            // compute _amount0 based on _paymentTokenAmount and usdPrice, and update RFS amounts using ChainLink by getting the price of the chosen token (So we can't have a RFS with a token that is not indexed by ChainLink)
-            address aggregator = priceFeeds[rfs.tokensAccepted[index]];
-            //If it is never been set, it will be 0x00...00
-            if (aggregator == address(0)) revert Router__InvalidAggregatorAddress();
-            (, int256 price, , , ) = AggregatorV3Interface(aggregator).latestRoundData();
-
-            //since the pair X/USD has always 8 decimals, we can just multiply by 1e8 the requested price so we get a better precision
-            //Reusing the same function as above, but even if the amount are different, math is the same
-            _amount0 = OtcMath.getTakerAmount0(
-                _paymentTokenAmount,
-                rfs.usdPrice * 1e8,
-                uint256(price)
-            );
-            if (_amount0 > rfs.amount0) revert Router__Amount1TooHigh();
-        }
+        // compute _amount0 (depends on rfs.typeRfs, so this is left to takeFixedRfs/takeDynamicRfs)
+        uint256 _amount0 = computeAmount0(_id, _paymentTokenAmount, index, expectedRfsType);
+        if (_amount0 > rfs.amount0) revert Router__Amount0TooHigh();
 
         // transfer token1 to the maker
         success = IERC20(rfs.tokensAccepted[index]).transferFrom(
@@ -285,25 +305,21 @@ contract OtcNexus is Ownable {
         if (!success) revert Router__TransferToken0Failed();
 
         // update RFS
-        updateRfs(rfs, _amount0, _paymentTokenAmount, rfs.usdPrice != 0);
+        updateRfs(rfs, _amount0, _paymentTokenAmount);
         emit RfsFilled(_id, msg.sender, _amount0, _paymentTokenAmount);
+
+        return success;
     }
 
-    //TODO : Add a function to take a dynamic price RFS
-    /*
-  function takeDynamicRfs(
-        uint256 _id,
-        ... //TODO : Add the parameters
-    ) external returns (bool success) {
-}
-    */
-
-    function updateRfs(RFS memory rfs, uint256 _amount0, uint256 _amount1, bool usdPriced) private {
+    function updateRfs(RFS memory rfs, uint256 _amount0, uint256 _amount1) private {
         rfs.amount0 -= _amount0;
-        if (!usdPriced) {
+        if (rfs.usdPrice == 0 && rfs.typeRfs == RfsType.FIXED) {
             rfs.amount1 -= _amount1;
         }
-        if (rfs.amount0 == 0 || (rfs.amount1 == 0 && !usdPriced)) {
+        if (
+            rfs.amount0 == 0 ||
+            (rfs.amount1 == 0 && rfs.usdPrice == 0 && rfs.typeRfs == RfsType.FIXED)
+        ) {
             rfs.removed = true;
             delete idToRfs[rfs.id];
             emit RfsRemoved(rfs.id, true);
@@ -355,5 +371,54 @@ contract OtcNexus is Ownable {
      */
     function setPriceFeeds(address _address1, address _aggregator) public onlyOwner {
         priceFeeds[_address1] = _aggregator;
+    }
+
+    /**
+     * @notice compute the amount0 to be sent to the taker
+     * @param _id id of the RFS
+     * @param _paymentTokenAmount amount of tokens used to pay for the RFS
+     * @param index index of the token used to buy
+     * @param expectedRfsType type of the Rfs: FIXED or DYNAMIC
+     * @dev helper function to compute the amount0 to be sent to the taker
+     * @return _amount0 amount of token0 to be sent to the taker
+     */
+    function computeAmount0(
+        uint256 _id,
+        uint256 _paymentTokenAmount,
+        uint256 index,
+        RfsType expectedRfsType
+    ) internal view returns (uint256 _amount0) {
+        RFS memory rfs = getRfs(_id);
+
+        if (expectedRfsType == RfsType.FIXED) {
+            if (rfs.usdPrice == 0) {
+                _amount0 = OtcMath.getTakerAmount0(rfs.amount0, rfs.amount1, _paymentTokenAmount);
+                if (_paymentTokenAmount > rfs.amount1) revert Router__Amount1TooHigh();
+            } else {
+                address aggregator = priceFeeds[rfs.tokensAccepted[index]];
+                if (aggregator == address(0)) revert Router__InvalidAggregatorAddress();
+                (, int256 price, , , ) = AggregatorV3Interface(aggregator).latestRoundData();
+                _amount0 = OtcMath.getTakerAmount0(
+                    _paymentTokenAmount,
+                    rfs.usdPrice * 1e8,
+                    uint256(price)
+                );
+            }
+        } else if (expectedRfsType == RfsType.DYNAMIC) {
+            address aggregatorTaker = priceFeeds[rfs.tokensAccepted[index]];
+            if (aggregatorTaker == address(0)) revert Router__InvalidAggregatorAddress();
+            (, int256 priceTaker, , , ) = AggregatorV3Interface(aggregatorTaker).latestRoundData();
+
+            address aggregatorMaker = priceFeeds[rfs.token0];
+            if (aggregatorMaker == address(0)) revert Router__InvalidAggregatorAddress();
+            (, int256 priceMaker, , , ) = AggregatorV3Interface(aggregatorMaker).latestRoundData();
+            _amount0 = OtcMath.getTakerAmount0(
+                _paymentTokenAmount,
+                (uint256(priceMaker) * rfs.priceMultiplier) / 100,
+                uint256(priceTaker)
+            );
+        } else {
+            revert Router__InvalidRfsType();
+        }
     }
 }
