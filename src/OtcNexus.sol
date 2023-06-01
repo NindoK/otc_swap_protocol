@@ -557,6 +557,18 @@ contract OtcNexus is Ownable {
         }
     }
 
+    /**
+     * @dev This function allows users to claim their rewards.
+     *
+     * Users can call this function to claim any rewards that they have accumulated.
+     * The amount of rewards that a user can claim is stored in the `userRewards` mapping.
+     * If the user has no rewards to claim, the function will revert.
+     * Otherwise, the amount of rewards is transferred to the user from this contract's balance of `otcToken`.
+     *
+     * Requirements:
+     *
+     * - The user must have non-zero rewards to claim.
+     */
     function claimRewards() external {
         if (userRewards[msg.sender] == 0) revert OtcNexus__NoRewardsToClaim();
         uint256 rewards = userRewards[msg.sender];
