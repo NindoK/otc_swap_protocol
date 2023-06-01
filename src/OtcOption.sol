@@ -38,7 +38,7 @@ contract OtcOption is Ownable {
     );
     event DealTaken(uint id, address taker);
     event DealRemoved(uint id);
-    event DealSettled(uint id);
+    event DealSettled(uint id, bool exercised);
 
     enum DealStatus {
         Open,
@@ -56,10 +56,10 @@ contract OtcOption is Ownable {
         bool isCall;
         uint amount;
         uint premium;
-        address maker;
-        address taker;
         bool isMakerBuyer;
         DealStatus status;
+        address maker;
+        address taker;
     }
 
     // status variables
@@ -110,10 +110,10 @@ contract OtcOption is Ownable {
             _isCall,
             _amount,
             _premium,
-            msg.sender,
-            address(0),
             _isMakerBuyer,
-            DealStatus.Open
+            DealStatus.Open,
+            msg.sender,
+            address(0)
         );
 
         // store new deal
@@ -181,6 +181,7 @@ contract OtcOption is Ownable {
             if (!success) revert Option__DepositPremiumFailed();
         }
 
+        _deals[id].taker = msg.sender;
         _deals[id].status = DealStatus.Taken;
         emit DealTaken(id, msg.sender);
     }
@@ -190,18 +191,18 @@ contract OtcOption is Ownable {
         Deal memory deal = getDeal(id);
 
         uint price = getPrice(deal.underlyingToken, deal.quoteToken);
-        bool canBeExercised = (deal.isCall && price >= deal.strike) ||
+        bool exercised = (deal.isCall && price >= deal.strike) ||
             (!deal.isCall && price <= deal.strike);
 
-        // if canBeExercised: transfer underlying tokens to the buyer
+        // if exercised: transfer underlying tokens to the buyer
         // otherwise expired worthless: refund margin to the seller
-        address receiver = canBeExercised ? _getDealBuyer(deal) : _getDealSeller(deal);
+        address receiver = exercised ? getDealBuyer(deal.id) : getDealSeller(deal.id);
 
         bool success = IERC20(deal.underlyingToken).transfer(receiver, deal.amount);
         if (!success) revert Option__TransferMarginFailed();
 
         _deals[id].status = DealStatus.Settled;
-        emit DealSettled(id);
+        emit DealSettled(id, exercised);
     }
 
     function getDeal(uint id) public view returns (Deal memory) {
@@ -215,7 +216,8 @@ contract OtcOption is Ownable {
         return (block.timestamp >= deal.maturity);
     }
 
-    function _getDealBuyer(Deal memory deal) private pure returns (address) {
+    function getDealBuyer(uint id) public view returns (address) {
+        Deal memory deal = getDeal(id);
         if (deal.isMakerBuyer) {
             return deal.maker;
         } else {
@@ -224,7 +226,8 @@ contract OtcOption is Ownable {
         }
     }
 
-    function _getDealSeller(Deal memory deal) private pure returns (address) {
+    function getDealSeller(uint id) public view returns (address) {
+        Deal memory deal = getDeal(id);
         if (!deal.isMakerBuyer) {
             return deal.maker;
         } else {
