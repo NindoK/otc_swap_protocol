@@ -5,6 +5,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
 import "./OtcMath.sol";
+import "./OtcToken.sol";
 
 error Router__InvalidTokenAmount();
 error Router__InvalidPriceAmount();
@@ -36,9 +37,14 @@ error Router__InvalidRfsType();
  */
 contract OtcNexus is Ownable {
     uint256 public rfsIdCounter;
+    uint8 public makerFeeIfDeposited;
+    uint8 public makerFeeIfNotDeposited;
+    uint8 public takerFee;
+    OtcToken public otcToken;
 
     mapping(uint256 => RFS) private idToRfs;
     mapping(address => RFS[]) private makerRfs;
+    mapping(address => uint256) private userRewards;
 
     //Given a token, return the price feed aggregator (Skipping the second token since we only need to know the price in USD)
     mapping(address => address) public priceFeeds;
@@ -80,6 +86,13 @@ contract OtcNexus is Ownable {
         uint8 priceMultiplier,
         uint256 deadline
     );
+
+    constructor(address _otcTokenAddress) {
+        makerFeeIfDeposited = 25; // 0.25%
+        makerFeeIfNotDeposited = 50; // 0.5%
+        takerFee = 25; // 0.25%
+        otcToken = OtcToken(_otcTokenAddress);
+    }
 
     /**
      * @notice create an RFS where the price is either fixed to a USD price or it requests only a specific amount of tokens
@@ -282,15 +295,39 @@ contract OtcNexus is Ownable {
             _paymentTokenAmount
         ) revert Router__AllowanceToken1TooLow();
 
+        //0.25% fee on the payment token of the taker FLAT FEE
+        (uint256 feeAmount1, uint256 _paymentTokenAmountAfterTakerFee) = takeFee(
+            takerFee,
+            _paymentTokenAmount
+        );
         // compute _amount0 (depends on rfs.typeRfs, so this is left to takeFixedRfs/takeDynamicRfs)
-        uint256 _amount0 = computeAmount0(_id, _paymentTokenAmount, index, expectedRfsType);
-        if (_amount0 > rfs.amount0) revert Router__Amount0TooHigh();
+        uint256 _amountBuying = computeAmount0(
+            _id,
+            _paymentTokenAmountAfterTakerFee,
+            index,
+            expectedRfsType
+        );
+        if (_amountBuying > rfs.amount0) revert Router__Amount0TooHigh();
 
+        //0.25% fee on the token0 of the maker FLAT FEE if DEPOSITED, otherwise 0.5% if APPROVED
+        (uint256 feeAmount2, uint256 _paymentTokenAmountAfterMakerFee) = takeFee(
+            rfs.interactionType == TokenInteractionType.TOKEN_DEPOSITED
+                ? makerFeeIfDeposited
+                : makerFeeIfNotDeposited,
+            _paymentTokenAmountAfterTakerFee
+        );
         // transfer token1 to the maker
         success = IERC20(rfs.tokensAccepted[index]).transferFrom(
             msg.sender,
             rfs.maker,
-            _paymentTokenAmount
+            _paymentTokenAmountAfterMakerFee
+        );
+        if (!success) revert Router__TransferToken1Failed();
+
+        success = IERC20(rfs.tokensAccepted[index]).transferFrom(
+            msg.sender,
+            rfs.maker,
+            feeAmount1 + feeAmount2
         );
         if (!success) revert Router__TransferToken1Failed();
 
@@ -301,16 +338,37 @@ contract OtcNexus is Ownable {
         } else {
             from = rfs.maker;
         }
-        success = IERC20(rfs.token0).transferFrom(from, msg.sender, _amount0);
+        success = IERC20(rfs.token0).transferFrom(from, msg.sender, _amountBuying);
         if (!success) revert Router__TransferToken0Failed();
 
         // update RFS
-        updateRfs(rfs, _amount0, _paymentTokenAmount);
-        emit RfsFilled(_id, msg.sender, _amount0, _paymentTokenAmount);
+        updateRfs(rfs, _amountBuying, _paymentTokenAmount);
+        computeRewards(rfs.maker, msg.sender, _amountBuying, rfs.amount0);
 
-        return success;
+        emit RfsFilled(_id, msg.sender, _amountBuying, _paymentTokenAmount);
     }
 
+    /**
+     * @dev This function updates the RFS structure, decreasing the amounts
+     * of token0 and (in case of the presence of token1) token1.
+     *
+     * If after this operation amount of token0 becomes zero, or amount of token1 becomes zero, the RFS is marked as removed.
+     *
+     * If RFS is not removed, it is updated in the mapping and an event is emitted.
+     *
+     * @param rfs the RFS structure to update
+     * @param _amount0 the amount of token0 to subtract from the RFS structure
+     * @param _amount1 the amount of token1 to subtract from the RFS structure
+     *
+     * Emits an {RfsUpdated} event with current state of the RFS in case it was not removed.
+     * Emits an {RfsRemoved} event with RFS id and status (true) in case it was removed.
+     *
+     * Requirements:
+     *
+     * - `rfs` must not be removed.
+     * - `_amount0` must be less or equal to `rfs.amount0`.
+     * - `_amount1` must be less or equal to `rfs.amount1` in case of fixed amount1.
+     */
     function updateRfs(RFS memory rfs, uint256 _amount0, uint256 _amount1) private {
         rfs.amount0 -= _amount0;
         if (rfs.usdPrice == 0 && rfs.typeRfs == RfsType.FIXED) {
@@ -369,8 +427,46 @@ contract OtcNexus is Ownable {
      * @dev this is only callable by the owner, since after deployment
      * @dev we need to set the pricefeeds manually (algorithmically)
      */
-    function setPriceFeeds(address _address1, address _aggregator) public onlyOwner {
+    function setPriceFeeds(address _address1, address _aggregator) external onlyOwner {
         priceFeeds[_address1] = _aggregator;
+    }
+
+    /**
+     * @dev This function allows the owner of the contract to set the fee rates for different scenarios.
+     *
+     * This function can only be called by the owner of the contract. It sets the rates for three types of fees:
+     * 1) `takerFee`: the fee rate for the taker of an RFS (Request For Service)
+     * 2) `makerFeeIfDeposited`: the fee rate for the maker of an RFS if the maker has deposited their tokens
+     * 3) `makerFeeIfNotDeposited`: the fee rate for the maker of an RFS if the maker has not deposited their tokens
+     * @param _takerFee the fee rate for the taker, in basis points
+     * @param _makerFeeIfDeposited the fee rate for the maker if they have deposited their tokens, in basis points
+     * @param _makerFeeIfNotDeposited the fee rate for the maker if they have not deposited their tokens, in basis points
+     *
+     * Requirements:
+     *
+     * - The caller must be the owner of the contract.
+     */
+    function setFee(
+        uint8 _takerFee,
+        uint8 _makerFeeIfDeposited,
+        uint8 _makerFeeIfNotDeposited
+    ) external onlyOwner {
+        takerFee = _takerFee;
+        makerFeeIfDeposited = _makerFeeIfDeposited;
+        makerFeeIfNotDeposited = _makerFeeIfNotDeposited;
+    }
+
+    /**
+     * @dev This function allows the owner of the contract to set the address of the token used for rewards
+     *
+     * This function can only be called by the owner of the contract.
+     * @param _otcTokenAddress the address of the token
+     * Requirements:
+     *
+     * - The caller must be the owner of the contract.
+     */
+    function setOtcTokenAddress(address _otcTokenAddress) external onlyOwner {
+        otcToken = OtcToken(_otcTokenAddress);
     }
 
     /**
@@ -419,6 +515,44 @@ contract OtcNexus is Ownable {
             );
         } else {
             revert Router__InvalidRfsType();
+        }
+    }
+
+    function computeRewards(
+        address maker,
+        address taker,
+        uint256 _amount0Bought,
+        uint256 _amount0Total
+    ) internal {
+        uint256 percentageBought = (_amount0Bought * OtcToken(otcToken).decimals()) / _amount0Total; //Calculate the percentage of the total amount bought with the decimals of the token so less computations and we can just send this amount
+        userRewards[taker] = percentageBought;
+        userRewards[maker] = percentageBought * 3; //3x the amount of the buyer
+    }
+
+    /**
+     * @dev This function calculates the fee to be taken from a specified amount based on a
+     * given fee percentage. It also calculates the amount left after the fee is taken.
+     *
+     * The fee is calculated as a percentage of the input amount, where the percentage is
+     * expressed as a value out of 10,000 (i.e., basis points). For example, if the
+     * `applicableFeePercentage` is 50, then the fee will be 0.5% of the input amount.
+     *
+     * @param applicableFeePercentage the fee rate expressed as basis points (i.e., hundredths of a percent)
+     * @param _paymentTokenAmount the amount from which the fee is to be taken
+     * @return feeAmount the calculated fee amount
+     * @return amountAfterFee the amount that remains after the fee is subtracted
+     *
+     * Requirements:
+     *
+     * - `applicableFeePercentage` must be less than or equal to 10,000 (100%).
+     */
+    function takeFee(
+        uint8 applicableFeePercentage,
+        uint256 _paymentTokenAmount
+    ) internal pure returns (uint256 feeAmount, uint256 amountAfterFee) {
+        unchecked {
+            feeAmount = (_paymentTokenAmount * applicableFeePercentage) / 10000;
+            amountAfterFee = _paymentTokenAmount - feeAmount;
         }
     }
 }
