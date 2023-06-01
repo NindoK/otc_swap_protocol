@@ -135,6 +135,9 @@ contract OtcNexus is Ownable {
     /**
      * @notice create a dynamic RFS where the price is based on the current price of the asset and a multiplier
      * that is applied to the current price (either a discount or a premium)
+     *
+     * It should allow only tokens that have a price feed aggregator, otherwise we can't dynamically calculate the price
+     *
      * @param _token0 token offered
      * @param _tokensAccepted token requested
      * @param _amount0 amount of token offered
@@ -152,6 +155,7 @@ contract OtcNexus is Ownable {
         TokenInteractionType interactionType
     ) external returns (uint256) {
         if (_priceMultiplier == 0) revert OtcNexus__InvalidPriceMultiplier();
+        if (priceFeeds[_token0] == address(0)) revert OtcNexus__InvalidAggregatorAddress();
         return
             _createRfs(
                 _token0,
@@ -193,7 +197,8 @@ contract OtcNexus is Ownable {
         // sanity checks
         if (_deadline < block.timestamp) revert OtcNexus__InvalidDeadline();
         if (_amount0 == 0) revert OtcNexus__InvalidTokenAmount();
-        if (_tokensAccepted.length == 0) revert OtcNexus__InvalidTokenAddresses();
+        if (_tokensAccepted.length == 0 || _tokensAccepted.length > 5)
+            revert OtcNexus__InvalidTokenAddresses();
         if (IERC20(_token0).allowance(msg.sender, address(this)) < _amount0)
             revert OtcNexus__AllowanceToken0TooLow();
         for (uint i = 0; i < _tokensAccepted.length; i++) {
