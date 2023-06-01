@@ -7,29 +7,30 @@ import "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
 import "./OtcMath.sol";
 import "./OtcToken.sol";
 
-error Router__InvalidTokenAmount();
-error Router__InvalidPriceAmount();
-error Router__InvalidPriceMultiplier();
-error Router__InvalidDeadline();
-error Router__InvalidTokenAddresses();
-error Router__InvalidTokenAndAmountMismatch();
-error Router__AllowanceToken0TooLow();
-error Router__AllowanceToken1TooLow();
-error Router__ApproveToken0Failed();
-error Router__DepositToken0Failed();
-error Router__RfsRemoved();
-error Router__Amount1TooHigh();
-error Router__Amount0TooHigh();
-error Router__TransferToken0Failed();
-error Router__TransferToken1Failed();
-error Router__NotMaker();
-error Router__RefundToken0Failed();
-error Router__OnlyFixedOrDynamicAllowed();
-error Router__OnlyFixedPriceOrAmountAllowed();
-error Router__OnlyOneTokenAccepted();
-error Router__InvalidTokenIndex();
-error Router__InvalidAggregatorAddress();
-error Router__InvalidRfsType();
+error OtcNexus__InvalidTokenAmount();
+error OtcNexus__InvalidPriceAmount();
+error OtcNexus__InvalidPriceMultiplier();
+error OtcNexus__InvalidDeadline();
+error OtcNexus__InvalidTokenAddresses();
+error OtcNexus__InvalidTokenAndAmountMismatch();
+error OtcNexus__AllowanceToken0TooLow();
+error OtcNexus__AllowanceToken1TooLow();
+error OtcNexus__ApproveToken0Failed();
+error OtcNexus__DepositToken0Failed();
+error OtcNexus__RfsRemoved();
+error OtcNexus__Amount1TooHigh();
+error OtcNexus__Amount0TooHigh();
+error OtcNexus__TransferToken0Failed();
+error OtcNexus__TransferToken1Failed();
+error OtcNexus__NotMaker();
+error OtcNexus__RefundToken0Failed();
+error OtcNexus__OnlyFixedOrDynamicAllowed();
+error OtcNexus__OnlyFixedPriceOrAmountAllowed();
+error OtcNexus__OnlyOneTokenAccepted();
+error OtcNexus__InvalidTokenIndex();
+error OtcNexus__InvalidAggregatorAddress();
+error OtcNexus__InvalidRfsType();
+error OtcNexus__NoRewardsToClaim();
 
 /**
  * @title OtcNexus
@@ -115,8 +116,8 @@ contract OtcNexus is Ownable {
         TokenInteractionType interactionType
     ) external returns (uint256) {
         if ((_amount1 != 0 && _usdPrice != 0) || (_amount1 == 0 && _usdPrice == 0))
-            revert Router__OnlyFixedPriceOrAmountAllowed();
-        if (_amount1 != 0 && _tokensAccepted.length != 1) revert Router__OnlyOneTokenAccepted();
+            revert OtcNexus__OnlyFixedPriceOrAmountAllowed();
+        if (_amount1 != 0 && _tokensAccepted.length != 1) revert OtcNexus__OnlyOneTokenAccepted();
         return
             _createRfs(
                 _token0,
@@ -150,7 +151,7 @@ contract OtcNexus is Ownable {
         uint256 _deadline,
         TokenInteractionType interactionType
     ) external returns (uint256) {
-        if (_priceMultiplier == 0) revert Router__InvalidPriceMultiplier();
+        if (_priceMultiplier == 0) revert OtcNexus__InvalidPriceMultiplier();
         return
             _createRfs(
                 _token0,
@@ -190,19 +191,19 @@ contract OtcNexus is Ownable {
         TokenInteractionType interactionType
     ) private returns (uint256) {
         // sanity checks
-        if (_deadline < block.timestamp) revert Router__InvalidDeadline();
-        if (_amount0 == 0) revert Router__InvalidTokenAmount();
-        if (_tokensAccepted.length == 0) revert Router__InvalidTokenAddresses();
+        if (_deadline < block.timestamp) revert OtcNexus__InvalidDeadline();
+        if (_amount0 == 0) revert OtcNexus__InvalidTokenAmount();
+        if (_tokensAccepted.length == 0) revert OtcNexus__InvalidTokenAddresses();
         if (IERC20(_token0).allowance(msg.sender, address(this)) < _amount0)
-            revert Router__AllowanceToken0TooLow();
+            revert OtcNexus__AllowanceToken0TooLow();
         for (uint i = 0; i < _tokensAccepted.length; i++) {
             if (priceFeeds[_tokensAccepted[i]] == address(0))
-                revert Router__InvalidAggregatorAddress();
+                revert OtcNexus__InvalidAggregatorAddress();
         }
         if (interactionType == TokenInteractionType.TOKEN_DEPOSITED) {
             // transfer sell token to contract
             bool success = IERC20(_token0).transferFrom(msg.sender, address(this), _amount0);
-            if (!success) revert Router__DepositToken0Failed();
+            if (!success) revert OtcNexus__DepositToken0Failed();
         }
 
         // create RFS
@@ -286,14 +287,14 @@ contract OtcNexus is Ownable {
         RFS memory rfs = getRfs(_id);
 
         // sanity checks
-        if (rfs.typeRfs != expectedRfsType) revert Router__InvalidRfsType();
-        if (rfs.removed) revert Router__RfsRemoved();
-        if (_paymentTokenAmount == 0) revert Router__InvalidTokenAmount();
-        if (index >= rfs.tokensAccepted.length) revert Router__InvalidTokenIndex();
+        if (rfs.typeRfs != expectedRfsType) revert OtcNexus__InvalidRfsType();
+        if (rfs.removed) revert OtcNexus__RfsRemoved();
+        if (_paymentTokenAmount == 0) revert OtcNexus__InvalidTokenAmount();
+        if (index >= rfs.tokensAccepted.length) revert OtcNexus__InvalidTokenIndex();
         if (
             IERC20(rfs.tokensAccepted[index]).allowance(msg.sender, address(this)) <
             _paymentTokenAmount
-        ) revert Router__AllowanceToken1TooLow();
+        ) revert OtcNexus__AllowanceToken1TooLow();
 
         //0.25% fee on the payment token of the taker FLAT FEE
         (uint256 feeAmount1, uint256 _paymentTokenAmountAfterTakerFee) = takeFee(
@@ -307,7 +308,7 @@ contract OtcNexus is Ownable {
             index,
             expectedRfsType
         );
-        if (_amountBuying > rfs.amount0) revert Router__Amount0TooHigh();
+        if (_amountBuying > rfs.amount0) revert OtcNexus__Amount0TooHigh();
 
         //0.25% fee on the token0 of the maker FLAT FEE if DEPOSITED, otherwise 0.5% if APPROVED
         (uint256 feeAmount2, uint256 _paymentTokenAmountAfterMakerFee) = takeFee(
@@ -322,14 +323,14 @@ contract OtcNexus is Ownable {
             rfs.maker,
             _paymentTokenAmountAfterMakerFee
         );
-        if (!success) revert Router__TransferToken1Failed();
+        if (!success) revert OtcNexus__TransferToken1Failed();
 
         success = IERC20(rfs.tokensAccepted[index]).transferFrom(
             msg.sender,
             rfs.maker,
             feeAmount1 + feeAmount2
         );
-        if (!success) revert Router__TransferToken1Failed();
+        if (!success) revert OtcNexus__TransferToken1Failed();
 
         // transfer token0 to the taker
         address from;
@@ -339,7 +340,7 @@ contract OtcNexus is Ownable {
             from = rfs.maker;
         }
         success = IERC20(rfs.token0).transferFrom(from, msg.sender, _amountBuying);
-        if (!success) revert Router__TransferToken0Failed();
+        if (!success) revert OtcNexus__TransferToken0Failed();
 
         // update RFS
         updateRfs(rfs, _amountBuying, _paymentTokenAmount);
@@ -396,13 +397,13 @@ contract OtcNexus is Ownable {
     function removeRfs(uint256 _id, bool _permanentlyDelete) external returns (bool success) {
         RFS memory rfs = idToRfs[_id];
         // only the maker can remove the RFS
-        if (msg.sender != rfs.maker) revert Router__NotMaker();
+        if (msg.sender != rfs.maker) revert OtcNexus__NotMaker();
 
         if (rfs.interactionType == TokenInteractionType.TOKEN_DEPOSITED) {
             // refund deposited tokens to the maker
             // No need to check for revert as transferFrom revert automatically
             success = IERC20(rfs.token0).transferFrom(address(this), rfs.maker, rfs.amount0);
-            if (!success) revert Router__TransferToken0Failed();
+            if (!success) revert OtcNexus__TransferToken0Failed();
         }
         idToRfs[_id].removed = true;
 
@@ -489,10 +490,10 @@ contract OtcNexus is Ownable {
         if (expectedRfsType == RfsType.FIXED) {
             if (rfs.usdPrice == 0) {
                 _amount0 = OtcMath.getTakerAmount0(rfs.amount0, rfs.amount1, _paymentTokenAmount);
-                if (_paymentTokenAmount > rfs.amount1) revert Router__Amount1TooHigh();
+                if (_paymentTokenAmount > rfs.amount1) revert OtcNexus__Amount1TooHigh();
             } else {
                 address aggregator = priceFeeds[rfs.tokensAccepted[index]];
-                if (aggregator == address(0)) revert Router__InvalidAggregatorAddress();
+                if (aggregator == address(0)) revert OtcNexus__InvalidAggregatorAddress();
                 (, int256 price, , , ) = AggregatorV3Interface(aggregator).latestRoundData();
                 _amount0 = OtcMath.getTakerAmount0(
                     _paymentTokenAmount,
@@ -502,11 +503,11 @@ contract OtcNexus is Ownable {
             }
         } else if (expectedRfsType == RfsType.DYNAMIC) {
             address aggregatorTaker = priceFeeds[rfs.tokensAccepted[index]];
-            if (aggregatorTaker == address(0)) revert Router__InvalidAggregatorAddress();
+            if (aggregatorTaker == address(0)) revert OtcNexus__InvalidAggregatorAddress();
             (, int256 priceTaker, , , ) = AggregatorV3Interface(aggregatorTaker).latestRoundData();
 
             address aggregatorMaker = priceFeeds[rfs.token0];
-            if (aggregatorMaker == address(0)) revert Router__InvalidAggregatorAddress();
+            if (aggregatorMaker == address(0)) revert OtcNexus__InvalidAggregatorAddress();
             (, int256 priceMaker, , , ) = AggregatorV3Interface(aggregatorMaker).latestRoundData();
             _amount0 = OtcMath.getTakerAmount0(
                 _paymentTokenAmount,
@@ -514,7 +515,7 @@ contract OtcNexus is Ownable {
                 uint256(priceTaker)
             );
         } else {
-            revert Router__InvalidRfsType();
+            revert OtcNexus__InvalidRfsType();
         }
     }
 
@@ -554,5 +555,12 @@ contract OtcNexus is Ownable {
             feeAmount = (_paymentTokenAmount * applicableFeePercentage) / 10000;
             amountAfterFee = _paymentTokenAmount - feeAmount;
         }
+    }
+
+    function claimRewards() external {
+        if (userRewards[msg.sender] == 0) revert OtcNexus__NoRewardsToClaim();
+        uint256 rewards = userRewards[msg.sender];
+        userRewards[msg.sender] = 0;
+        otcToken.transferFrom(address(this), msg.sender, rewards);
     }
 }
