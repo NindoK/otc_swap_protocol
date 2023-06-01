@@ -580,4 +580,16 @@ contract OtcNexus is Ownable {
         userRewards[msg.sender] = 0;
         otcToken.transferFrom(address(this), msg.sender, rewards);
     }
+
+    /**
+     * @notice Transfer all tokens of a specific ERC20 token from the contract to the contract's owner.
+     * @dev This function can only be called by the contract owner.
+     * @param _tokenAddr The address of the ERC20 token to be transferred.
+     */
+    function claimProtocolFees(address _tokenAddr) external onlyOwner {
+        uint256 balance = IERC20(_tokenAddr).balanceOf(address(this));
+        require(balance > 0, "No tokens to claim");
+
+        require(IERC20(_tokenAddr).transfer(owner(), balance), "Transfer failed");
+    }
 }
