@@ -48,7 +48,7 @@ contract OtcNexus is Ownable {
     mapping(address => uint256) private userRewards;
 
     //Given a token, return the price feed aggregator (Skipping the second token since we only need to know the price in USD)
-    mapping(address => address) public priceFeeds;
+    mapping(address => address) private priceFeeds;
 
     enum RfsType {
         DYNAMIC,
