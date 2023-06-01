@@ -69,7 +69,7 @@ contract OtcNexusCreateRfsTest is OtcNexusTestSetup {
         vm.assume(0 < amount1 && amount1 <= supplyToken1 / 100);
         vm.startPrank(maker);
 
-        vm.expectRevert(Router__InvalidTokenAmount.selector);
+        vm.expectRevert(OtcNexus__InvalidTokenAmount.selector);
         otcNexus.createFixedRfs(
             address(token0),
             _tokensAcceptedToken1,
@@ -80,7 +80,7 @@ contract OtcNexusCreateRfsTest is OtcNexusTestSetup {
             OtcNexus.TokenInteractionType.TOKEN_DEPOSITED
         );
 
-        vm.expectRevert(Router__InvalidTokenAmount.selector);
+        vm.expectRevert(OtcNexus__InvalidTokenAmount.selector);
         otcNexus.createFixedRfs(
             address(token0),
             _tokensAcceptedToken1,
@@ -91,7 +91,7 @@ contract OtcNexusCreateRfsTest is OtcNexusTestSetup {
             OtcNexus.TokenInteractionType.TOKEN_APPROVED
         );
 
-        vm.expectRevert(Router__OnlyFixedPriceOrAmountAllowed.selector);
+        vm.expectRevert(OtcNexus__OnlyFixedPriceOrAmountAllowed.selector);
         otcNexus.createFixedRfs(
             address(token0),
             _tokensAcceptedToken1,
@@ -102,7 +102,7 @@ contract OtcNexusCreateRfsTest is OtcNexusTestSetup {
             OtcNexus.TokenInteractionType.TOKEN_DEPOSITED
         );
 
-        vm.expectRevert(Router__OnlyFixedPriceOrAmountAllowed.selector);
+        vm.expectRevert(OtcNexus__OnlyFixedPriceOrAmountAllowed.selector);
         otcNexus.createFixedRfs(
             address(token0),
             _tokensAcceptedToken1,
@@ -121,7 +121,7 @@ contract OtcNexusCreateRfsTest is OtcNexusTestSetup {
         vm.assume(0 < amount1 && amount1 <= supplyToken1 / 100);
         vm.startPrank(maker);
 
-        vm.expectRevert(Router__InvalidTokenAmount.selector);
+        vm.expectRevert(OtcNexus__InvalidTokenAmount.selector);
         otcNexus.createFixedRfs(
             address(token0),
             _tokensAcceptedToken1,
@@ -132,7 +132,7 @@ contract OtcNexusCreateRfsTest is OtcNexusTestSetup {
             OtcNexus.TokenInteractionType.TOKEN_DEPOSITED
         );
 
-        vm.expectRevert(Router__InvalidTokenAmount.selector);
+        vm.expectRevert(OtcNexus__InvalidTokenAmount.selector);
         otcNexus.createFixedRfs(
             address(token0),
             _tokensAcceptedToken1,
@@ -152,7 +152,7 @@ contract OtcNexusCreateRfsTest is OtcNexusTestSetup {
         vm.assume(deadline < block.timestamp);
         vm.startPrank(maker);
 
-        vm.expectRevert(Router__InvalidDeadline.selector);
+        vm.expectRevert(OtcNexus__InvalidDeadline.selector);
         otcNexus.createFixedRfs(
             address(token0),
             _tokensAcceptedToken1,
@@ -163,7 +163,7 @@ contract OtcNexusCreateRfsTest is OtcNexusTestSetup {
             OtcNexus.TokenInteractionType.TOKEN_DEPOSITED
         );
 
-        vm.expectRevert(Router__InvalidDeadline.selector);
+        vm.expectRevert(OtcNexus__InvalidDeadline.selector);
         otcNexus.createFixedRfs(
             address(token0),
             _tokensAcceptedToken1,
@@ -174,7 +174,7 @@ contract OtcNexusCreateRfsTest is OtcNexusTestSetup {
             OtcNexus.TokenInteractionType.TOKEN_APPROVED
         );
 
-        vm.expectRevert(Router__InvalidDeadline.selector);
+        vm.expectRevert(OtcNexus__InvalidDeadline.selector);
         otcNexus.createDynamicRfs(
             address(token0),
             _tokensAcceptedToken1,
@@ -184,7 +184,7 @@ contract OtcNexusCreateRfsTest is OtcNexusTestSetup {
             OtcNexus.TokenInteractionType.TOKEN_DEPOSITED
         );
 
-        vm.expectRevert(Router__InvalidDeadline.selector);
+        vm.expectRevert(OtcNexus__InvalidDeadline.selector);
         otcNexus.createDynamicRfs(
             address(token0),
             _tokensAcceptedToken1,
@@ -203,7 +203,7 @@ contract OtcNexusCreateRfsTest is OtcNexusTestSetup {
         vm.assume(deadline >= block.timestamp);
         vm.startPrank(maker);
 
-        vm.expectRevert(Router__AllowanceToken0TooLow.selector);
+        vm.expectRevert(OtcNexus__AllowanceToken0TooLow.selector);
         otcNexus.createFixedRfs(
             address(token0),
             _tokensAcceptedToken1,
@@ -214,7 +214,7 @@ contract OtcNexusCreateRfsTest is OtcNexusTestSetup {
             OtcNexus.TokenInteractionType.TOKEN_DEPOSITED
         );
 
-        vm.expectRevert(Router__AllowanceToken0TooLow.selector);
+        vm.expectRevert(OtcNexus__AllowanceToken0TooLow.selector);
         otcNexus.createDynamicRfs(
             address(token0),
             _tokensAcceptedToken1,
@@ -263,7 +263,7 @@ contract OtcNexusCreateRfsTest is OtcNexusTestSetup {
     function test_removeRfs_failNotMaker(uint amount0, uint amount1, uint deadline) public {
         uint rfsId = createFixedDepositedRfs(amount0, amount1, deadline);
         vm.prank(address(new TestAddress()));
-        vm.expectRevert(Router__NotMaker.selector);
+        vm.expectRevert(OtcNexus__NotMaker.selector);
         otcNexus.removeRfs(rfsId, false);
         assertFalse(otcNexus.getRfs(rfsId).removed);
     }
