@@ -5,6 +5,7 @@ import "forge-std/Test.sol";
 import "../../src/OtcNexus.sol";
 import "../../src/OtcToken.sol";
 import "./util.sol";
+import "@chainlink/contracts/src/v0.8/tests/MockV3Aggregator.sol";
 
 contract OtcNexusTestSetup is Test {
     address public deployer = address(new TestAddress());
@@ -27,11 +28,14 @@ contract OtcNexusTestSetup is Test {
         otcNexus = new OtcNexus(address(otcFeeToken));
         _tokensAcceptedToken1 = new address[](1);
         _tokensAcceptedToken1[0] = address(token1);
-        
-        // TODO
-        otcNexus.setPriceFeeds(address(token0), address(0x0));
-        otcNexus.setPriceFeeds(address(token1), address(0x0));
-        otcNexus.setPriceFeeds(address(otcFeeToken), address(0x0));
+    
+        MockV3Aggregator token0MockChainlinkAggregator = new MockV3Aggregator(18, 1000*(10**18));
+        MockV3Aggregator token1MockChainlinkAggregator = new MockV3Aggregator(6, 2000*(10**6));
+        MockV3Aggregator otcFeeTokenMockChainlinkAggregator = new MockV3Aggregator(18, 3000*(10**18));
+    
+        otcNexus.setPriceFeeds(address(token0), address(token0MockChainlinkAggregator));
+        otcNexus.setPriceFeeds(address(token1), address(token1MockChainlinkAggregator));
+        otcNexus.setPriceFeeds(address(otcFeeToken), address(otcFeeTokenMockChainlinkAggregator));
         
         vm.stopPrank();
     }
