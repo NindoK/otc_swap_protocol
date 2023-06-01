@@ -6,6 +6,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
 import "./OtcMath.sol";
 import "./OtcToken.sol";
+import "forge-std/console.sol";
 
 error OtcNexus__InvalidTokenAmount();
 error OtcNexus__InvalidPriceAmount();
@@ -242,7 +243,7 @@ contract OtcNexus is Ownable {
             );
         }
 
-        return rfsIdCounter;
+        return rfsIdCounter - 1;
     }
 
     /**
@@ -402,6 +403,8 @@ contract OtcNexus is Ownable {
     function removeRfs(uint256 _id, bool _permanentlyDelete) external returns (bool success) {
         RFS memory rfs = idToRfs[_id];
         // only the maker can remove the RFS
+        console.log("maker address: %s", rfs.maker);
+        console.log("msg.sender address: %s", msg.sender);
         if (msg.sender != rfs.maker) revert OtcNexus__NotMaker();
 
         if (rfs.interactionType == TokenInteractionType.TOKEN_DEPOSITED) {
