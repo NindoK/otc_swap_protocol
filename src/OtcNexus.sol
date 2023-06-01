@@ -476,6 +476,37 @@ contract OtcNexus is Ownable {
     }
 
     /**
+     * @notice Transfer all tokens of a specific ERC20 token from the contract to the contract's owner.
+     * @dev This function can only be called by the contract owner.
+     * @param _tokenAddr The address of the ERC20 token to be transferred.
+     */
+    function claimProtocolFees(address _tokenAddr) external onlyOwner {
+        uint256 balance = IERC20(_tokenAddr).balanceOf(address(this));
+        require(balance > 0, "No tokens to claim");
+
+        require(IERC20(_tokenAddr).transfer(owner(), balance), "Transfer failed");
+    }
+
+    /**
+     * @dev This function allows users to claim their rewards.
+     *
+     * Users can call this function to claim any rewards that they have accumulated.
+     * The amount of rewards that a user can claim is stored in the `userRewards` mapping.
+     * If the user has no rewards to claim, the function will revert.
+     * Otherwise, the amount of rewards is transferred to the user from this contract's balance of `otcToken`.
+     *
+     * Requirements:
+     *
+     * - The user must have non-zero rewards to claim.
+     */
+    function claimRewards() external {
+        if (userRewards[msg.sender] == 0) revert OtcNexus__NoRewardsToClaim();
+        uint256 rewards = userRewards[msg.sender];
+        userRewards[msg.sender] = 0;
+        otcToken.transferFrom(address(this), msg.sender, rewards);
+    }
+
+    /**
      * @notice compute the amount0 to be sent to the taker
      * @param _id id of the RFS
      * @param _paymentTokenAmount amount of tokens used to pay for the RFS
@@ -560,36 +591,5 @@ contract OtcNexus is Ownable {
             feeAmount = (_paymentTokenAmount * applicableFeePercentage) / 10000;
             amountAfterFee = _paymentTokenAmount - feeAmount;
         }
-    }
-
-    /**
-     * @dev This function allows users to claim their rewards.
-     *
-     * Users can call this function to claim any rewards that they have accumulated.
-     * The amount of rewards that a user can claim is stored in the `userRewards` mapping.
-     * If the user has no rewards to claim, the function will revert.
-     * Otherwise, the amount of rewards is transferred to the user from this contract's balance of `otcToken`.
-     *
-     * Requirements:
-     *
-     * - The user must have non-zero rewards to claim.
-     */
-    function claimRewards() external {
-        if (userRewards[msg.sender] == 0) revert OtcNexus__NoRewardsToClaim();
-        uint256 rewards = userRewards[msg.sender];
-        userRewards[msg.sender] = 0;
-        otcToken.transferFrom(address(this), msg.sender, rewards);
-    }
-
-    /**
-     * @notice Transfer all tokens of a specific ERC20 token from the contract to the contract's owner.
-     * @dev This function can only be called by the contract owner.
-     * @param _tokenAddr The address of the ERC20 token to be transferred.
-     */
-    function claimProtocolFees(address _tokenAddr) external onlyOwner {
-        uint256 balance = IERC20(_tokenAddr).balanceOf(address(this));
-        require(balance > 0, "No tokens to claim");
-
-        require(IERC20(_tokenAddr).transfer(owner(), balance), "Transfer failed");
     }
 }
