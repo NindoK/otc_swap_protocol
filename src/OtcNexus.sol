@@ -32,6 +32,8 @@ error OtcNexus__InvalidTokenIndex();
 error OtcNexus__InvalidAggregatorAddress();
 error OtcNexus__InvalidRfsType();
 error OtcNexus__NoRewardsToClaim();
+error OtcNexus__NoTokensToClaim();
+error OtcNexus__TransferTokenFailed();
 
 /**
  * @title OtcNexus
@@ -486,9 +488,9 @@ contract OtcNexus is Ownable {
      */
     function claimProtocolFees(address _tokenAddr) external onlyOwner {
         uint256 balance = IERC20(_tokenAddr).balanceOf(address(this));
-        require(balance > 0, "No tokens to claim");
+        if (balance == 0) revert OtcNexus__NoTokensToClaim();
 
-        require(IERC20(_tokenAddr).transfer(owner(), balance), "Transfer failed");
+        if (!IERC20(_tokenAddr).transfer(owner(), balance)) revert OtcNexus__TransferTokenFailed();
     }
 
     /**
@@ -507,7 +509,7 @@ contract OtcNexus is Ownable {
         if (userRewards[msg.sender] == 0) revert OtcNexus__NoRewardsToClaim();
         uint256 rewards = userRewards[msg.sender];
         userRewards[msg.sender] = 0;
-        otcToken.transferFrom(address(this), msg.sender, rewards);
+        otcToken.transfer(msg.sender, rewards);
     }
 
     /**
@@ -566,8 +568,10 @@ contract OtcNexus is Ownable {
         uint256 _amount0Total
     ) internal {
         uint256 percentageBought = (_amount0Bought * OtcToken(otcToken).decimals()) / _amount0Total; //Calculate the percentage of the total amount bought with the decimals of the token so less computations and we can just send this amount
-        userRewards[taker] = percentageBought;
-        userRewards[maker] = percentageBought * 3; //3x the amount of the buyer
+        unchecked {
+            userRewards[taker] = percentageBought;
+            userRewards[maker] = percentageBought * 3; //3x the amount of the buyer
+        }
     }
 
     /**
