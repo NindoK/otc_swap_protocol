@@ -335,7 +335,7 @@ contract OtcNexus is Ownable {
 
         success = IERC20(rfs.tokensAccepted[index]).transferFrom(
             msg.sender,
-            rfs.maker,
+            address(this),
             feeAmount1 + feeAmount2
         );
         if (!success) revert OtcNexus__TransferToken1Failed();
