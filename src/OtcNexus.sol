@@ -411,7 +411,7 @@ contract OtcNexus is Ownable {
             console.log(rfs.amount0);
             console.log(IERC20(rfs.token0).balanceOf(address(this)));
             console.log(IERC20(rfs.token0).allowance(address(this), rfs.maker));
-            success = IERC20(rfs.token0).transferFrom(address(this), rfs.maker, rfs.amount0);
+            success = IERC20(rfs.token0).transfer(rfs.maker, rfs.amount0);
             if (!success) revert OtcNexus__TransferToken0Failed();
         }
         idToRfs[_id].removed = true;
