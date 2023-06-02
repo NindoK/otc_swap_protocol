@@ -1,3 +1,4 @@
+"use client";
 import React, { useState } from "react"
 import { ArrowForwardIcon } from "@chakra-ui/icons"
 import {
@@ -13,19 +14,22 @@ import {
     useDisclosure,
 } from "@chakra-ui/react"
 import dynamic from "next/dynamic"
+import Link from "next/link"
+import { useRouter } from "next/router"
 
 const OverlayOne = () => <ModalOverlay bg="none" backdropFilter="blur(10px) " />
 
 const CardComponent = (props) => {
+    
     const [overlay, setOverlay] = useState(<OverlayOne />)
     const { isOpen, onOpen, onClose } = useDisclosure()
     const dynamicStyle = {
         backgroundColor: props.condition ? "#A06D22" : "#348D8D",
     }
-
+  
     return (
         <div className=" w-full flex justify-center mt-10 ">
-            <div className="transition-all ease-out duration-500  hover:shadow-xl hover:scale-105  flex h-60 w-[56rem] bg-gray-dark rounded-2xl relative">
+            <div className="transition-all ease-out duration-500  hover:shadow-xl hover:scale-105  flex h-60 w-[56rem]  rounded-2xl relative bg-gray-950 bg-opacity-50 shadow-lg border-opacity-18">
                 <div
                     className=" font-semibold font-montserrat tracking-wider absolute bottom-0 origin-bottom-left left-6 transform -rotate-90 text-white w-60  text-center rounded-t-2xl"
                     style={dynamicStyle}
@@ -67,12 +71,15 @@ const CardComponent = (props) => {
                     </h3>
                 </VStack>
                 <div className="absolute right-7 top-24 rounded-full hover:bg-gray-500 hover:cursor-pointer  h-14 w-14 ">
+                    <Link href='/confirmswap'>
                     <ArrowForwardIcon
                         className="mt-3 ml-3 hover:cursor-pointer "
                         w={8}
                         h={8}
                         color="white"
+                        
                     />
+                    </Link>
                 </div>
             </div>
             <Modal isCentered isOpen={isOpen} onClose={onClose}>

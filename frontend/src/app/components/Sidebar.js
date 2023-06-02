@@ -3,7 +3,7 @@ import dynamic from "next/dynamic"
 
 const Sidebar = () => {
     return (
-        <div className=" w-72 bg-gray-dark relative">
+        <div className=" w-72 bg-gray-900 bg-opacity-40 shadow-lg  border-opacity-18  relative">
             <h2 className=" font-montserrat font-normal text-3xl text-center text-white pt-8 tracking-wider">
                 OTC Nexus
             </h2>
