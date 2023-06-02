@@ -341,13 +341,12 @@ contract OtcNexus is Ownable {
         if (!success) revert OtcNexus__TransferToken1Failed();
 
         // transfer token0 to the taker
-        address from;
         if (rfs.interactionType == TokenInteractionType.TOKEN_DEPOSITED) {
-            from = address(this);
+            success = IERC20(rfs.token0).transfer(msg.sender, _amountBuying);
         } else {
-            from = rfs.maker;
+            success = IERC20(rfs.token0).transferFrom(rfs.maker, msg.sender, _amountBuying);
         }
-        success = IERC20(rfs.token0).transferFrom(from, msg.sender, _amountBuying);
+
         if (!success) revert OtcNexus__TransferToken0Failed();
 
         // update RFS
