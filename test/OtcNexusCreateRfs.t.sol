@@ -268,9 +268,12 @@ contract OtcNexusCreateRfsTest is OtcNexusTestSetup {
         assertFalse(otcNexus.getRfs(rfsId).removed);
     }
 
-    function test_removeRfs(uint amount0, uint amount1, uint deadline) public {
+    function test_removeRfs_success(uint amount0, uint amount1, uint deadline) public {
         uint rfsId = createFixedDepositedRfs(amount0, amount1, deadline);
         uint startBalance = token0.balanceOf(maker);
+        assertEq(token0.balanceOf(maker), 0);
+        vm.prank(address(otcNexus));
+        token0.approve(maker, amount0);
         vm.prank(maker);
         bool success = otcNexus.removeRfs(rfsId, false);
         require(success);

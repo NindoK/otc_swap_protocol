@@ -403,13 +403,14 @@ contract OtcNexus is Ownable {
     function removeRfs(uint256 _id, bool _permanentlyDelete) external returns (bool success) {
         RFS memory rfs = idToRfs[_id];
         // only the maker can remove the RFS
-        console.log("maker address: %s", rfs.maker);
-        console.log("msg.sender address: %s", msg.sender);
         if (msg.sender != rfs.maker) revert OtcNexus__NotMaker();
 
         if (rfs.interactionType == TokenInteractionType.TOKEN_DEPOSITED) {
             // refund deposited tokens to the maker
             // No need to check for revert as transferFrom revert automatically
+            console.log(rfs.amount0);
+            console.log(IERC20(rfs.token0).balanceOf(address(this)));
+            console.log(IERC20(rfs.token0).allowance(address(this), rfs.maker));
             success = IERC20(rfs.token0).transferFrom(address(this), rfs.maker, rfs.amount0);
             if (!success) revert OtcNexus__TransferToken0Failed();
         }
