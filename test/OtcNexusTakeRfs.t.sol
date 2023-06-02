@@ -7,40 +7,46 @@ import "./helpers/util.sol";
 import "./helpers/OtcNexusTestSetup.sol";
 
 contract OtcNexusTakeRfsTest is OtcNexusTestSetup {
- /*
-    function createRfs(uint amount0, uint amount1, uint deadline) private returns (uint rfsId) {
+    function createRfs(
+        uint amount0,
+        uint amount1,
+        uint deadline
+    ) private returns (uint rfsId) {
         vm.assume(0 < amount0 && amount0 <= supplyToken0 / 100);
         vm.assume(0 < amount1 && amount1 <= supplyToken1 / 100);
         vm.assume(deadline >= block.timestamp);
-
+        
         vm.prank(deployer);
         token0.transfer(maker, amount0);
-
+        
         vm.startPrank(maker);
         token0.approve(address(otcNexus), amount0);
-
+        
         uint startBalance = token0.balanceOf(maker);
-
+        
         // create RFS
-        rfsId = otcNexus.createRfsWithDeposit(
+        rfsId = otcNexus.createFixedRfs(
             address(token0),
-            address(token1),
+            _tokensAcceptedToken1,
             amount0,
             amount1,
-            deadline
+            0,
+            deadline,
+            OtcNexus.TokenInteractionType.TOKEN_DEPOSITED
         );
         vm.stopPrank();
-
+        
         // check final balance
         assertEq(token0.balanceOf(maker), startBalance - amount0);
     }
-
+    
+    
     function test_takeRfs_failAllowance(uint amount0, uint amount1, uint deadline) public {
         vm.assume(amount1 > 0);
         uint rfsId = createRfs(amount0, amount1, deadline);
         vm.prank(taker);
-        vm.expectRevert(Router__AllowanceToken1TooLow.selector);
-        otcNexus.takeRfsWithDeposit(rfsId, amount1);
+        vm.expectRevert(OtcNexus__AllowanceToken1TooLow.selector);
+        otcNexus.takeFixedRfs(rfsId, amount1, 0);
     }
 
     function test_takeRfs_failBalance(uint amount0, uint amount1, uint deadline) public {
@@ -50,7 +56,7 @@ contract OtcNexusTakeRfsTest is OtcNexusTestSetup {
         token1.approve(address(otcNexus), amount1);
         vm.prank(taker);
         vm.expectRevert("ERC20: transfer amount exceeds balance");
-        otcNexus.takeRfsWithDeposit(rfsId, amount1);
+        otcNexus.takeFixedRfs(rfsId, amount1, 0);
     }
 
     function test_takeRfs_failTokenAmount(uint amount0, uint amount1, uint deadline) public {
@@ -58,11 +64,11 @@ contract OtcNexusTakeRfsTest is OtcNexusTestSetup {
         vm.prank(taker);
         token1.approve(address(otcNexus), amount1);
         vm.prank(taker);
-        vm.expectRevert(Router__InvalidTokenAmount.selector);
-        otcNexus.takeRfsWithDeposit(rfsId, 0);
+        vm.expectRevert(OtcNexus__InvalidTokenAmount.selector);
+        otcNexus.takeFixedRfs(rfsId, 0, 0);
     }
 
-    function test_takeRfs(uint amount0, uint amount1, uint deadline) public {
+    function test_takeRfs_success(uint amount0, uint amount1, uint deadline) public {
         vm.assume(amount1 > 0);
         uint rfsId = createRfs(amount0, amount1, deadline);
 
@@ -76,7 +82,7 @@ contract OtcNexusTakeRfsTest is OtcNexusTestSetup {
         vm.startPrank(taker);
         token1.approve(address(otcNexus), amount1);
 
-        bool success = otcNexus.takeRfsWithDeposit(rfsId, amount1);
+        bool success = otcNexus.takeFixedRfs(rfsId, amount1, 0);
         require(success);
         vm.stopPrank();
 
@@ -96,26 +102,26 @@ contract OtcNexusTakeRfsTest is OtcNexusTestSetup {
         vm.startPrank(taker);
         token1.approve(address(otcNexus), amount1);
 
-        bool success = otcNexus.takeRfsWithDeposit(rfsId, amount1);
+        bool success = otcNexus.takeFixedRfs(rfsId, amount1, 0);
         require(success);
 
-        vm.expectRevert(Router__RfsRemoved.selector);
-        otcNexus.takeRfsWithDeposit(rfsId, amount1);
+        vm.expectRevert(OtcNexus__RfsRemoved.selector);
+        otcNexus.takeFixedRfs(rfsId, amount1, 0);
         vm.stopPrank();
     }
 
-    function takeRfsPartial(uint rfsId, uint takerAmount1) private {
+    function takeRfsPartial(uint rfsId, uint takerAmount1, uint256 index) private {
         uint startMakerToken0Balance = token0.balanceOf(maker);
         uint startMakerToken1Balance = token1.balanceOf(maker);
         uint startTakerToken0Balance = token0.balanceOf(taker);
         uint startTakerToken1Balance = token1.balanceOf(taker);
 
-        Router.RFS memory rfs = otcNexus.getRfs(rfsId);
+        OtcNexus.RFS memory rfs = otcNexus.getRfs(rfsId);
         uint makerAmount0 = rfs.amount0;
         uint makerAmount1 = rfs.amount1;
 
         vm.prank(taker);
-        bool success = otcNexus.takeRfsWithDeposit(rfsId, takerAmount1);
+        bool success = otcNexus.takeFixedRfs(rfsId, takerAmount1, index);
         require(success);
 
         uint takerAmount0 = OtcMath.getTakerAmount0(makerAmount0, makerAmount1, takerAmount1);
@@ -130,7 +136,7 @@ contract OtcNexusTakeRfsTest is OtcNexusTestSetup {
         assertEq(token1.balanceOf(taker), startTakerToken1Balance - takerAmount1);
     }
 
-    function test_takeRfs_partial(
+    function test_takeRfs_partial_oneStep(
         uint makerAmount0,
         uint makerAmount1,
         uint deadline,
@@ -145,11 +151,11 @@ contract OtcNexusTakeRfsTest is OtcNexusTestSetup {
         vm.prank(taker);
         token1.approve(address(otcNexus), takerAmount1);
 
-        takeRfsPartial(rfsId, takerAmount1);
+        takeRfsPartial(rfsId, takerAmount1, 0);
         assertFalse(otcNexus.getRfs(rfsId).removed);
     }
 
-    function test_takeRfs_partials(uint makerAmount0, uint makerAmount1, uint deadline) public {
+    function test_takeRfs_partials_threeSteps(uint makerAmount0, uint makerAmount1, uint deadline) public {
         uint rfsId = createRfs(makerAmount0, makerAmount1, deadline);
         vm.assume(makerAmount0 >= 3);
         vm.assume(makerAmount1 >= 3);
@@ -163,12 +169,11 @@ contract OtcNexusTakeRfsTest is OtcNexusTestSetup {
         uint takerAmountB = makerAmount1 / 3;
         uint takerAmountC = makerAmount1 - takerAmountA - takerAmountB;
 
-        takeRfsPartial(rfsId, takerAmountA);
+        takeRfsPartial(rfsId, takerAmountA, 0);
         assertFalse(otcNexus.getRfs(rfsId).removed);
-        takeRfsPartial(rfsId, takerAmountB);
+        takeRfsPartial(rfsId, takerAmountB, 0);
         assertFalse(otcNexus.getRfs(rfsId).removed);
-        takeRfsPartial(rfsId, takerAmountC);
+        takeRfsPartial(rfsId, takerAmountC, 0);
         assertTrue(otcNexus.getRfs(rfsId).removed);
     }
-    */
 }
