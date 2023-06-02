@@ -12,7 +12,32 @@ contract OtcNexusCreateRfsTest is OtcNexusTestSetup {
         uint amount1,
         uint deadline
     ) private returns (uint rfsId) {
-        return 0; //todo
+        vm.assume(0 < amount0 && amount0 <= supplyToken0 / 100);
+        vm.assume(0 < amount1 && amount1 <= supplyToken1 / 100);
+        vm.assume(deadline >= block.timestamp);
+    
+        vm.prank(deployer);
+        token0.transfer(maker, amount0);
+    
+        vm.startPrank(maker);
+        token0.approve(address(otcNexus), amount0);
+    
+        uint startBalance = token0.balanceOf(maker);
+    
+        // create RFS
+        rfsId = otcNexus.createDynamicRfs(
+            address(token0),
+            _tokensAcceptedToken1,
+            amount0,
+            1,
+            deadline,
+            OtcNexus.TokenInteractionType.TOKEN_APPROVED
+        );
+        vm.stopPrank();
+    
+        // check final balance
+        assertEq(token0.balanceOf(maker), startBalance);
+        assertEq(token0.allowance(maker, address(otcNexus)), amount0);
     }
 
     function createDynamicDepositedRfs(
@@ -20,7 +45,31 @@ contract OtcNexusCreateRfsTest is OtcNexusTestSetup {
         uint amount1,
         uint deadline
     ) private returns (uint rfsId) {
-        return 0; //todo
+        vm.assume(0 < amount0 && amount0 <= supplyToken0 / 100);
+        vm.assume(0 < amount1 && amount1 <= supplyToken1 / 100);
+        vm.assume(deadline >= block.timestamp);
+    
+        vm.prank(deployer);
+        token0.transfer(maker, amount0);
+    
+        vm.startPrank(maker);
+        token0.approve(address(otcNexus), amount0);
+    
+        uint startBalance = token0.balanceOf(maker);
+    
+        // create RFS
+        rfsId = otcNexus.createDynamicRfs(
+            address(token0),
+            _tokensAcceptedToken1,
+            amount0,
+            1,
+            deadline,
+            OtcNexus.TokenInteractionType.TOKEN_DEPOSITED
+        );
+        vm.stopPrank();
+    
+        // check final balance
+        assertEq(token0.balanceOf(maker), startBalance - amount0);
     }
 
     function createFixedApprovedRfs(
@@ -28,7 +77,33 @@ contract OtcNexusCreateRfsTest is OtcNexusTestSetup {
         uint amount1,
         uint deadline
     ) private returns (uint rfsId) {
-        return 0; //todo
+        vm.assume(0 < amount0 && amount0 <= supplyToken0 / 100);
+        vm.assume(0 < amount1 && amount1 <= supplyToken1 / 100);
+        vm.assume(deadline >= block.timestamp);
+    
+        vm.prank(deployer);
+        token0.transfer(maker, amount0);
+    
+        vm.startPrank(maker);
+        token0.approve(address(otcNexus), amount0);
+    
+        uint startBalance = token0.balanceOf(maker);
+    
+        // create RFS
+        rfsId = otcNexus.createFixedRfs(
+            address(token0),
+            _tokensAcceptedToken1,
+            amount0,
+            amount1,
+            0,
+            deadline,
+            OtcNexus.TokenInteractionType.TOKEN_APPROVED
+        );
+        vm.stopPrank();
+    
+        // check final balance
+        assertEq(token0.balanceOf(maker), startBalance);
+        assertEq(token0.allowance(maker, address(otcNexus)), amount0);
     }
 
     function createFixedDepositedRfs(
@@ -62,6 +137,14 @@ contract OtcNexusCreateRfsTest is OtcNexusTestSetup {
 
         // check final balance
         assertEq(token0.balanceOf(maker), startBalance - amount0);
+    }
+    
+    
+    function test_createRfs_allKinds(uint amount0, uint amount1, uint deadline) public {
+        createFixedDepositedRfs(amount0, amount1, deadline);
+        createFixedApprovedRfs(amount0, amount1, deadline);
+        createDynamicDepositedRfs(amount0, amount1, deadline);
+        createDynamicApprovedRfs(amount0, amount1, deadline);
     }
 
     function test_createFixedRfs_failTokenAmount(uint amount0, uint amount1) public {
