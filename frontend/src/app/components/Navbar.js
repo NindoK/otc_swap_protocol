@@ -2,7 +2,10 @@ import React, { useState } from 'react'
 
 import close from "../../../public/close.svg"
 import menu from "../../../public/menu.svg"
-
+import { ConnectButton } from '@rainbow-me/rainbowkit'
+import Image from 'next/image'
+import Link from 'next/link'
+import dynamic from "next/dynamic";
 
 
 const Navbar = () => {
@@ -14,13 +17,18 @@ const Navbar = () => {
       <li href="/" className="font-montserrat font-normal cursor-pointer text-[16px] text-white mr-10 ">
       Create A Deal
   </li>
-  <li href="/swap" className="font-montserrat font-normal cursor-pointer text-[16px] text-white mr-10">
-      Swap
-  </li>
+  <Link href="/swap" >
+  <li className="font-montserrat font-normal cursor-pointer text-[16px] text-white mr-10">
+  Swap
+</li>
+  </Link>
+  
       </ul>
+      
+   
 
       <div className="sm:hidden flex flex-1 justify-end items-center">
-        <img
+        <Image
           src={toggle ? close : menu}
           alt="menu"
           className="w-[28px] h-[28px] object-contain"
@@ -42,7 +50,9 @@ const Navbar = () => {
           </ul>
         </div>
       </div>
+      
     </nav>
+    
   )
 }
 
