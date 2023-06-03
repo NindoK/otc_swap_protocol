@@ -64,7 +64,7 @@ contract OtcNexus is Ownable {
 
     struct RFS {
         uint256 id;
-        uint256 amount0;
+        uint256 currentAmount0;
         uint256 initialAmount0;
         uint256 amount1;
         uint256 usdPrice; // Implies the fixed price per token0
@@ -218,8 +218,8 @@ contract OtcNexus is Ownable {
         // create RFS
         idToRfs[rfsIdCounter] = RFS(
             rfsIdCounter, // id
-            _amount0, // amount0
-            _amount0, // amount0
+            _amount0, // currentAmount0
+            _amount0, // totalAmount0
             _amount1, // amount1
             _usdPrice, // price
             _deadline, // deadline
@@ -307,7 +307,7 @@ contract OtcNexus is Ownable {
         ) revert OtcNexus__AllowanceToken1TooLow();
 
         //0.25% fee on the payment token of the taker FLAT FEE
-        (uint256 feeAmount1, uint256 _paymentTokenAmountAfterTakerFee) = takeFee(
+        (uint256 feeAmount1, uint256 _paymentTokenAmountAfterTakerFee) = calculateFee(
             takerFee,
             _paymentTokenAmount
         );
@@ -318,10 +318,10 @@ contract OtcNexus is Ownable {
             index,
             expectedRfsType
         );
-        if (_amountBuying > rfs.amount0) revert OtcNexus__Amount0TooHigh();
+        if (_amountBuying > rfs.currentAmount0) revert OtcNexus__Amount0TooHigh();
 
         //0.25% fee on the token0 of the maker FLAT FEE if DEPOSITED, otherwise 0.5% if APPROVED
-        (uint256 feeAmount2, uint256 _paymentTokenAmountAfterMakerFee) = takeFee(
+        (uint256 feeAmount2, uint256 _paymentTokenAmountAfterMakerFee) = calculateFee(
             rfs.interactionType == TokenInteractionType.TOKEN_DEPOSITED
                 ? makerFeeIfDeposited
                 : makerFeeIfNotDeposited,
@@ -380,12 +380,12 @@ contract OtcNexus is Ownable {
      * - `_amount1` must be less or equal to `rfs.amount1` in case of fixed amount1.
      */
     function updateRfs(RFS memory rfs, uint256 _amount0, uint256 _amount1) private {
-        rfs.amount0 -= _amount0;
+        rfs.currentAmount0 -= _amount0;
         if (rfs.usdPrice == 0 && rfs.typeRfs == RfsType.FIXED) {
             rfs.amount1 -= _amount1;
         }
         if (
-            rfs.amount0 == 0 ||
+            rfs.currentAmount0 == 0 ||
             (rfs.amount1 == 0 && rfs.usdPrice == 0 && rfs.typeRfs == RfsType.FIXED)
         ) {
             rfs.removed = true;
@@ -393,7 +393,7 @@ contract OtcNexus is Ownable {
             emit RfsRemoved(rfs.id, true);
         } else {
             idToRfs[rfs.id] = rfs;
-            emit RfsUpdated(rfs.id, rfs.amount0, rfs.amount1, rfs.deadline);
+            emit RfsUpdated(rfs.id, rfs.currentAmount0, rfs.amount1, rfs.deadline);
         }
     }
 
@@ -411,10 +411,7 @@ contract OtcNexus is Ownable {
         if (rfs.interactionType == TokenInteractionType.TOKEN_DEPOSITED) {
             // refund deposited tokens to the maker
             // No need to check for revert as transferFrom revert automatically
-            console.log(rfs.amount0);
-            console.log(IERC20(rfs.token0).balanceOf(address(this)));
-            console.log(IERC20(rfs.token0).allowance(address(this), rfs.maker));
-            success = IERC20(rfs.token0).transfer(rfs.maker, rfs.amount0);
+            success = IERC20(rfs.token0).transfer(rfs.maker, rfs.currentAmount0);
             if (!success) revert OtcNexus__TransferToken0Failed();
         }
         idToRfs[_id].removed = true;
@@ -532,7 +529,11 @@ contract OtcNexus is Ownable {
 
         if (expectedRfsType == RfsType.FIXED) {
             if (rfs.usdPrice == 0) {
-                _amount0 = OtcMath.getTakerAmount0(rfs.amount0, rfs.amount1, _paymentTokenAmount);
+                _amount0 = OtcMath.getTakerAmount0(
+                    rfs.currentAmount0,
+                    rfs.amount1,
+                    _paymentTokenAmount
+                );
                 if (_paymentTokenAmount > rfs.amount1) revert OtcNexus__Amount1TooHigh();
             } else {
                 address aggregator = priceFeeds[rfs.tokensAccepted[index]];
@@ -592,7 +593,7 @@ contract OtcNexus is Ownable {
      *
      * - `applicableFeePercentage` must be less than or equal to 10,000 (100%).
      */
-    function takeFee(
+    function calculateFee(
         uint8 applicableFeePercentage,
         uint256 _paymentTokenAmount
     ) internal pure returns (uint256 feeAmount, uint256 amountAfterFee) {
