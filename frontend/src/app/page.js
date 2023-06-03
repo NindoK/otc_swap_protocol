@@ -1,12 +1,10 @@
 "use client"
-import Image from "next/image"
+
 import styles from "./style"
-import logo from "../../public/logo.svg"
-import close from "../../public/close.svg"
-import menu from "../../public/menu.svg"
-import robot from "../../public/robot.png"
+
 import { useState } from "react"
-import Link from "next/link"
+import '@rainbow-me/rainbowkit/styles.css';
+import dynamic from "next/dynamic";
 import Feature1 from "./components/Feature1"
 import Navbar from "./components/Navbar"
 import Hero from "./components/Hero"
@@ -16,9 +14,10 @@ import Feature2 from "./components/Feature2"
 import Devs from "./components/Devs"
 import Service from "./components/Service"
 import Footer from "./components/Footer"
+import { ConnectButton } from "@rainbow-me/rainbowkit"
 
 export default function Home() {
-    const [toggle, setToggle] = useState(false)
+  
 
     return (
     
@@ -27,8 +26,11 @@ export default function Home() {
       <div className={`${styles.boxWidth}`}>
         <Navbar/>
       </div>
+      <div className='h-fit w-60 text-center bg-blue-gradient p-3 pl-4 -mr-50 rounded-xl z-30'>
+    <ConnectButton showBalance={false}/>
     </div>
-
+    </div>
+    
     <div className={`bg-black ${styles.flexStart}`}>
       <div className={`${styles.boxWidth}`}>
         <Hero/>
