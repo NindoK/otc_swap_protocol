@@ -1,6 +1,6 @@
 import { Avatar, AvatarGroup } from "@chakra-ui/react"
 import React from "react"
-import dynamic from "next/dynamic"
+
 
 export const CardData = [
     {
