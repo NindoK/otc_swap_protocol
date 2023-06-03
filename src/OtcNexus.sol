@@ -65,6 +65,7 @@ contract OtcNexus is Ownable {
     struct RFS {
         uint256 id;
         uint256 amount0;
+        uint256 initialAmount0;
         uint256 amount1;
         uint256 usdPrice; // Implies the fixed price per token0
         uint256 deadline;
@@ -218,6 +219,7 @@ contract OtcNexus is Ownable {
         idToRfs[rfsIdCounter] = RFS(
             rfsIdCounter, // id
             _amount0, // amount0
+            _amount0, // amount0
             _amount1, // amount1
             _usdPrice, // price
             _deadline, // deadline
@@ -351,7 +353,7 @@ contract OtcNexus is Ownable {
 
         // update RFS
         updateRfs(rfs, _amountBuying, _paymentTokenAmount);
-        computeRewards(rfs.maker, msg.sender, _amountBuying, rfs.amount0);
+        computeRewards(rfs.maker, msg.sender, _amountBuying, rfs.initialAmount0);
 
         emit RfsFilled(_id, msg.sender, _amountBuying, _paymentTokenAmount);
     }
