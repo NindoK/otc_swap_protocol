@@ -5,6 +5,8 @@ import "forge-std/Test.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "./helpers/util.sol";
 import "./helpers/OtcNexusTestSetup.sol";
+import "forge-std/console.sol";
+
 
 contract OtcNexusTakeRfsTest is OtcNexusTestSetup {
     function createRfs(
@@ -100,6 +102,7 @@ contract OtcNexusTakeRfsTest is OtcNexusTestSetup {
         vm.prank(deployer);
         token1.transfer(address(taker), amount1);
         vm.startPrank(taker);
+        token1.approve(maker, amount1);
         token1.approve(address(otcNexus), amount1);
 
         bool success = otcNexus.takeFixedRfs(rfsId, amount1, 0);
