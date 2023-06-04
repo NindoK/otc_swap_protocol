@@ -8,6 +8,9 @@ import "./util.sol";
 import "@chainlink/contracts/src/v0.8/tests/MockV3Aggregator.sol";
 
 contract OtcNexusTestSetup is Test {
+    event RfsFilled(uint256 rfsId, address taker, uint256 amount0, uint256 amount1);
+    event RfsRemoved(uint256 rfsId, bool permanentlyDeleted);
+    
     address public deployer = address(new TestAddress());
     address public maker = address(new TestAddress());
     address public taker = address(new TestAddress());
