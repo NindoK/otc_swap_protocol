@@ -57,7 +57,7 @@ contract OtcNexusTakeRfsTest is OtcNexusTestSetup {
         otcNexus.takeFixedRfs(rfsId, amount1, 0);
     }
 
-    function test_takeRfs_failTokenAmount(uint amount0, uint amount1, uint deadline) public {
+    function test_takeRfs_failTokenAmount_fixed_deposited(uint amount0, uint amount1, uint deadline) public {
         uint rfsId = createFixedDepositedRfs(amount0, amount1, deadline);
         vm.prank(taker);
         token1.approve(address(otcNexus), amount1);
@@ -65,35 +65,75 @@ contract OtcNexusTakeRfsTest is OtcNexusTestSetup {
         vm.expectRevert(OtcNexus__InvalidTokenAmount.selector);
         otcNexus.takeFixedRfs(rfsId, 0, 0);
     }
+    
+    function test_takeRfs_failTokenAmount_fixed_approved(uint amount0, uint amount1, uint deadline) public {
+        uint rfsId = createFixedApprovedRfs(amount0, amount1, deadline);
+        vm.prank(taker);
+        token1.approve(address(otcNexus), amount1);
+        vm.prank(taker);
+        vm.expectRevert(OtcNexus__InvalidTokenAmount.selector);
+        otcNexus.takeFixedRfs(rfsId, 0, 0);
+    }
+    
+    function test_takeRfs_failTokenAmount_dynamic_deposited(uint amount0, uint amount1, uint deadline) public {
+        uint rfsId = createDynamicDepositedRfs(amount0, amount1, deadline);
+        vm.prank(taker);
+        token1.approve(address(otcNexus), amount1);
+        vm.prank(taker);
+        vm.expectRevert(OtcNexus__InvalidTokenAmount.selector);
+        otcNexus.takeDynamicRfs(rfsId, 0, 0);
+    }
+    
+    function test_takeRfs_failTokenAmount_dynamic_approved(uint amount0, uint amount1, uint deadline) public {
+        uint rfsId = createDynamicApprovedRfs(amount0, amount1, deadline);
+        vm.prank(taker);
+        token1.approve(address(otcNexus), amount1);
+        vm.prank(taker);
+        vm.expectRevert(OtcNexus__InvalidTokenAmount.selector);
+        otcNexus.takeDynamicRfs(rfsId, 0, 0);
+    }
+
 
     function test_takeRfs_success(uint amount0, uint amount1, uint deadline) public {
         vm.assume(amount1 > 0);
-        uint rfsId = createFixedDepositedRfs(amount0, amount1, deadline);
+        uint rfsIdFd = createFixedDepositedRfs(amount0, amount1, deadline);
+//        uint rfsIdFa = createFixedApprovedRfs(amount0, amount1, deadline);
+//        uint rfsIdDd = createDynamicDepositedRfs(amount0, amount1, deadline);
+//        uint rfsIdDa = createDynamicApprovedRfs(amount0, amount1, deadline);
 
+        takeRfs_success_forRfsId(amount0, amount1, deadline, rfsIdFd);
+//        takeRfs_success_forRfsId(amount0, amount1, deadline, rfsIdFa);
+//        takeRfs_success_forRfsId(amount0, amount1, deadline, rfsIdDd);
+//        takeRfs_success_forRfsId(amount0, amount1, deadline, rfsIdDa);
+    }
+    
+    function takeRfs_success_forRfsId(uint amount0, uint amount1, uint deadline, uint rfsId) public {
+    
         uint startMakerToken0Balance = token0.balanceOf(maker);
         uint startMakerToken1Balance = token1.balanceOf(maker);
         uint startTakerToken0Balance = token0.balanceOf(taker);
         uint startTakerToken1Balance = token1.balanceOf(taker);
-
+    
         vm.prank(deployer);
         token1.transfer(address(taker), amount1);
         vm.startPrank(taker);
         token1.approve(address(otcNexus), amount1);
-
+    
         vm.expectEmit(address(otcNexus));
         emit RfsRemoved(rfsId, true);
         bool success = otcNexus.takeFixedRfs(rfsId, amount1, 0);
         require(success);
         assertEq(otcNexus.getRfs(rfsId).id, 0);
         vm.stopPrank();
-
+    
         assertEq(token0.balanceOf(maker), startMakerToken0Balance);
-//        todo think about how to calculate fees; compare amount 0 in RfsFilled event using vm.expect emit
-//        assertEq(token1.balanceOf(maker), startMakerToken1Balance + amount1);
-//        assertEq(token0.balanceOf(taker), startTakerToken0Balance + amount0);
+        //        todo think about how to calculate fees; compare amount 0 in RfsFilled event using vm.expect emit
+        //        assertEq(token1.balanceOf(maker), startMakerToken1Balance + amount1);
+        //        assertEq(token0.balanceOf(taker), startTakerToken0Balance + amount0);
         assertEq(token1.balanceOf(taker), startTakerToken1Balance);
     }
-
+    
+    
     function test_takeRfs_failRfsRemoved(uint amount0, uint amount1, uint deadline) public {
         vm.assume(amount1 > 0);
         uint rfsId = createFixedDepositedRfs(amount0, amount1, deadline);
