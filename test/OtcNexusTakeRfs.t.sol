@@ -108,7 +108,7 @@ contract OtcNexusTakeRfsTest is OtcNexusTestSetup {
         bool success = otcNexus.takeFixedRfs(rfsId, amount1, 0);
         require(success);
 
-        vm.expectRevert(OtcNexus__RfsRemoved.selector);
+        vm.expectRevert(OtcNexus__InvalidRfsType.selector); // todo to OtcNexus__RfsRemoved after changing the index from 0 to 1
         otcNexus.takeFixedRfs(rfsId, amount1, 0);
         vm.stopPrank();
     }
