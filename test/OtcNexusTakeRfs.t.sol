@@ -120,7 +120,7 @@ contract OtcNexusTakeRfsTest is OtcNexusTestSetup {
         uint startTakerToken1Balance = token1.balanceOf(taker);
 
         OtcNexus.RFS memory rfs = otcNexus.getRfs(rfsId);
-        uint makerAmount0 = rfs.amount0;
+        uint makerAmount0 = rfs.currentAmount0;
         uint makerAmount1 = rfs.amount1;
 
         vm.prank(taker);
@@ -130,7 +130,7 @@ contract OtcNexusTakeRfsTest is OtcNexusTestSetup {
         uint takerAmount0 = OtcMath.getTakerAmount0(makerAmount0, makerAmount1, takerAmount1);
 
         rfs = otcNexus.getRfs(rfsId);
-        assertEq(rfs.amount0, makerAmount0 - takerAmount0);
+        assertEq(rfs.currentAmount0, makerAmount0 - takerAmount0);
         assertEq(rfs.amount1, makerAmount1 - takerAmount1);
 
         assertEq(token0.balanceOf(maker), startMakerToken0Balance);

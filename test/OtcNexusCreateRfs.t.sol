@@ -337,7 +337,7 @@ contract OtcNexusCreateRfsTest is OtcNexusTestSetup {
             OtcNexus.RFS memory rfs = otcNexus.getRfs(rfsId);
             assertEq(rfs.token0, address(token0));
             assertEq(rfs.tokensAccepted[0], address(token1));
-            assertEq(rfs.amount0, amount0);
+            assertEq(rfs.currentAmount0, amount0);
             assertEq(rfs.amount1, amount1);
             assertEq(rfs.deadline, deadline);
         }
