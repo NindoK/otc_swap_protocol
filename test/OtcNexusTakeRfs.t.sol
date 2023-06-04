@@ -85,7 +85,7 @@ contract OtcNexusTakeRfsTest is OtcNexusTestSetup {
         token1.approve(address(otcNexus), amount1);
 
         vm.expectEmit(address(otcNexus));
-        emit RfsRemoved(0, true);
+        emit RfsRemoved(rfsId, true);
         bool success = otcNexus.takeFixedRfs(rfsId, amount1, 0);
         require(success);
         vm.stopPrank();
@@ -107,11 +107,11 @@ contract OtcNexusTakeRfsTest is OtcNexusTestSetup {
         token1.approve(address(otcNexus), amount1);
     
         vm.expectEmit(address(otcNexus));
-        emit RfsRemoved(0, true);
+        emit RfsRemoved(rfsId, true);
         bool success = otcNexus.takeFixedRfs(rfsId, amount1, 0);
         require(success);
 
-        vm.expectRevert(OtcNexus__InvalidRfsType.selector); // todo to OtcNexus__RfsRemoved after changing the index from 0 to 1
+        vm.expectRevert(OtcNexus__RfsRemoved.selector);
         otcNexus.takeFixedRfs(rfsId, amount1, 0);
         vm.stopPrank();
     }

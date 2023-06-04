@@ -331,7 +331,7 @@ contract OtcNexusCreateRfsTest is OtcNexusTestSetup {
 
     function test_createRfs_success(uint amount0, uint amount1, uint deadline, uint8 n) public {
         vm.assume(0 < n && n < 32);
-        for (uint8 i = 0; i < n; ++i) {
+        for (uint8 i = 1; i < n; ++i) {
             uint rfsId = createFixedDepositedRfs(amount0, amount1, deadline);
             require(rfsId == i);
             OtcNexus.RFS memory rfs = otcNexus.getRfs(rfsId);

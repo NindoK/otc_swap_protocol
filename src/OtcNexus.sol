@@ -40,7 +40,8 @@ error OtcNexus__TransferTokenFailed();
  * @notice core swap functionality
  */
 contract OtcNexus is Ownable {
-    uint256 public rfsIdCounter;
+    // rfs with id 0 will mean null in the context: getRfs(_id).id == 0 => RFS is not found
+    uint256 public rfsIdCounter = 1;
     uint8 public makerFeeIfDeposited;
     uint8 public makerFeeIfNotDeposited;
     uint8 public takerFee;
@@ -297,8 +298,8 @@ contract OtcNexus is Ownable {
         RFS memory rfs = getRfs(_id);
 
         // sanity checks
+        if (rfs.removed || rfs.id == 0) revert OtcNexus__RfsRemoved();
         if (rfs.typeRfs != expectedRfsType) revert OtcNexus__InvalidRfsType();
-        if (rfs.removed) revert OtcNexus__RfsRemoved();
         if (_paymentTokenAmount == 0) revert OtcNexus__InvalidTokenAmount();
         if (index >= rfs.tokensAccepted.length) revert OtcNexus__InvalidTokenIndex();
         if (
