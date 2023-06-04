@@ -94,4 +94,5 @@ export const CardData = [
             </AvatarGroup>
         ),
     },
+    
 ]

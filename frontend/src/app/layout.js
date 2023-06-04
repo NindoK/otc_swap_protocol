@@ -44,15 +44,17 @@ const montserrat = Montserrat({
 export default function RootLayout({ children }) {
     return (
         <html lang="en">
-        <WagmiConfig config={wagmiConfig}>
-      <RainbowKitProvider theme={darkTheme()} coolMode chains={chains}>
+      
             <CacheProvider>
                 <ChakraProvider>
+                <WagmiConfig config={wagmiConfig}>
+      <RainbowKitProvider theme={darkTheme()} coolMode chains={chains}>
                     <body className={`${montserrat.variable} font-montserrat`}>{children}</body>
+                    </RainbowKitProvider>
+    </WagmiConfig>
                 </ChakraProvider>
             </CacheProvider>
-            </RainbowKitProvider>
-    </WagmiConfig>
+            
         </html>
     )
 }
