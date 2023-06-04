@@ -9,43 +9,10 @@ import "forge-std/console.sol";
 
 
 contract OtcNexusTakeRfsTest is OtcNexusTestSetup {
-    function createRfs(
-        uint amount0,
-        uint amount1,
-        uint deadline
-    ) private returns (uint rfsId) {
-        vm.assume(0 < amount0 && amount0 <= supplyToken0 / 100);
-        vm.assume(0 < amount1 && amount1 <= supplyToken1 / 100);
-        vm.assume(deadline >= block.timestamp);
-        
-        vm.prank(deployer);
-        token0.transfer(maker, amount0);
-        
-        vm.startPrank(maker);
-        token0.approve(address(otcNexus), amount0);
-        
-        uint startBalance = token0.balanceOf(maker);
-        
-        // create RFS
-        rfsId = otcNexus.createFixedRfs(
-            address(token0),
-            _tokensAcceptedToken1,
-            amount0,
-            amount1,
-            0,
-            deadline,
-            OtcNexus.TokenInteractionType.TOKEN_DEPOSITED
-        );
-        vm.stopPrank();
-        
-        // check final balance
-        assertEq(token0.balanceOf(maker), startBalance - amount0);
-    }
-    
     
     function test_takeRfs_failAllowance(uint amount0, uint amount1, uint deadline) public {
         vm.assume(amount1 > 0);
-        uint rfsId = createRfs(amount0, amount1, deadline);
+        uint rfsId = createFixedDepositedRfs(amount0, amount1, deadline);
         vm.prank(taker);
         vm.expectRevert(OtcNexus__AllowanceToken1TooLow.selector);
         otcNexus.takeFixedRfs(rfsId, amount1, 0);
@@ -53,7 +20,7 @@ contract OtcNexusTakeRfsTest is OtcNexusTestSetup {
 
     function test_takeRfs_failBalance(uint amount0, uint amount1, uint deadline) public {
         vm.assume(amount1 > 0);
-        uint rfsId = createRfs(amount0, amount1, deadline);
+        uint rfsId = createFixedDepositedRfs(amount0, amount1, deadline);
         vm.prank(taker);
         token1.approve(address(otcNexus), amount1);
         vm.prank(taker);
@@ -62,7 +29,7 @@ contract OtcNexusTakeRfsTest is OtcNexusTestSetup {
     }
 
     function test_takeRfs_failTokenAmount(uint amount0, uint amount1, uint deadline) public {
-        uint rfsId = createRfs(amount0, amount1, deadline);
+        uint rfsId = createFixedDepositedRfs(amount0, amount1, deadline);
         vm.prank(taker);
         token1.approve(address(otcNexus), amount1);
         vm.prank(taker);
@@ -72,7 +39,7 @@ contract OtcNexusTakeRfsTest is OtcNexusTestSetup {
 
     function test_takeRfs_success(uint amount0, uint amount1, uint deadline) public {
         vm.assume(amount1 > 0);
-        uint rfsId = createRfs(amount0, amount1, deadline);
+        uint rfsId = createFixedDepositedRfs(amount0, amount1, deadline);
 
         uint startMakerToken0Balance = token0.balanceOf(maker);
         uint startMakerToken1Balance = token1.balanceOf(maker);
@@ -91,7 +58,7 @@ contract OtcNexusTakeRfsTest is OtcNexusTestSetup {
         vm.stopPrank();
 
         assertEq(token0.balanceOf(maker), startMakerToken0Balance);
-//        todo think about how to calculate fees
+//        todo think about how to calculate fees; compare amount 0 in RfsFilled event using vm.expect emit
 //        assertEq(token1.balanceOf(maker), startMakerToken1Balance + amount1);
 //        assertEq(token0.balanceOf(taker), startTakerToken0Balance + amount0);
         assertEq(token1.balanceOf(taker), startTakerToken1Balance);
@@ -99,7 +66,7 @@ contract OtcNexusTakeRfsTest is OtcNexusTestSetup {
 
     function test_takeRfs_failRfsRemoved(uint amount0, uint amount1, uint deadline) public {
         vm.assume(amount1 > 0);
-        uint rfsId = createRfs(amount0, amount1, deadline);
+        uint rfsId = createFixedDepositedRfs(amount0, amount1, deadline);
         vm.prank(deployer);
         token1.transfer(address(taker), amount1);
         vm.startPrank(taker);
@@ -150,7 +117,7 @@ contract OtcNexusTakeRfsTest is OtcNexusTestSetup {
     ) public {
         vm.assume(0 < takerAmount1 && takerAmount1 < makerAmount1);
 
-        uint rfsId = createRfs(makerAmount0, makerAmount1, deadline);
+        uint rfsId = createFixedDepositedRfs(makerAmount0, makerAmount1, deadline);
 
         vm.prank(deployer);
         token1.transfer(address(taker), takerAmount1);
@@ -162,7 +129,7 @@ contract OtcNexusTakeRfsTest is OtcNexusTestSetup {
     }
 
     function test_takeRfs_partials_threeSteps(uint makerAmount0, uint makerAmount1, uint deadline) public {
-        uint rfsId = createRfs(makerAmount0, makerAmount1, deadline);
+        uint rfsId = createFixedDepositedRfs(makerAmount0, makerAmount1, deadline);
         vm.assume(makerAmount0 >= 3);
         vm.assume(makerAmount1 >= 3);
 
