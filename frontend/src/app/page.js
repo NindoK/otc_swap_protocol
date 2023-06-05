@@ -1,7 +1,7 @@
 "use client"
 
 import styles from "./style"
-import '@rainbow-me/rainbowkit/styles.css';
+
 import dynamic from "next/dynamic";
 import Feature1 from "./components/Feature1"
 import Navbar from "./components/Navbar"
