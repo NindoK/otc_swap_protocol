@@ -294,13 +294,47 @@ contract OtcOptionTest is Test {
         // todo assertEq(otcOption.getDeal(dealId).status, OtcOption.DealStatus.Taken);
     }
 
-    function test_takeDeal_exercise(
+    function test_settleRemove(
         uint64 _strike,
         uint64 _maturity,
         bool _isCall,
         uint128 _amount,
         uint128 _premium,
-        bool _isMakerBuyer
+        bool _isMakerBuyer,
+        int256 _settlePrice
+    ) public {
+        vm.assume(_strike > 0);
+        vm.assume(_maturity > block.timestamp);
+        vm.assume(_amount > 0);
+        vm.assume(_premium > 0);
+
+        uint strike = _strike * 10 ** mockAggregator.decimals();
+        uint maturity = _maturity;
+        bool isCall = _isCall;
+        uint amount = _amount * 10 ** underlyingToken.decimals();
+        uint premium = _premium * 10 ** quoteToken.decimals();
+
+        uint dealId = _createDeal(strike, maturity, isCall, amount, premium, _isMakerBuyer);
+
+        // forward
+        vm.warp(maturity);
+
+        mockAggregator.updateAnswer(_settlePrice);
+
+        vm.prank(maker);
+        otcOption.settleDeal(dealId);
+
+        // todo assertEq(otcOption.getDeal(dealId).status, OtcOption.DealStatus.Removed);
+    }
+
+    function test_settleExercise(
+        uint64 _strike,
+        uint64 _maturity,
+        bool _isCall,
+        uint128 _amount,
+        uint128 _premium,
+        bool _isMakerBuyer,
+        uint64 _settlePrice
     ) public {
         vm.assume(_strike > 0);
         vm.assume(_maturity > block.timestamp);
@@ -330,7 +364,14 @@ contract OtcOptionTest is Test {
         // forward
         vm.warp(maturity);
 
-        mockAggregator.updateAnswer(int256(strike));
+        // set settle price so that the option can be exercised
+        if (isCall) {
+            vm.assume(_settlePrice >= _strike);
+        } else {
+            vm.assume(_settlePrice <= _strike);
+        }
+        uint settlePrice = _settlePrice * 10 ** mockAggregator.decimals();
+        mockAggregator.updateAnswer(int256(settlePrice));
 
         vm.prank(maker);
         otcOption.settleDeal(dealId);
@@ -342,13 +383,14 @@ contract OtcOptionTest is Test {
         // todo assertEq(otcOption.getDeal(dealId).status, OtcOption.DealStatus.Settled);
     }
 
-    function test_takeDeal_notExercise(
+    function test_settleNotExercise(
         uint64 _strike,
         uint64 _maturity,
         bool _isCall,
         uint128 _amount,
         uint128 _premium,
-        bool _isMakerBuyer
+        bool _isMakerBuyer,
+        uint64 _settlePrice
     ) public {
         vm.assume(_strike > 0);
         vm.assume(_maturity > block.timestamp);
@@ -378,11 +420,14 @@ contract OtcOptionTest is Test {
         // forward
         vm.warp(maturity);
 
+        // set settle price so that the option can not be exercised
         if (isCall) {
-            mockAggregator.updateAnswer(int256(strike - 1));
+            vm.assume(_settlePrice < _strike);
         } else {
-            mockAggregator.updateAnswer(int256(strike + 1));
+            vm.assume(_settlePrice > _strike);
         }
+        uint settlePrice = _settlePrice * 10 ** mockAggregator.decimals();
+        mockAggregator.updateAnswer(int256(settlePrice));
 
         vm.prank(maker);
         otcOption.settleDeal(dealId);
