@@ -75,7 +75,7 @@ contract OtcOptionTest is Test {
         vm.stopPrank();
     }
 
-    function test_createDeal_failInvalidMaturity(
+    function test_createDeal_failInvalidInput(
         uint64 _strike,
         uint64 _maturity,
         bool _isCall,
@@ -84,7 +84,7 @@ contract OtcOptionTest is Test {
         bool _isMakerBuyer
     ) public {
         vm.assume(_strike > 0);
-        vm.assume(_maturity <= block.timestamp);
+        vm.assume(_maturity > block.timestamp);
         vm.assume(_amount > 0);
         vm.assume(_premium > 0);
 
@@ -96,9 +96,9 @@ contract OtcOptionTest is Test {
         bool isMakerBuyer = _isMakerBuyer;
 
         vm.startPrank(maker);
-        vm.expectRevert(Option__InvalidMaturity.selector);
+        vm.expectRevert(Option__InvalidUnderlyingToken.selector);
         otcOption.createDeal(
-            address(underlyingToken),
+            address(0),
             address(quoteToken),
             strike,
             maturity,
@@ -107,7 +107,67 @@ contract OtcOptionTest is Test {
             premium,
             isMakerBuyer
         );
+
+        vm.expectRevert(Option__InvalidQuoteToken.selector);
+        otcOption.createDeal(
+            address(underlyingToken),
+            address(0),
+            strike,
+            maturity,
+            isCall,
+            amount,
+            premium,
+            isMakerBuyer
+        );
+
+        vm.expectRevert(Option__InvalidStrike.selector);
+        otcOption.createDeal(
+            address(underlyingToken),
+            address(quoteToken),
+            0,
+            maturity,
+            isCall,
+            amount,
+            premium,
+            isMakerBuyer
+        );
+
+        vm.expectRevert(Option__InvalidMaturity.selector);
+        otcOption.createDeal(
+            address(underlyingToken),
+            address(quoteToken),
+            strike,
+            block.timestamp,
+            isCall,
+            amount,
+            premium,
+            isMakerBuyer
+        );
         vm.stopPrank();
+
+        vm.expectRevert(Option__InvalidAmount.selector);
+        otcOption.createDeal(
+            address(underlyingToken),
+            address(quoteToken),
+            strike,
+            maturity,
+            isCall,
+            0,
+            premium,
+            isMakerBuyer
+        );
+
+        vm.expectRevert(Option__InvalidPremium.selector);
+        otcOption.createDeal(
+            address(underlyingToken),
+            address(quoteToken),
+            strike,
+            maturity,
+            isCall,
+            amount,
+            0,
+            isMakerBuyer
+        );
     }
 
     function test_createDealBuy_failDepositPremium(
@@ -209,7 +269,7 @@ contract OtcOptionTest is Test {
         assertEq(deal.amount, amount);
         assertEq(deal.premium, premium);
         assertEq(deal.isMakerBuyer, _isMakerBuyer);
-        // todo assertEq(deal.status, OtcOption.DealStatus.Open);
+        assert(deal.status == OtcOption.DealStatus.Open);
         assertEq(deal.maker, address(maker));
         assertEq(deal.taker, address(0));
 
@@ -321,6 +381,11 @@ contract OtcOptionTest is Test {
         } else {
             assertEq(ERC20(underlyingToken).balanceOf(address(maker)), amount); // refund margin
         }
+
+        // the deal is no longer open and cannot be taken
+        vm.prank(taker);
+        vm.expectRevert(Option__DealNotOpen.selector);
+        otcOption.takeDeal(dealId);
     }
 
     function test_takeDeal(
@@ -357,7 +422,7 @@ contract OtcOptionTest is Test {
             assertEq(ERC20(quoteToken).balanceOf(address(taker)), 0); // buyer deposited the premium
         }
         vm.stopPrank();
-        // todo assertEq(otcOption.getDeal(dealId).status, OtcOption.DealStatus.Taken);
+        assert(otcOption.getDeal(dealId).status == OtcOption.DealStatus.Taken);
 
         vm.startPrank(maker);
         vm.expectRevert(Option__DealNotOpen.selector);
@@ -393,12 +458,17 @@ contract OtcOptionTest is Test {
         // forward
         vm.warp(maturity);
 
+        // the deal is expired and cannot be taken
+        vm.prank(taker);
+        vm.expectRevert(Option__DealExpired.selector);
+        otcOption.takeDeal(dealId);
+
         mockAggregator.updateAnswer(_settlePrice);
 
         vm.prank(maker);
         otcOption.settleDeal(dealId);
 
-        // todo assertEq(otcOption.getDeal(dealId).status, OtcOption.DealStatus.Removed);
+        assert(otcOption.getDeal(dealId).status == OtcOption.DealStatus.Removed);
     }
 
     function test_settleExercise(
@@ -454,7 +524,7 @@ contract OtcOptionTest is Test {
         address buyer = otcOption.getDealBuyer(dealId);
         assertEq(ERC20(underlyingToken).balanceOf(buyer), amount);
 
-        // todo assertEq(otcOption.getDeal(dealId).status, OtcOption.DealStatus.Settled);
+        assert(otcOption.getDeal(dealId).status == OtcOption.DealStatus.Settled);
     }
 
     function test_settleNotExercise(
@@ -494,7 +564,7 @@ contract OtcOptionTest is Test {
         // forward
         vm.warp(maturity);
 
-        // set settle price so that the option can not be exercised
+        // set settle price so that the option cannot be exercised
         if (isCall) {
             vm.assume(_settlePrice < _strike);
         } else {
@@ -510,6 +580,6 @@ contract OtcOptionTest is Test {
         address seller = otcOption.getDealSeller(dealId);
         assertEq(ERC20(underlyingToken).balanceOf(seller), amount);
 
-        // todo assertEq(otcOption.getDeal(dealId).status, OtcOption.DealStatus.Settled);
+        assert(otcOption.getDeal(dealId).status == OtcOption.DealStatus.Settled);
     }
 }
