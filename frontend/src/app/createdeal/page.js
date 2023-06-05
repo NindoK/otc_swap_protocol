@@ -55,7 +55,7 @@ const CreateDeal = () => {
                 <div className="absolute z-[0] w-[50%] h-[50%] left-0 bottom-40 blue__gradient" />
 
                 <div className="flex justify-center  w-full">
-                <form className="  text-gray-400 font-montserrat h-fit w-fit lg:p-10 p-6  bg-white bg-opacity-5 shadow-md  backdrop-blur rounded-lg border border-gray-400 border-opacity-18 ">
+                <form className="  text-gray-400 font-montserrat h-fit w-fit lg:p-10 p-6  bg-white bg-opacity-5 shadow-md  backdrop-blur rounded-xl border border-gray-400 border-opacity-18 ">
                     <h2 className="text-center font-bold font-montserrat text-2xl">Create a Deal</h2>
                     <div className="lg:flex gap-14 ">
                     <FormControl isRequired isInvalid={isError} className="flex flex-col lg:my-5 my-3">
@@ -67,11 +67,11 @@ const CreateDeal = () => {
                             onChange={handleUTInputChange}
                         />
                         {!isError ? (
-                            <FormHelperText>
+                            <FormHelperText className="text-gray-500">
                                 Enter the Address of the underlying token.
                             </FormHelperText>
                         ) : (
-                            <FormErrorMessage>Addres is required.</FormErrorMessage>
+                            <FormErrorMessage className="text-gray-500">Addres is required.</FormErrorMessage>
                         )}
                     </FormControl>
 
@@ -84,9 +84,9 @@ const CreateDeal = () => {
                             onChange={handleQTInputChange}
                         />
                         {!isError ? (
-                            <FormHelperText>Enter the Address of the quote token.</FormHelperText>
+                            <FormHelperText className="text-gray-500">Enter the Address of the quote token.</FormHelperText>
                         ) : (
-                            <FormErrorMessage>Addres is required.</FormErrorMessage>
+                            <FormErrorMessage className="text-gray-500">Addres is required.</FormErrorMessage>
                         )}
                     </FormControl>
                     </div>
@@ -95,7 +95,7 @@ const CreateDeal = () => {
                     <FormControl isRequired isInvalid={isError} className="flex flex-col my-5">
                         <FormLabel className=" font-bold">Strike</FormLabel>
                         <NumberInput value={strike} onChange={handleStrikeChange} precision={3}>
-                            <NumberInputField />
+                            <NumberInputField className=" border-t-0 border-x-0 rounded-none focus: border-b-2" />
                         </NumberInput>
                     </FormControl>
 

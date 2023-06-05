@@ -12,10 +12,15 @@ const Navbar = () => {
     const [toggle, setToggle] = useState(false)
   return (
     <nav className="w-full flex py-6 justify-between items-center navbar">
-      <h1 className="font-montserrat font-extrabold text-2xl text-white">Logo</h1>
+      <Link href="/" ><h1 className="hover:cursor-pointer font-montserrat font-extrabold text-2xl text-white">Logo</h1></Link>
       <ul className="list-none sm:flex hidden justify-end items-center flex-1">
+      <Link href="/createrfs" >
+      <li  className="font-montserrat font-normal cursor-pointer text-[16px] text-white mr-10 ">
+      Create RFS
+  </li>
+  </Link>
       <Link href="/createdeal" >
-      <li href="/" className="font-montserrat font-normal cursor-pointer text-[16px] text-white mr-10 ">
+      <li  className="font-montserrat font-normal cursor-pointer text-[16px] text-white mr-10 ">
       Create A Deal
   </li>
   </Link>
