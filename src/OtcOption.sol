@@ -2,6 +2,7 @@
 pragma solidity ^0.8.13;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
 
@@ -275,5 +276,21 @@ contract OtcOption is Ownable {
             /*uint80 answeredInRound*/
         ) = priceFeed.latestRoundData();
         return uint(price);
+    }
+
+    /**
+     * @notice Get decimals of underlying token, quote token and price feed for a given deal
+     * @param id deal ID
+     * @return decimals of (underlyingToken, quoteToken, priceFeed)
+     */
+    function getDecimals(uint id) external view returns (uint8, uint8, uint8) {
+        Deal memory deal = getDeal(id);
+        address priceFeedAddress = getPriceFeed(deal.underlyingToken, deal.quoteToken);
+
+        return (
+            ERC20(deal.underlyingToken).decimals(),
+            ERC20(deal.quoteToken).decimals(),
+            AggregatorV3Interface(priceFeedAddress).decimals()
+        );
     }
 }
