@@ -17,6 +17,7 @@ error Option__DepositPremiumFailed();
 error Option__DepositMarginFailed();
 error Option__TransferPremiumFailed();
 error Option__TransferMarginFailed();
+error Option__NotDealMaker();
 error Option__DealNotOpen();
 error Option__DealExpired();
 error Option__DealNotExpired();
@@ -186,9 +187,35 @@ contract OtcOption is Ownable {
         emit DealTaken(id, msg.sender);
     }
 
+    function _removeDeal(uint id) internal {
+        Deal memory deal = getDeal(id);
+        if (deal.isMakerBuyer) {
+            bool success = IERC20(deal.quoteToken).transfer(msg.sender, deal.premium);
+            if (!success) revert Option__TransferPremiumFailed();
+        } else {
+            bool success = IERC20(deal.underlyingToken).transfer(msg.sender, deal.amount);
+            if (!success) revert Option__TransferMarginFailed();
+        }
+        _deals[id].status = DealStatus.Removed;
+        emit DealRemoved(id);
+    }
+
+    function removeDeal(uint id) external {
+        Deal memory deal = getDeal(id);
+        if (deal.maker != msg.sender) revert Option__NotDealMaker();
+        if (deal.status != DealStatus.Open) revert Option__DealNotOpen();
+        _removeDeal(id);
+    }
+
     function settleDeal(uint id) external {
         if (!isDealExpired(id)) revert Option__DealNotExpired();
         Deal memory deal = getDeal(id);
+
+        // if there is no taker, remove deal
+        if (deal.taker == address(0)) {
+            _removeDeal(id);
+            return;
+        }
 
         uint price = getPrice(deal.underlyingToken, deal.quoteToken);
         bool exercised = (deal.isCall && price >= deal.strike) ||
