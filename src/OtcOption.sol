@@ -13,7 +13,7 @@ error Option__InvalidMaturity();
 error Option__InvalidAmount();
 error Option__InvalidPremium();
 
-error Option__PriceFeedNotFound();
+error Option__InvalidPriceFeed();
 error Option__DepositPremiumFailed();
 error Option__DepositMarginFailed();
 error Option__TransferPremiumFailed();
@@ -74,6 +74,9 @@ contract OtcOption is Ownable {
         address _quoteToken,
         address _priceFeedAddress
     ) public onlyOwner {
+        if (_underlyingToken == address(0)) revert Option__InvalidUnderlyingToken();
+        if (_quoteToken == address(0)) revert Option__InvalidQuoteToken();
+        if (_priceFeedAddress == address(0)) revert Option__InvalidPriceFeed();
         _priceFeeds[_underlyingToken][_quoteToken] = _priceFeedAddress;
     }
 
@@ -82,7 +85,7 @@ contract OtcOption is Ownable {
         address _quoteToken
     ) public view returns (address) {
         address priceFeed = _priceFeeds[_underlyingToken][_quoteToken];
-        if (priceFeed == address(0)) revert Option__PriceFeedNotFound();
+        if (priceFeed == address(0)) revert Option__InvalidPriceFeed();
         return priceFeed;
     }
 

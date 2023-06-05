@@ -45,6 +45,34 @@ contract OtcOptionTest is Test {
     function test_getPriceFeed() public {
         address priceFeed = otcOption.getPriceFeed(address(underlyingToken), address(quoteToken));
         assertEq(priceFeed, address(mockAggregator));
+
+        vm.expectRevert(Option__InvalidPriceFeed.selector);
+        otcOption.getPriceFeed(address(0), address(0));
+    }
+
+    function test_addPriceFeed(
+        address _underlyingToken,
+        address _quoteToken,
+        address _priceFeedAddress
+    ) public {
+        vm.assume(_underlyingToken != address(0));
+        vm.assume(_quoteToken != address(0));
+        vm.assume(_priceFeedAddress != address(0));
+
+        vm.startPrank(deployer);
+        otcOption.addPriceFeed(_underlyingToken, _quoteToken, _priceFeedAddress);
+        address priceFeed = otcOption.getPriceFeed(_underlyingToken, _quoteToken);
+        assertEq(priceFeed, _priceFeedAddress);
+
+        vm.expectRevert(Option__InvalidUnderlyingToken.selector);
+        otcOption.addPriceFeed(address(0), _quoteToken, _priceFeedAddress);
+
+        vm.expectRevert(Option__InvalidQuoteToken.selector);
+        otcOption.addPriceFeed(_underlyingToken, address(0), _priceFeedAddress);
+
+        vm.expectRevert(Option__InvalidPriceFeed.selector);
+        otcOption.addPriceFeed(_underlyingToken, _quoteToken, address(0));
+        vm.stopPrank();
     }
 
     function test_createDeal_failInvalidMaturity(
@@ -158,6 +186,9 @@ contract OtcOptionTest is Test {
         uint128 _premium,
         bool _isMakerBuyer
     ) public {
+        vm.expectRevert(Option__DealNotFound.selector);
+        otcOption.getDeal(0);
+
         vm.assume(_strike > 0);
         vm.assume(_maturity > block.timestamp);
         vm.assume(_amount > 0);
@@ -257,6 +288,41 @@ contract OtcOptionTest is Test {
         vm.stopPrank();
     }
 
+    function test_removeDeal(
+        uint64 _strike,
+        uint64 _maturity,
+        bool _isCall,
+        uint128 _amount,
+        uint128 _premium,
+        bool _isMakerBuyer
+    ) public {
+        vm.assume(_strike > 0);
+        vm.assume(_maturity > block.timestamp);
+        vm.assume(_amount > 0);
+        vm.assume(_premium > 0);
+
+        uint strike = _strike * 10 ** mockAggregator.decimals();
+        uint maturity = _maturity;
+        bool isCall = _isCall;
+        uint amount = _amount * 10 ** underlyingToken.decimals();
+        uint premium = _premium * 10 ** quoteToken.decimals();
+
+        uint dealId = _createDeal(strike, maturity, isCall, amount, premium, _isMakerBuyer);
+
+        vm.prank(taker);
+        vm.expectRevert(Option__NotDealMaker.selector);
+        otcOption.removeDeal(dealId);
+
+        vm.prank(maker);
+        otcOption.removeDeal(dealId);
+
+        if (_isMakerBuyer) {
+            assertEq(ERC20(quoteToken).balanceOf(address(maker)), premium); // refund premium
+        } else {
+            assertEq(ERC20(underlyingToken).balanceOf(address(maker)), amount); // refund margin
+        }
+    }
+
     function test_takeDeal(
         uint64 _strike,
         uint64 _maturity,
@@ -292,6 +358,14 @@ contract OtcOptionTest is Test {
         }
         vm.stopPrank();
         // todo assertEq(otcOption.getDeal(dealId).status, OtcOption.DealStatus.Taken);
+
+        vm.startPrank(maker);
+        vm.expectRevert(Option__DealNotOpen.selector);
+        otcOption.removeDeal(dealId);
+
+        vm.expectRevert(Option__DealNotExpired.selector);
+        otcOption.settleDeal(dealId);
+        vm.stopPrank();
     }
 
     function test_settleRemove(
