@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState } from "react"
-import Navbar from "../components/Navbar"
+import Navbar from "../../../components/Navbar"
 import styles from "../style"
 import { ConnectButton } from "@rainbow-me/rainbowkit"
 import {
