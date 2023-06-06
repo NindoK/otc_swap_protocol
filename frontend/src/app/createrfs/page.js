@@ -6,11 +6,13 @@ import styles from "../style"
 import axios from "axios"
 import { ConnectButton } from "@rainbow-me/rainbowkit"
 import {
+    Avatar,
     Box,
     Button,
     Flex,
     FormControl,
     FormLabel,
+    Image,
     Input,
     NumberDecrementStepper,
     NumberIncrementStepper,
@@ -32,9 +34,10 @@ import {
     Wrap,
     WrapItem,
 } from "@chakra-ui/react"
-import Image from "next/image"
+
 import PercentageSlider from "../components/PercentageSlider"
 import MultipleTags from "../components/MultipleTags"
+
 
 const CreateRfs = () => {
     const [tokenData, setTokenData] = useState([])
@@ -43,13 +46,13 @@ const CreateRfs = () => {
     async function fetchTokenData() {
         try {
             const response = await axios.get(
-                "https://api.coingecko.com/api/v3/exchanges/uniswap_v2/tickers"
+                "https://tokens.coingecko.com/uniswap/all.json"
             )
 
             // Process the response data
-            const tokens = response.data.tickers.slice(0, 20)
+            const tokens = response.data.tokens.slice(0,100)
             console.log(tokens)
-            console.log(tokens.map((token) => token.coin_id))
+           
             setTokenData(tokens)
         } catch (error) {
             console.error("Error fetching token data:", error)
@@ -96,7 +99,12 @@ const CreateRfs = () => {
                                     <FormLabel className=" font-bold">Token Offered</FormLabel>
                                     <Select placeholder="-None-">
                                         {tokenData.map((token) => (
-                                            <option key={token.coin_id}>{token.coin_id}</option>
+                                            <option key={token.id}><Image
+                                            borderRadius='full'
+                                            boxSize='40px'
+                                            src={token.logoURI}
+                                            alt='token image'
+                                          /><span>{token.symbol}</span></option>
                                         ))}
                                     </Select>
                                 </FormControl>
