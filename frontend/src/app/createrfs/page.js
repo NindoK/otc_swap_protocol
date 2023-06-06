@@ -25,7 +25,9 @@ import {
 } from "@chakra-ui/react"
 import PercentageSlider from "../../../components/PercentageSlider"
 import MultipleTags from "../../../components/MultipleTags"
-
+import { ethers } from "ethers"
+import { networkMapping } from "@constants"
+import { OtcNexusAbi } from "@constants/abis/OtcNexusAbi"
 import PercentageSlider from "../components/PercentageSlider"
 import MultipleTags from "../components/MultipleTags"
 
@@ -33,6 +35,13 @@ const CreateRfs = () => {
     const [tokenData, setTokenData] = useState([])
     const [interactionType, setInteractionType] = useState("0")
     const [rfsType, setRfsType] = useState("")
+    const [priceMultiplier, setPriceMultiplier] = useState(0)
+    const [tokenOffered, setTokenOffered] = useState("") //address
+    const [tokensAccepted, setTokensAccepted] = useState([]) //address[]
+    const [amount0Offered, setAmount0Offered] = useState(0) //uint256
+    const [amount1Requested, setAmount1Requested] = useState(0) //uint256
+    const [deadline, setDeadline] = useState(0) //unix timestamp
+    const [usdPrice, setUsdPrice] = useState(0) //uint256
 
     async function fetchTokenData() {
         try {
@@ -50,6 +59,42 @@ const CreateRfs = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault()
+        const provider = new ethers.providers.Web3Provider(window.ethereum)
+        const signer = provider.getSigner()
+        const otcNexus = new ethers.Contract(networkMapping[chainId].OtcNexus, OtcNexusAbi, signer)
+        const interactionTypeSelected = interactionType === "Deposited" ? 0 : 1
+        let tx
+        if (rfsType === "Dynamic") {
+            tx = await otcNexus.createDynamicRfs(
+                tokenOffered,
+                tokensAccepted,
+                amount0Offered,
+                priceMultiplier,
+                deadline,
+                interactionTypeSelected
+            )
+        } else if (rfsType === "Fixed_Usd") {
+            tx = await otcNexus.createFixedRfs(
+                tokenOffered,
+                tokensAccepted,
+                amount0Offered,
+                0,
+                usdPrice,
+                deadline,
+                interactionTypeSelected
+            )
+        } else if (rfsType === "Fixed_Amount") {
+            tx = await otcNexus.createFixedRfs(
+                tokenOffered,
+                tokensAccepted,
+                amount0Offered,
+                amount1Requested,
+                0,
+                deadline,
+                interactionTypeSelected
+            )
+        }
+        const receipt = await tx.wait()
     }
     useEffect(() => {
         fetchTokenData()
@@ -84,6 +129,8 @@ const CreateRfs = () => {
                                 <FormControl isRequired className="flex flex-col my-5">
                                     <FormLabel className=" font-bold">Datetime deadline</FormLabel>
                                     <Input
+                                        value={deadline}
+                                        onChange={setDeadline}
                                         placeholder="Select Date and Time"
                                         size="md"
                                         type="datetime-local"
@@ -92,7 +139,11 @@ const CreateRfs = () => {
 
                                 <FormControl isRequired className="flex flex-col my-5">
                                     <FormLabel className=" font-bold">Token Offered</FormLabel>
-                                    <Select placeholder="-None-">
+                                    <Select
+                                        value={tokenOffered}
+                                        onChange={setTokenOffered}
+                                        placeholder="-None-"
+                                    >
                                         {tokenData.map((token) => (
                                             <option key={token.id}>
                                                 <Image
@@ -109,7 +160,13 @@ const CreateRfs = () => {
 
                                 <FormControl isRequired>
                                     <FormLabel>Amount Offered</FormLabel>
-                                    <NumberInput defaultValue={15} precision={4} step={0.2}>
+                                    <NumberInput
+                                        value={amount0Offered}
+                                        onChange={setAmount0Offered}
+                                        defaultValue={15}
+                                        precision={4}
+                                        step={0.2}
+                                    >
                                         <NumberInputField />
                                         <NumberInputStepper>
                                             <NumberIncrementStepper />
@@ -144,13 +201,19 @@ const CreateRfs = () => {
                                         <FormControl isRequired>
                                             <FormLabel>Tokens accepted</FormLabel>
                                             <Box p={4}>
-                                                <MultipleTags />
+                                                <MultipleTags
+                                                    value={tokensAccepted}
+                                                    onChange={setTokensAccepted}
+                                                />
                                             </Box>
                                         </FormControl>
                                         <FormControl isRequired>
                                             <FormLabel>Discount/Premium</FormLabel>
                                             <Box p={4}>
-                                                <PercentageSlider />
+                                                <PercentageSlider
+                                                    value={priceMultiplier}
+                                                    onChange={setPriceMultiplier}
+                                                />
                                             </Box>
                                         </FormControl>
                                     </div>
@@ -160,12 +223,21 @@ const CreateRfs = () => {
                                         <FormControl isRequired>
                                             <FormLabel>Tokens accepted</FormLabel>
                                             <Box p={4}>
-                                                <MultipleTags />
+                                                <MultipleTags
+                                                    value={tokensAccepted}
+                                                    onChange={setTokensAccepted}
+                                                />
                                             </Box>{" "}
                                         </FormControl>
                                         <FormControl isRequired>
                                             <FormLabel>USD price</FormLabel>
-                                            <NumberInput defaultValue={15} precision={4} step={0.2}>
+                                            <NumberInput
+                                                value={usdPrice}
+                                                onChange={setUsdPrice}
+                                                defaultValue={15}
+                                                precision={4}
+                                                step={0.2}
+                                            >
                                                 <NumberInputField />
                                                 <NumberInputStepper>
                                                     <NumberIncrementStepper />
@@ -181,7 +253,11 @@ const CreateRfs = () => {
                                             <FormLabel className=" font-bold">
                                                 Token accepted
                                             </FormLabel>
-                                            <Select placeholder="-None-">
+                                            <Select
+                                                value={tokensAccepted}
+                                                onChange={setTokensAccepted}
+                                                placeholder="-None-"
+                                            >
                                                 {tokenData.slice(0, 20).map((token) => (
                                                     <option key={token.coin_id}>
                                                         {token.coin_id}
@@ -192,7 +268,13 @@ const CreateRfs = () => {
 
                                         <FormControl isRequired>
                                             <FormLabel>Amount Requested</FormLabel>
-                                            <NumberInput defaultValue={15} precision={4} step={0.2}>
+                                            <NumberInput
+                                                value={amount1Requested}
+                                                onChange={setAmount1Requested}
+                                                defaultValue={15}
+                                                precision={4}
+                                                step={0.2}
+                                            >
                                                 <NumberInputField />
                                                 <NumberInputStepper>
                                                     <NumberIncrementStepper />
