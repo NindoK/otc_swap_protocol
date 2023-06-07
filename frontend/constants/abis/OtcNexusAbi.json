@@ -1,0 +1,706 @@
+[
+    {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "_otcTokenAddress",
+                "type": "address"
+            }
+        ],
+        "stateMutability": "nonpayable",
+        "type": "constructor"
+    },
+    {
+        "inputs": [],
+        "name": "OtcNexus__AllowanceToken0TooLow",
+        "type": "error"
+    },
+    {
+        "inputs": [],
+        "name": "OtcNexus__AllowanceToken1TooLow",
+        "type": "error"
+    },
+    {
+        "inputs": [],
+        "name": "OtcNexus__Amount0TooHigh",
+        "type": "error"
+    },
+    {
+        "inputs": [],
+        "name": "OtcNexus__Amount1TooHigh",
+        "type": "error"
+    },
+    {
+        "inputs": [],
+        "name": "OtcNexus__DepositToken0Failed",
+        "type": "error"
+    },
+    {
+        "inputs": [],
+        "name": "OtcNexus__InvalidAggregatorAddress",
+        "type": "error"
+    },
+    {
+        "inputs": [],
+        "name": "OtcNexus__InvalidDeadline",
+        "type": "error"
+    },
+    {
+        "inputs": [],
+        "name": "OtcNexus__InvalidPriceMultiplier",
+        "type": "error"
+    },
+    {
+        "inputs": [],
+        "name": "OtcNexus__InvalidRfsType",
+        "type": "error"
+    },
+    {
+        "inputs": [],
+        "name": "OtcNexus__InvalidTokenAddresses",
+        "type": "error"
+    },
+    {
+        "inputs": [],
+        "name": "OtcNexus__InvalidTokenAmount",
+        "type": "error"
+    },
+    {
+        "inputs": [],
+        "name": "OtcNexus__InvalidTokenIndex",
+        "type": "error"
+    },
+    {
+        "inputs": [],
+        "name": "OtcNexus__NoRewardsToClaim",
+        "type": "error"
+    },
+    {
+        "inputs": [],
+        "name": "OtcNexus__NoTokensToClaim",
+        "type": "error"
+    },
+    {
+        "inputs": [],
+        "name": "OtcNexus__NotMaker",
+        "type": "error"
+    },
+    {
+        "inputs": [],
+        "name": "OtcNexus__OnlyFixedPriceOrAmountAllowed",
+        "type": "error"
+    },
+    {
+        "inputs": [],
+        "name": "OtcNexus__OnlyOneTokenAccepted",
+        "type": "error"
+    },
+    {
+        "inputs": [],
+        "name": "OtcNexus__RfsRemoved",
+        "type": "error"
+    },
+    {
+        "inputs": [],
+        "name": "OtcNexus__TransferToken0Failed",
+        "type": "error"
+    },
+    {
+        "inputs": [],
+        "name": "OtcNexus__TransferToken1Failed",
+        "type": "error"
+    },
+    {
+        "inputs": [],
+        "name": "OtcNexus__TransferTokenFailed",
+        "type": "error"
+    },
+    {
+        "anonymous": false,
+        "inputs": [
+            {
+                "indexed": true,
+                "internalType": "address",
+                "name": "previousOwner",
+                "type": "address"
+            },
+            {
+                "indexed": true,
+                "internalType": "address",
+                "name": "newOwner",
+                "type": "address"
+            }
+        ],
+        "name": "OwnershipTransferred",
+        "type": "event"
+    },
+    {
+        "anonymous": false,
+        "inputs": [
+            {
+                "indexed": false,
+                "internalType": "uint256",
+                "name": "rfsId",
+                "type": "uint256"
+            },
+            {
+                "indexed": false,
+                "internalType": "address",
+                "name": "maker",
+                "type": "address"
+            },
+            {
+                "indexed": true,
+                "internalType": "address",
+                "name": "token0",
+                "type": "address"
+            },
+            {
+                "indexed": true,
+                "internalType": "address[]",
+                "name": "tokensAccepted",
+                "type": "address[]"
+            },
+            {
+                "indexed": false,
+                "internalType": "uint256",
+                "name": "amount0",
+                "type": "uint256"
+            },
+            {
+                "indexed": false,
+                "internalType": "uint256",
+                "name": "usdPrice",
+                "type": "uint256"
+            },
+            {
+                "indexed": false,
+                "internalType": "uint8",
+                "name": "priceMultiplier",
+                "type": "uint8"
+            },
+            {
+                "indexed": false,
+                "internalType": "uint256",
+                "name": "deadline",
+                "type": "uint256"
+            }
+        ],
+        "name": "RfsCreated",
+        "type": "event"
+    },
+    {
+        "anonymous": false,
+        "inputs": [
+            {
+                "indexed": false,
+                "internalType": "uint256",
+                "name": "rfsId",
+                "type": "uint256"
+            },
+            {
+                "indexed": false,
+                "internalType": "address",
+                "name": "taker",
+                "type": "address"
+            },
+            {
+                "indexed": false,
+                "internalType": "uint256",
+                "name": "amount0",
+                "type": "uint256"
+            },
+            {
+                "indexed": false,
+                "internalType": "uint256",
+                "name": "amount1",
+                "type": "uint256"
+            }
+        ],
+        "name": "RfsFilled",
+        "type": "event"
+    },
+    {
+        "anonymous": false,
+        "inputs": [
+            {
+                "indexed": false,
+                "internalType": "uint256",
+                "name": "rfsId",
+                "type": "uint256"
+            },
+            {
+                "indexed": false,
+                "internalType": "bool",
+                "name": "permanentlyDeleted",
+                "type": "bool"
+            }
+        ],
+        "name": "RfsRemoved",
+        "type": "event"
+    },
+    {
+        "anonymous": false,
+        "inputs": [
+            {
+                "indexed": false,
+                "internalType": "uint256",
+                "name": "rfsId",
+                "type": "uint256"
+            },
+            {
+                "indexed": false,
+                "internalType": "uint256",
+                "name": "amount0",
+                "type": "uint256"
+            },
+            {
+                "indexed": false,
+                "internalType": "uint256",
+                "name": "amount1",
+                "type": "uint256"
+            },
+            {
+                "indexed": false,
+                "internalType": "uint256",
+                "name": "deadline",
+                "type": "uint256"
+            }
+        ],
+        "name": "RfsUpdated",
+        "type": "event"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "_tokenAddr",
+                "type": "address"
+            }
+        ],
+        "name": "claimProtocolFees",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "claimRewards",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "_token0",
+                "type": "address"
+            },
+            {
+                "internalType": "address[]",
+                "name": "_tokensAccepted",
+                "type": "address[]"
+            },
+            {
+                "internalType": "uint256",
+                "name": "_amount0",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint8",
+                "name": "_priceMultiplier",
+                "type": "uint8"
+            },
+            {
+                "internalType": "uint256",
+                "name": "_deadline",
+                "type": "uint256"
+            },
+            {
+                "internalType": "enum OtcNexus.TokenInteractionType",
+                "name": "interactionType",
+                "type": "uint8"
+            }
+        ],
+        "name": "createDynamicRfs",
+        "outputs": [
+            {
+                "internalType": "uint256",
+                "name": "",
+                "type": "uint256"
+            }
+        ],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "_token0",
+                "type": "address"
+            },
+            {
+                "internalType": "address[]",
+                "name": "_tokensAccepted",
+                "type": "address[]"
+            },
+            {
+                "internalType": "uint256",
+                "name": "_amount0",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint256",
+                "name": "_amount1",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint256",
+                "name": "_usdPrice",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint256",
+                "name": "_deadline",
+                "type": "uint256"
+            },
+            {
+                "internalType": "enum OtcNexus.TokenInteractionType",
+                "name": "interactionType",
+                "type": "uint8"
+            }
+        ],
+        "name": "createFixedRfs",
+        "outputs": [
+            {
+                "internalType": "uint256",
+                "name": "",
+                "type": "uint256"
+            }
+        ],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "uint256",
+                "name": "_id",
+                "type": "uint256"
+            }
+        ],
+        "name": "getRfs",
+        "outputs": [
+            {
+                "components": [
+                    {
+                        "internalType": "uint256",
+                        "name": "id",
+                        "type": "uint256"
+                    },
+                    {
+                        "internalType": "uint256",
+                        "name": "currentAmount0",
+                        "type": "uint256"
+                    },
+                    {
+                        "internalType": "uint256",
+                        "name": "initialAmount0",
+                        "type": "uint256"
+                    },
+                    {
+                        "internalType": "uint256",
+                        "name": "amount1",
+                        "type": "uint256"
+                    },
+                    {
+                        "internalType": "uint256",
+                        "name": "usdPrice",
+                        "type": "uint256"
+                    },
+                    {
+                        "internalType": "uint256",
+                        "name": "deadline",
+                        "type": "uint256"
+                    },
+                    {
+                        "internalType": "address",
+                        "name": "maker",
+                        "type": "address"
+                    },
+                    {
+                        "internalType": "uint8",
+                        "name": "priceMultiplier",
+                        "type": "uint8"
+                    },
+                    {
+                        "internalType": "enum OtcNexus.RfsType",
+                        "name": "typeRfs",
+                        "type": "uint8"
+                    },
+                    {
+                        "internalType": "enum OtcNexus.TokenInteractionType",
+                        "name": "interactionType",
+                        "type": "uint8"
+                    },
+                    {
+                        "internalType": "bool",
+                        "name": "removed",
+                        "type": "bool"
+                    },
+                    {
+                        "internalType": "address",
+                        "name": "token0",
+                        "type": "address"
+                    },
+                    {
+                        "internalType": "address[]",
+                        "name": "tokensAccepted",
+                        "type": "address[]"
+                    }
+                ],
+                "internalType": "struct OtcNexus.RFS",
+                "name": "",
+                "type": "tuple"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "makerFeeIfDeposited",
+        "outputs": [
+            {
+                "internalType": "uint8",
+                "name": "",
+                "type": "uint8"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "makerFeeIfNotDeposited",
+        "outputs": [
+            {
+                "internalType": "uint8",
+                "name": "",
+                "type": "uint8"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "otcToken",
+        "outputs": [
+            {
+                "internalType": "contract OtcToken",
+                "name": "",
+                "type": "address"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "owner",
+        "outputs": [
+            {
+                "internalType": "address",
+                "name": "",
+                "type": "address"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "uint256",
+                "name": "_id",
+                "type": "uint256"
+            },
+            {
+                "internalType": "bool",
+                "name": "_permanentlyDelete",
+                "type": "bool"
+            }
+        ],
+        "name": "removeRfs",
+        "outputs": [
+            {
+                "internalType": "bool",
+                "name": "success",
+                "type": "bool"
+            }
+        ],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "renounceOwnership",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "rfsIdCounter",
+        "outputs": [
+            {
+                "internalType": "uint256",
+                "name": "",
+                "type": "uint256"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "uint8",
+                "name": "_takerFee",
+                "type": "uint8"
+            },
+            {
+                "internalType": "uint8",
+                "name": "_makerFeeIfDeposited",
+                "type": "uint8"
+            },
+            {
+                "internalType": "uint8",
+                "name": "_makerFeeIfNotDeposited",
+                "type": "uint8"
+            }
+        ],
+        "name": "setFee",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "_otcTokenAddress",
+                "type": "address"
+            }
+        ],
+        "name": "setOtcTokenAddress",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "_address1",
+                "type": "address"
+            },
+            {
+                "internalType": "address",
+                "name": "_aggregator",
+                "type": "address"
+            }
+        ],
+        "name": "setPriceFeeds",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "uint256",
+                "name": "_id",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint256",
+                "name": "_paymentTokenAmount",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint256",
+                "name": "index",
+                "type": "uint256"
+            }
+        ],
+        "name": "takeDynamicRfs",
+        "outputs": [
+            {
+                "internalType": "bool",
+                "name": "success",
+                "type": "bool"
+            }
+        ],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "uint256",
+                "name": "_id",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint256",
+                "name": "_paymentTokenAmount",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint256",
+                "name": "index",
+                "type": "uint256"
+            }
+        ],
+        "name": "takeFixedRfs",
+        "outputs": [
+            {
+                "internalType": "bool",
+                "name": "success",
+                "type": "bool"
+            }
+        ],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "takerFee",
+        "outputs": [
+            {
+                "internalType": "uint8",
+                "name": "",
+                "type": "uint8"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "newOwner",
+                "type": "address"
+            }
+        ],
+        "name": "transferOwnership",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    }
+]

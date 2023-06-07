@@ -18,6 +18,8 @@
     "@rainbow-me/rainbowkit": "^1.0.0",
     "autoprefixer": "10.4.14",
     "axios": "^1.4.0",
+    "encoding": "^0.1.13",
+    "ethers": "5.7.0",
     "framer-motion": "^10.12.16",
     "next": "13.4.4",
     "node-gyp-build": "^4.6.0",

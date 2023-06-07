@@ -1,0 +1,588 @@
+[
+    {
+        "inputs": [],
+        "name": "Option__DealExpired",
+        "type": "error"
+    },
+    {
+        "inputs": [],
+        "name": "Option__DealHasNoTaker",
+        "type": "error"
+    },
+    {
+        "inputs": [],
+        "name": "Option__DealNotExpired",
+        "type": "error"
+    },
+    {
+        "inputs": [],
+        "name": "Option__DealNotFound",
+        "type": "error"
+    },
+    {
+        "inputs": [],
+        "name": "Option__DealNotOpen",
+        "type": "error"
+    },
+    {
+        "inputs": [],
+        "name": "Option__DepositMarginFailed",
+        "type": "error"
+    },
+    {
+        "inputs": [],
+        "name": "Option__DepositPremiumFailed",
+        "type": "error"
+    },
+    {
+        "inputs": [],
+        "name": "Option__InvalidAmount",
+        "type": "error"
+    },
+    {
+        "inputs": [],
+        "name": "Option__InvalidMaturity",
+        "type": "error"
+    },
+    {
+        "inputs": [],
+        "name": "Option__InvalidPremium",
+        "type": "error"
+    },
+    {
+        "inputs": [],
+        "name": "Option__InvalidPriceFeed",
+        "type": "error"
+    },
+    {
+        "inputs": [],
+        "name": "Option__InvalidQuoteToken",
+        "type": "error"
+    },
+    {
+        "inputs": [],
+        "name": "Option__InvalidStrike",
+        "type": "error"
+    },
+    {
+        "inputs": [],
+        "name": "Option__InvalidUnderlyingToken",
+        "type": "error"
+    },
+    {
+        "inputs": [],
+        "name": "Option__NotDealMaker",
+        "type": "error"
+    },
+    {
+        "inputs": [],
+        "name": "Option__TransferMarginFailed",
+        "type": "error"
+    },
+    {
+        "inputs": [],
+        "name": "Option__TransferPremiumFailed",
+        "type": "error"
+    },
+    {
+        "anonymous": false,
+        "inputs": [
+            {
+                "indexed": false,
+                "internalType": "uint256",
+                "name": "id",
+                "type": "uint256"
+            },
+            {
+                "indexed": false,
+                "internalType": "address",
+                "name": "underlyingToken",
+                "type": "address"
+            },
+            {
+                "indexed": false,
+                "internalType": "address",
+                "name": "quoteToken",
+                "type": "address"
+            },
+            {
+                "indexed": false,
+                "internalType": "uint256",
+                "name": "strike",
+                "type": "uint256"
+            },
+            {
+                "indexed": false,
+                "internalType": "uint256",
+                "name": "maturity",
+                "type": "uint256"
+            },
+            {
+                "indexed": false,
+                "internalType": "bool",
+                "name": "isCall",
+                "type": "bool"
+            },
+            {
+                "indexed": false,
+                "internalType": "uint256",
+                "name": "amount",
+                "type": "uint256"
+            },
+            {
+                "indexed": false,
+                "internalType": "uint256",
+                "name": "premium",
+                "type": "uint256"
+            },
+            {
+                "indexed": false,
+                "internalType": "bool",
+                "name": "isMakerBuyer",
+                "type": "bool"
+            },
+            {
+                "indexed": false,
+                "internalType": "address",
+                "name": "maker",
+                "type": "address"
+            }
+        ],
+        "name": "DealCreated",
+        "type": "event"
+    },
+    {
+        "anonymous": false,
+        "inputs": [
+            {
+                "indexed": false,
+                "internalType": "uint256",
+                "name": "id",
+                "type": "uint256"
+            }
+        ],
+        "name": "DealRemoved",
+        "type": "event"
+    },
+    {
+        "anonymous": false,
+        "inputs": [
+            {
+                "indexed": false,
+                "internalType": "uint256",
+                "name": "id",
+                "type": "uint256"
+            },
+            {
+                "indexed": false,
+                "internalType": "bool",
+                "name": "exercised",
+                "type": "bool"
+            }
+        ],
+        "name": "DealSettled",
+        "type": "event"
+    },
+    {
+        "anonymous": false,
+        "inputs": [
+            {
+                "indexed": false,
+                "internalType": "uint256",
+                "name": "id",
+                "type": "uint256"
+            },
+            {
+                "indexed": false,
+                "internalType": "address",
+                "name": "taker",
+                "type": "address"
+            }
+        ],
+        "name": "DealTaken",
+        "type": "event"
+    },
+    {
+        "anonymous": false,
+        "inputs": [
+            {
+                "indexed": true,
+                "internalType": "address",
+                "name": "previousOwner",
+                "type": "address"
+            },
+            {
+                "indexed": true,
+                "internalType": "address",
+                "name": "newOwner",
+                "type": "address"
+            }
+        ],
+        "name": "OwnershipTransferred",
+        "type": "event"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "_underlyingToken",
+                "type": "address"
+            },
+            {
+                "internalType": "address",
+                "name": "_quoteToken",
+                "type": "address"
+            },
+            {
+                "internalType": "address",
+                "name": "_priceFeedAddress",
+                "type": "address"
+            }
+        ],
+        "name": "addPriceFeed",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "_underlyingToken",
+                "type": "address"
+            },
+            {
+                "internalType": "address",
+                "name": "_quoteToken",
+                "type": "address"
+            },
+            {
+                "internalType": "uint256",
+                "name": "_strike",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint256",
+                "name": "_maturity",
+                "type": "uint256"
+            },
+            {
+                "internalType": "bool",
+                "name": "_isCall",
+                "type": "bool"
+            },
+            {
+                "internalType": "uint256",
+                "name": "_amount",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint256",
+                "name": "_premium",
+                "type": "uint256"
+            },
+            {
+                "internalType": "bool",
+                "name": "_isMakerBuyer",
+                "type": "bool"
+            }
+        ],
+        "name": "createDeal",
+        "outputs": [
+            {
+                "internalType": "uint256",
+                "name": "",
+                "type": "uint256"
+            }
+        ],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "uint256",
+                "name": "id",
+                "type": "uint256"
+            }
+        ],
+        "name": "getDeal",
+        "outputs": [
+            {
+                "components": [
+                    {
+                        "internalType": "uint256",
+                        "name": "id",
+                        "type": "uint256"
+                    },
+                    {
+                        "internalType": "address",
+                        "name": "underlyingToken",
+                        "type": "address"
+                    },
+                    {
+                        "internalType": "address",
+                        "name": "quoteToken",
+                        "type": "address"
+                    },
+                    {
+                        "internalType": "uint256",
+                        "name": "strike",
+                        "type": "uint256"
+                    },
+                    {
+                        "internalType": "uint256",
+                        "name": "maturity",
+                        "type": "uint256"
+                    },
+                    {
+                        "internalType": "bool",
+                        "name": "isCall",
+                        "type": "bool"
+                    },
+                    {
+                        "internalType": "uint256",
+                        "name": "amount",
+                        "type": "uint256"
+                    },
+                    {
+                        "internalType": "uint256",
+                        "name": "premium",
+                        "type": "uint256"
+                    },
+                    {
+                        "internalType": "bool",
+                        "name": "isMakerBuyer",
+                        "type": "bool"
+                    },
+                    {
+                        "internalType": "enum OtcOption.DealStatus",
+                        "name": "status",
+                        "type": "uint8"
+                    },
+                    {
+                        "internalType": "address",
+                        "name": "maker",
+                        "type": "address"
+                    },
+                    {
+                        "internalType": "address",
+                        "name": "taker",
+                        "type": "address"
+                    }
+                ],
+                "internalType": "struct OtcOption.Deal",
+                "name": "",
+                "type": "tuple"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "uint256",
+                "name": "id",
+                "type": "uint256"
+            }
+        ],
+        "name": "getDealBuyer",
+        "outputs": [
+            {
+                "internalType": "address",
+                "name": "",
+                "type": "address"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "uint256",
+                "name": "id",
+                "type": "uint256"
+            }
+        ],
+        "name": "getDealSeller",
+        "outputs": [
+            {
+                "internalType": "address",
+                "name": "",
+                "type": "address"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "uint256",
+                "name": "id",
+                "type": "uint256"
+            }
+        ],
+        "name": "getDecimals",
+        "outputs": [
+            {
+                "internalType": "uint8",
+                "name": "",
+                "type": "uint8"
+            },
+            {
+                "internalType": "uint8",
+                "name": "",
+                "type": "uint8"
+            },
+            {
+                "internalType": "uint8",
+                "name": "",
+                "type": "uint8"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "_underlyingToken",
+                "type": "address"
+            },
+            {
+                "internalType": "address",
+                "name": "_quoteToken",
+                "type": "address"
+            }
+        ],
+        "name": "getPrice",
+        "outputs": [
+            {
+                "internalType": "uint256",
+                "name": "",
+                "type": "uint256"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "_underlyingToken",
+                "type": "address"
+            },
+            {
+                "internalType": "address",
+                "name": "_quoteToken",
+                "type": "address"
+            }
+        ],
+        "name": "getPriceFeed",
+        "outputs": [
+            {
+                "internalType": "address",
+                "name": "",
+                "type": "address"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "uint256",
+                "name": "id",
+                "type": "uint256"
+            }
+        ],
+        "name": "isDealExpired",
+        "outputs": [
+            {
+                "internalType": "bool",
+                "name": "",
+                "type": "bool"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "owner",
+        "outputs": [
+            {
+                "internalType": "address",
+                "name": "",
+                "type": "address"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "uint256",
+                "name": "id",
+                "type": "uint256"
+            }
+        ],
+        "name": "removeDeal",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "renounceOwnership",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "uint256",
+                "name": "id",
+                "type": "uint256"
+            }
+        ],
+        "name": "settleDeal",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "uint256",
+                "name": "id",
+                "type": "uint256"
+            }
+        ],
+        "name": "takeDeal",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "newOwner",
+                "type": "address"
+            }
+        ],
+        "name": "transferOwnership",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    }
+]

@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState } from "react"
-import Navbar from "../components/Navbar"
+import Navbar from "@components/Navbar"
 import styles from "../style"
 import { ConnectButton } from "@rainbow-me/rainbowkit"
 import {
@@ -11,8 +11,9 @@ import {
     FormHelperText,
     FormLabel,
     Input,
+    NumberInput,
+    NumberInputField,
     Select,
-    useNumberInput,
 } from "@chakra-ui/react"
 const CreateDeal = () => {
     const [createDealFormData, setCreateDealFormData] = useState({
