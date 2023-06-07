@@ -8,6 +8,36 @@ import Navbar from "@components/Navbar"
 import { ConnectButton } from "@rainbow-me/rainbowkit"
 
 const swap = () => {
+    const retrieveAvailableRfs = async () => {
+        const provider = new ethers.providers.Web3Provider(window.ethereum)
+        const signer = provider.getSigner()
+        const chainId = (await provider.getNetwork()).chainId
+        const otcNexus = new ethers.Contract(networkMapping[chainId].OtcNexus, OtcNexusAbi, signer)
+
+        // Retrieve all past NewRFS events from the contract.
+        contract
+            .getPastEvents("NewRFS", {
+                fromBlock: 0, // Starting block
+                toBlock: "latest", // Ending block
+            })
+            .then((events) => {
+                // For each NewRFS event, fetch the corresponding RFS and update the front-end.
+                events.forEach((event) => {
+                    const rfsId = event.returnValues.id
+
+                    contract.methods
+                        .idToRfs(rfsId)
+                        .call()
+                        .then((rfs) => {
+                            console.log("Received RFS:", rfs)
+                            // Now you can update your front-end to include this RFS.
+                        })
+                        .catch(console.error)
+                })
+            })
+            .catch(console.error)
+    }
+
     return (
         <div className="flex h-fit w-full bg-black">
             {/* gradient start */}
