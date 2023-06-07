@@ -1,10 +1,10 @@
 "use client"
 import React from "react"
-import Sidebar from "@src/app/components/Sidebar"
-import CardComponent from "@src/app/components/CardComponent"
-import { CardData } from "@src/app/components/CardData"
+import Sidebar from "@components/Sidebar"
+import CardComponent from "@components/CardComponent"
+import { CardData } from "@components/CardData"
 import dynamic from "next/dynamic"
-import Navbar from "@src/app/components/Navbar"
+import Navbar from "@components/Navbar"
 import { ConnectButton } from "@rainbow-me/rainbowkit"
 
 const swap = () => {
