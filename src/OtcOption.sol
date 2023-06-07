@@ -129,7 +129,7 @@ contract OtcOption is Ownable {
         if (_maturity <= block.timestamp) revert Option__InvalidMaturity();
         if (_amount == 0) revert Option__InvalidAmount();
         if (_premium == 0) revert Option__InvalidPremium();
-        getPriceFeed(_underlyingToken, _quoteToken);
+        getPriceFeed(_underlyingToken, _quoteToken); // check price feed exists
 
         uint quoteAmount = getQuoteAmount(_underlyingToken, _quoteToken, _amount, _strike);
 

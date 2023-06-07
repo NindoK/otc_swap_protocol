@@ -16,6 +16,10 @@ import {
     NumberInputField,
     Select,
 } from "@chakra-ui/react"
+import { BigNumber, ethers } from "ethers"
+import networkMapping from "@constants/networkMapping"
+import OtcOptionAbi from "@constants/abis/OtcOptionAbi"
+
 const CreateDeal = () => {
     const [createDealFormData, setCreateDealFormData] = useState({
         underlyingToken: "",
@@ -77,9 +81,51 @@ const CreateDeal = () => {
         }))
     }
 
-    const handleSubmit = (event) => {
+    const handleSubmit = async (event) => {
         event.preventDefault()
-        console.log(JSON.stringify(createDealFormData))
+        const provider = new ethers.providers.Web3Provider(window.ethereum)
+        const signer = provider.getSigner()
+        const chainId = (await provider.getNetwork()).chainId
+        const otcOption = new ethers.Contract(
+            networkMapping[chainId].OtcOption,
+            OtcOptionAbi,
+            signer
+        )
+        // console.log(otcOption)
+
+        try {
+            const info = createDealFormData
+            const [ulyTokenDec, quoteTokenDec, priceFeedDec] = await otcOption.getDecimals(
+                info["underlyingToken"],
+                info["quoteToken"]
+            )
+            const inputInfo = {
+                ulyToken: info["underlyingToken"],
+                quoteToken: info["quoteToken"],
+                strike: (parseFloat(info["strike"]) * 10 ** priceFeedDec).toString(),
+                maturity: new Date(info["maturity"]).getTime() / 1000,
+                isCall: info["optionType"].toLowerCase() === "call",
+                amount: (parseFloat(info["amount"]) * 10 ** ulyTokenDec).toString(),
+                premium: (parseFloat(info["premium"]) * 10 ** quoteTokenDec).toString(),
+                isMakerBuyer: info["side"].toLowerCase() === "buy",
+            }
+            console.log(inputInfo)
+
+            const tx = await otcOption.createDeal(
+                inputInfo["ulyToken"],
+                inputInfo["quoteToken"],
+                inputInfo["strike"],
+                inputInfo["maturity"],
+                inputInfo["isCall"],
+                inputInfo["amount"],
+                inputInfo["premium"],
+                inputInfo["isMakerBuyer"]
+            )
+            const receipt = await tx.wait()
+            console.log(receipt)
+        } catch (error) {
+            console.error(error)
+        }
     }
 
     return (
@@ -136,7 +182,7 @@ const CreateDeal = () => {
                                 <FormLabel className=" font-bold">Strike</FormLabel>
                                 <Input
                                     type="number"
-                                    placeholder="strike amount"
+                                    placeholder="Strike"
                                     value={createDealFormData.strike}
                                     onChange={handleStrikeChange}
                                 />
@@ -148,7 +194,7 @@ const CreateDeal = () => {
                                     name="maturity"
                                     placeholder="Select Date and Time"
                                     size="md"
-                                    type="date"
+                                    type="datetime-local"
                                     value={createDealFormData.maturity}
                                     onChange={handleMaturityChange}
                                 />
@@ -199,7 +245,7 @@ const CreateDeal = () => {
                                 <FormLabel className=" font-bold">Premium</FormLabel>
                                 <Input
                                     type="number"
-                                    placeholder="premium"
+                                    placeholder="Premium"
                                     value={createDealFormData.premium}
                                     onChange={handlePremiumChange}
                                 />

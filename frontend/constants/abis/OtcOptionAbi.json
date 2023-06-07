@@ -406,6 +406,35 @@
                 "type": "uint256"
             }
         ],
+        "name": "getDealDecimals",
+        "outputs": [
+            {
+                "internalType": "uint8",
+                "name": "",
+                "type": "uint8"
+            },
+            {
+                "internalType": "uint8",
+                "name": "",
+                "type": "uint8"
+            },
+            {
+                "internalType": "uint8",
+                "name": "",
+                "type": "uint8"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "uint256",
+                "name": "id",
+                "type": "uint256"
+            }
+        ],
         "name": "getDealSeller",
         "outputs": [
             {
@@ -420,9 +449,14 @@
     {
         "inputs": [
             {
-                "internalType": "uint256",
-                "name": "id",
-                "type": "uint256"
+                "internalType": "address",
+                "name": "_underlyingToken",
+                "type": "address"
+            },
+            {
+                "internalType": "address",
+                "name": "_quoteToken",
+                "type": "address"
             }
         ],
         "name": "getDecimals",
