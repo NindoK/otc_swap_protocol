@@ -1,9 +1,7 @@
-"use client";
+"use client"
 import React, { useState } from "react"
 import { ArrowForwardIcon } from "@chakra-ui/icons"
 import {
-    Avatar,
-    AvatarGroup,
     Modal,
     ModalBody,
     ModalCloseButton,
@@ -20,23 +18,12 @@ import { useRouter } from "next/router"
 const OverlayOne = () => <ModalOverlay bg="none" backdropFilter="blur(10px) " />
 
 const CardComponent = (props) => {
-    const router = useRouter();
     const [overlay, setOverlay] = useState(<OverlayOne />)
     const { isOpen, onOpen, onClose } = useDisclosure()
     const dynamicStyle = {
         backgroundColor: props.condition ? "#A06D22" : "#348D8D",
     }
-  
-    const handleClick=()=>{
-        const values={
-            icon:props.icon,
-            title:props.title
-        };
-        router.push({
-            pathname: '/confirmswap',
-            state: values,
-          });
-    }
+
     return (
         <div className=" w-full flex justify-center mt-10 ">
             <div className="transition-all ease-out duration-500  hover:shadow-xl hover:scale-105  flex h-60 w-[56rem]  rounded-2xl relative bg-gray-950 bg-opacity-50 shadow-lg border-opacity-18">
@@ -80,16 +67,15 @@ const CardComponent = (props) => {
                         Total Value : <span>{props.tvalue}</span>
                     </h3>
                 </VStack>
-                <div className="absolute right-7 top-24 rounded-full hover:bg-gray-500 hover:cursor-pointer  h-14 w-14  " onClick={handleClick}>
-                    
-                    <ArrowForwardIcon
-                        className="mt-3 ml-3 hover:cursor-pointer "
-                        w={8}
-                        h={8}
-                        color="white"
-                        
-                    />
-                    
+                <div className="absolute right-7 top-24 rounded-full hover:bg-gray-500 hover:cursor-pointer  h-14 w-14 ">
+                    <Link href="/confirmswap">
+                        <ArrowForwardIcon
+                            className="mt-3 ml-3 hover:cursor-pointer "
+                            w={8}
+                            h={8}
+                            color="white"
+                        />
+                    </Link>
                 </div>
             </div>
             <Modal isCentered isOpen={isOpen} onClose={onClose}>
