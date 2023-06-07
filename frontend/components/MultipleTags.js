@@ -2,19 +2,16 @@ import { Box, Flex, Select, Tag, TagCloseButton, TagLabel } from "@chakra-ui/rea
 import axios from "axios"
 import React, { useEffect, useState } from "react"
 
-const MultipleTags = ({ tokensAccepted, setTokensAccepted }) => {
+const MultipleTags = ({ setTokensAccepted }) => {
     const [inputValue, setInputValue] = useState("")
     const [tags, setTags] = useState([])
     const [tokenData, setTokenData] = useState([])
 
     async function fetchTokenData() {
         try {
-            const response = await axios.get(
-                "https://api.coingecko.com/api/v3/exchanges/uniswap_v2/tickers"
-            )
+            const response = await axios.get("https://tokens.coingecko.com/uniswap/all.json")
+            const tokens = response.data.tokens
 
-            // Process the response data
-            const tokens = response.data.tickers
             setTokenData(tokens)
         } catch (error) {
             console.error("Error fetching token data:", error)
@@ -32,6 +29,7 @@ const MultipleTags = ({ tokensAccepted, setTokensAccepted }) => {
     const handleInputKeyDown = (event) => {
         if (event.key === "Enter" && inputValue.trim() !== "") {
             setTags([...tags, inputValue.trim()])
+            setTokensAccepted([...tags, inputValue.trim()])
             setInputValue("")
         }
     }
@@ -61,8 +59,8 @@ const MultipleTags = ({ tokensAccepted, setTokensAccepted }) => {
                 mt={2}
             >
                 {tokenData.slice(0, 20).map((token) => (
-                    <option key={`${token.coin_id}-${token.target_coin_id}`} value={token.base}>
-                        {token.coin_id}
+                    <option key={`${token.name}-${token.symbol}`} value={token.address}>
+                        {token.symbol}
                     </option>
                 ))}
             </Select>
