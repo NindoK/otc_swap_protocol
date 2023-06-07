@@ -29,7 +29,6 @@ contract DeployLocal is Script {
         OtcNexus otcNexus = new OtcNexus(address(otcToken));
         OtcOption otcOption = new OtcOption();
         //        MockV3Aggregator mockChainlinkAggregator = new MockV3Aggregator(8, 2000*(10**8));
-
         otcNexus.setPriceFeeds(
             0x93567d6B6553bDe2b652FB7F197a229b93813D3f,
             0xFF3EEb22B5E3dE6e705b44749C2559d704923FD7

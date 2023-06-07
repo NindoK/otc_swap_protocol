@@ -13,6 +13,7 @@ import {
     FormControl,
     FormLabel,
     Input,
+    Image,
     NumberDecrementStepper,
     NumberIncrementStepper,
     NumberInput,
