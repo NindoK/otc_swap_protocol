@@ -1,5 +1,5 @@
 import React from "react"
-import styles, { layout } from "../src/app/style"
+import styles, { layout } from "@src/app/style"
 import Image from "next/image"
 import bill from "@public/bill.png"
 const Feature2 = () => {

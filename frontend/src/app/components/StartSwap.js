@@ -1,6 +1,6 @@
 import React from "react"
-import styles from "../src/app/style"
-import arrowUp from "../../../public/arrow-up.svg"
+import styles from "@src/app/style"
+import arrowUp from "@public/arrow-up.svg"
 import Image from "next/image"
 const StartSwap = () => {
     return (

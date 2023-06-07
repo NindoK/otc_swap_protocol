@@ -1,5 +1,5 @@
 import React from "react"
-import styles from "../src/app/style"
+import styles from "@src/app/style"
 
 export const stats = [
     {

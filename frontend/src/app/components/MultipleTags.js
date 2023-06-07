@@ -2,12 +2,10 @@ import { Box, Flex, Select, Tag, TagCloseButton, TagLabel } from "@chakra-ui/rea
 import axios from "axios"
 import React, { useEffect, useState } from "react"
 
-const MultipleTags = () => {
-    const [selectedOptions, setSelectedOptions] = useState([])
+const MultipleTags = ({ tokensAccepted, setTokensAccepted }) => {
     const [inputValue, setInputValue] = useState("")
     const [tags, setTags] = useState([])
     const [tokenData, setTokenData] = useState([])
-    const [value, setValue] = useState("0")
 
     async function fetchTokenData() {
         try {

@@ -1,5 +1,5 @@
 import React from "react"
-import styles, { layout } from "../src/app/style"
+import styles, { layout } from "@src/app/style"
 import Button from "./Button"
 import star from "@public/Star.svg"
 import shield from "@public/Shield.svg"
