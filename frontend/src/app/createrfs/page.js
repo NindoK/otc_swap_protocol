@@ -28,8 +28,6 @@ import MultipleTags from "@components/MultipleTags"
 import { ethers } from "ethers"
 import networkMapping from "@constants/networkMapping"
 import OtcNexusAbi from "@constants/abis/OtcNexusAbi"
-import PercentageSlider from "../components/PercentageSlider"
-import MultipleTags from "../components/MultipleTags"
 
 const CreateRfs = () => {
     const [tokenData, setTokenData] = useState([])
@@ -45,10 +43,12 @@ const CreateRfs = () => {
 
     async function fetchTokenData() {
         try {
+            console.log("Fetching token data...")
             const response = await axios.get("https://tokens.coingecko.com/uniswap/all.json")
+            console.log(response)
 
             // Process the response data
-            const tokens = response.data.tickers
+            const tokens = response.data.tokens
             console.log(tokens)
 
             setTokenData(tokens)
@@ -178,7 +178,10 @@ const CreateRfs = () => {
                                         placeholder="-None-"
                                     >
                                         {tokenData.map((token) => (
-                                            <option key={token.id}>
+                                            <option
+                                                key={`${token.name}-${token.symbol}`}
+                                                value={token.address}
+                                            >
                                                 <Image
                                                     borderRadius="full"
                                                     boxSize="40px"
@@ -186,11 +189,6 @@ const CreateRfs = () => {
                                                     alt="token image"
                                                 />
                                                 <span>{token.symbol}</span>
-                                            <option
-                                                key={`${token.coin_id}-${token.target_coin_id}`}
-                                                value={token.base}
-                                            >
-                                                {token.coin_id}
                                             </option>
                                         ))}
                                     </Select>
@@ -308,10 +306,16 @@ const CreateRfs = () => {
                                             >
                                                 {tokenData.slice(0, 20).map((token) => (
                                                     <option
-                                                        key={`${token.coin_id}-${token.target_coin_id}`}
-                                                        value={token.base}
+                                                        key={`${token.name}-${token.symbol}`}
+                                                        value={token.address}
                                                     >
-                                                        {token.coin_id}
+                                                        <Image
+                                                            borderRadius="full"
+                                                            boxSize="40px"
+                                                            src={token.logoURI}
+                                                            alt="token image"
+                                                        />
+                                                        <span>{token.symbol}</span>
                                                     </option>
                                                 ))}
                                             </Select>
