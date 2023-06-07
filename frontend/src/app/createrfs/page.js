@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useEffect, useState } from "react"
-import Navbar from "../../../components/Navbar"
+import Navbar from "@components/Navbar"
 import styles from "../style"
 import axios from "axios"
 import { ConnectButton } from "@rainbow-me/rainbowkit"
@@ -23,11 +23,11 @@ import {
     Select,
     Stack,
 } from "@chakra-ui/react"
-import PercentageSlider from "../../../components/PercentageSlider"
-import MultipleTags from "../../../components/MultipleTags"
+import PercentageSlider from "@components/PercentageSlider"
+import MultipleTags from "@components/MultipleTags"
 import { ethers } from "ethers"
-import { networkMapping } from "@constants"
-import { OtcNexusAbi } from "@constants/abis/OtcNexusAbi"
+import networkMapping from "@constants/networkMapping"
+import OtcNexusAbi from "@constants/abis/OtcNexusAbi"
 import PercentageSlider from "../components/PercentageSlider"
 import MultipleTags from "../components/MultipleTags"
 
@@ -37,7 +37,7 @@ const CreateRfs = () => {
     const [rfsType, setRfsType] = useState("")
     const [priceMultiplier, setPriceMultiplier] = useState(0)
     const [tokenOffered, setTokenOffered] = useState("") //address
-    const [tokensAccepted, setTokensAccepted] = useState([]) //address[]
+    const [tokensAccepted, setTokensAccepted] = useState("") //address[]
     const [amount0Offered, setAmount0Offered] = useState(0) //uint256
     const [amount1Requested, setAmount1Requested] = useState(0) //uint256
     const [deadline, setDeadline] = useState(0) //unix timestamp
@@ -61,41 +61,74 @@ const CreateRfs = () => {
         e.preventDefault()
         const provider = new ethers.providers.Web3Provider(window.ethereum)
         const signer = provider.getSigner()
+        const chainId = (await provider.getNetwork()).chainId
         const otcNexus = new ethers.Contract(networkMapping[chainId].OtcNexus, OtcNexusAbi, signer)
+        console.log(otcNexus)
         const interactionTypeSelected = interactionType === "Deposited" ? 0 : 1
+        const deadlineInUnixtimestamp = new Date(deadline).getTime() / 1000
+        // let tokensAcceptedLowerCased = tokensAccepted.map((token) => token.toLowerCase())
+        // tokensAcceptedLowerCased.push("0XC02AAA39B223FE8D0A0E5C4F27EAD9083C756CC2".toLowerCase())
         let tx
-        if (rfsType === "Dynamic") {
-            tx = await otcNexus.createDynamicRfs(
-                tokenOffered,
-                tokensAccepted,
-                amount0Offered,
-                priceMultiplier,
-                deadline,
-                interactionTypeSelected
-            )
-        } else if (rfsType === "Fixed_Usd") {
-            tx = await otcNexus.createFixedRfs(
-                tokenOffered,
-                tokensAccepted,
-                amount0Offered,
-                0,
-                usdPrice,
-                deadline,
-                interactionTypeSelected
-            )
-        } else if (rfsType === "Fixed_Amount") {
-            tx = await otcNexus.createFixedRfs(
-                tokenOffered,
-                tokensAccepted,
-                amount0Offered,
-                amount1Requested,
-                0,
-                deadline,
-                interactionTypeSelected
-            )
+        const rfsIdCounter = await otcNexus.rfsIdCounter()
+        console.log("RFS ID Counter: ", rfsIdCounter.toString())
+        const rfs = await otcNexus.getRfs((rfsIdCounter - 1).toString())
+        console.log("RFS: ", rfs)
+        // console.log(
+        //     tokenOffered.toLowerCase(),
+        //     tokensAcceptedLowerCased,
+        //     amount0Offered,
+        //     priceMultiplier,
+        //     deadlineInUnixtimestamp,
+        //     interactionTypeSelected
+        // )
+
+        console.log(
+            tokenOffered.toLowerCase(),
+            [tokensAccepted.toLowerCase()],
+            amount0Offered,
+            parseFloat(amount1Requested),
+            0,
+            deadlineInUnixtimestamp,
+            interactionTypeSelected
+        )
+        try {
+            if (rfsType === "Dynamic") {
+                tx = await otcNexus.createDynamicRfs(
+                    "0x93567d6B6553bDe2b652FB7F197a229b93813D3f".toLowerCase(),
+                    ["0xdAC17F958D2ee523a2206206994597C13D831ec7".toLowerCase()],
+                    40,
+                    90,
+                    1686168300,
+                    0
+                )
+            } else if (rfsType === "Fixed_Usd") {
+                tx = await otcNexus.createFixedRfs(
+                    tokenOffered,
+                    tokensAccepted,
+                    amount0Offered,
+                    0,
+                    usdPrice,
+                    deadline,
+                    interactionTypeSelected
+                )
+            } else if (rfsType === "Fixed_Amount") {
+                //TODO TO BE ADJUSTED
+                tx = await otcNexus.createFixedRfs(
+                    tokenOffered.toLowerCase(),
+                    [tokensAccepted.toLowerCase()],
+                    amount0Offered,
+                    parseFloat(amount1Requested),
+                    0,
+                    deadlineInUnixtimestamp,
+                    interactionTypeSelected
+                )
+            }
+            const receipt = await tx.wait()
+        } catch (error) {
+            console.log(error.stack)
         }
-        const receipt = await tx.wait()
     }
+
     useEffect(() => {
         fetchTokenData()
     }, [])
@@ -130,7 +163,7 @@ const CreateRfs = () => {
                                     <FormLabel className=" font-bold">Datetime deadline</FormLabel>
                                     <Input
                                         value={deadline}
-                                        onChange={setDeadline}
+                                        onChange={(e) => setDeadline(e.target.value)}
                                         placeholder="Select Date and Time"
                                         size="md"
                                         type="datetime-local"
@@ -141,7 +174,7 @@ const CreateRfs = () => {
                                     <FormLabel className=" font-bold">Token Offered</FormLabel>
                                     <Select
                                         value={tokenOffered}
-                                        onChange={setTokenOffered}
+                                        onChange={(e) => setTokenOffered(e.target.value)}
                                         placeholder="-None-"
                                     >
                                         {tokenData.map((token) => (
@@ -153,6 +186,11 @@ const CreateRfs = () => {
                                                     alt="token image"
                                                 />
                                                 <span>{token.symbol}</span>
+                                            <option
+                                                key={`${token.coin_id}-${token.target_coin_id}`}
+                                                value={token.base}
+                                            >
+                                                {token.coin_id}
                                             </option>
                                         ))}
                                     </Select>
@@ -162,7 +200,12 @@ const CreateRfs = () => {
                                     <FormLabel>Amount Offered</FormLabel>
                                     <NumberInput
                                         value={amount0Offered}
-                                        onChange={setAmount0Offered}
+                                        onChange={(e) => {
+                                            const value = parseInt(e, 10)
+                                            if (!isNaN(value)) {
+                                                setAmount0Offered(value)
+                                            }
+                                        }}
                                         defaultValue={15}
                                         precision={4}
                                         step={0.2}
@@ -202,8 +245,8 @@ const CreateRfs = () => {
                                             <FormLabel>Tokens accepted</FormLabel>
                                             <Box p={4}>
                                                 <MultipleTags
-                                                    value={tokensAccepted}
-                                                    onChange={setTokensAccepted}
+                                                    tokensAccepted={tokensAccepted}
+                                                    setTokensAccepted={setTokensAccepted}
                                                 />
                                             </Box>
                                         </FormControl>
@@ -224,8 +267,8 @@ const CreateRfs = () => {
                                             <FormLabel>Tokens accepted</FormLabel>
                                             <Box p={4}>
                                                 <MultipleTags
-                                                    value={tokensAccepted}
-                                                    onChange={setTokensAccepted}
+                                                    tokensAccepted={tokensAccepted}
+                                                    setTokensAccepted={setTokensAccepted}
                                                 />
                                             </Box>{" "}
                                         </FormControl>
@@ -233,7 +276,12 @@ const CreateRfs = () => {
                                             <FormLabel>USD price</FormLabel>
                                             <NumberInput
                                                 value={usdPrice}
-                                                onChange={setUsdPrice}
+                                                onChange={(e) => {
+                                                    const value = parseInt(e, 10)
+                                                    if (!isNaN(value)) {
+                                                        setUsdPrice(value)
+                                                    }
+                                                }}
                                                 defaultValue={15}
                                                 precision={4}
                                                 step={0.2}
@@ -255,11 +303,14 @@ const CreateRfs = () => {
                                             </FormLabel>
                                             <Select
                                                 value={tokensAccepted}
-                                                onChange={setTokensAccepted}
+                                                onChange={(e) => setTokensAccepted(e.target.value)}
                                                 placeholder="-None-"
                                             >
                                                 {tokenData.slice(0, 20).map((token) => (
-                                                    <option key={token.coin_id}>
+                                                    <option
+                                                        key={`${token.coin_id}-${token.target_coin_id}`}
+                                                        value={token.base}
+                                                    >
                                                         {token.coin_id}
                                                     </option>
                                                 ))}

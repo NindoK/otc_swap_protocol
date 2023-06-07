@@ -206,9 +206,11 @@ contract OtcNexus is Ownable {
             revert OtcNexus__InvalidTokenAddresses();
         if (IERC20(_token0).allowance(msg.sender, address(this)) < _amount0)
             revert OtcNexus__AllowanceToken0TooLow();
-        for (uint i = 0; i < _tokensAccepted.length; i++) {
-            if (priceFeeds[_tokensAccepted[i]] == address(0))
-                revert OtcNexus__InvalidAggregatorAddress();
+        if (_usdPrice != 0) {
+            for (uint i = 0; i < _tokensAccepted.length; i++) {
+                if (priceFeeds[_tokensAccepted[i]] == address(0))
+                    revert OtcNexus__InvalidAggregatorAddress();
+            }
         }
         if (interactionType == TokenInteractionType.TOKEN_DEPOSITED) {
             // transfer sell token to contract
@@ -234,7 +236,6 @@ contract OtcNexus is Ownable {
         );
 
         makerRfs[msg.sender].push(idToRfs[rfsIdCounter]);
-
         unchecked {
             emit RfsCreated(
                 rfsIdCounter++,

@@ -43,8 +43,8 @@ const MultipleTags = ({ tokensAccepted, setTokensAccepted }) => {
     return (
         <Flex direction="column" width="300px">
             <Box mb={2}>
-                {tags.map((tag) => (
-                    <Tag key={tag} size="md" mr={1} mb={1}>
+                {tags.map((tag, index) => (
+                    <Tag key={`${tag}-${index}`} size="md" mr={1} mb={1}>
                         <TagLabel>{tag}</TagLabel>
                         <TagCloseButton onClick={() => handleRemoveTag(tag)} />
                     </Tag>
@@ -61,7 +61,9 @@ const MultipleTags = ({ tokensAccepted, setTokensAccepted }) => {
                 mt={2}
             >
                 {tokenData.slice(0, 20).map((token) => (
-                    <option key={token.coin_id}>{token.coin_id}</option>
+                    <option key={`${token.coin_id}-${token.target_coin_id}`} value={token.base}>
+                        {token.coin_id}
+                    </option>
                 ))}
             </Select>
         </Flex>
