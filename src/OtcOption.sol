@@ -5,6 +5,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
+import "./OtcMath.sol";
 
 error Option__InvalidUnderlyingToken();
 error Option__InvalidQuoteToken();
@@ -14,10 +15,8 @@ error Option__InvalidAmount();
 error Option__InvalidPremium();
 
 error Option__InvalidPriceFeed();
-error Option__DepositPremiumFailed();
-error Option__DepositMarginFailed();
-error Option__TransferPremiumFailed();
-error Option__TransferMarginFailed();
+error Option__NotEnoughAllowance();
+error Option__TransferFailed();
 error Option__NotDealMaker();
 error Option__DealNotOpen();
 error Option__DealExpired();
@@ -89,6 +88,13 @@ contract OtcOption is Ownable {
         return priceFeed;
     }
 
+    function _safeTransferFrom(address _token, address _from, address _to, uint _amount) internal {
+        if (IERC20(_token).allowance(_from, address(this)) < _amount)
+            revert Option__NotEnoughAllowance();
+        bool success = IERC20(_token).transferFrom(_from, _to, _amount);
+        if (!success) revert Option__TransferFailed();
+    }
+
     function createDeal(
         address _underlyingToken,
         address _quoteToken,
@@ -105,6 +111,7 @@ contract OtcOption is Ownable {
         if (_maturity <= block.timestamp) revert Option__InvalidMaturity();
         if (_amount == 0) revert Option__InvalidAmount();
         if (_premium == 0) revert Option__InvalidPremium();
+        getPriceFeed(_underlyingToken, _quoteToken);
 
         Deal memory deal = Deal(
             _dealCounter,
@@ -124,22 +131,29 @@ contract OtcOption is Ownable {
         // store new deal
         _deals[deal.id] = deal;
 
-        if (deal.isMakerBuyer) {
+        if (_isMakerBuyer) {
             // maker is buyer: deposit premium
-            bool success = IERC20(deal.quoteToken).transferFrom(
-                msg.sender,
-                address(this),
-                _premium
-            );
-            if (!success) revert Option__DepositPremiumFailed();
+            _safeTransferFrom(_quoteToken, msg.sender, address(this), _premium);
         } else {
-            // maker is seller: deposit underlying tokens
-            bool success = IERC20(deal.underlyingToken).transferFrom(
-                msg.sender,
-                address(this),
-                _amount
-            );
-            if (!success) revert Option__DepositMarginFailed();
+            if (_isCall) {
+                // maker is call seller: deposit underlying tokens
+                _safeTransferFrom(_underlyingToken, msg.sender, address(this), _amount);
+            } else {
+                // maker is put seller: deposit quote tokens
+                uint price = getPrice(_underlyingToken, _quoteToken);
+                (uint8 ulyDec, uint8 quoteDec, uint8 priceDec) = getDecimals(
+                    _underlyingToken,
+                    _quoteToken
+                );
+                uint quoteAmount = OtcMath.getQuoteAmount(
+                    _amount,
+                    price,
+                    ulyDec,
+                    quoteDec,
+                    priceDec
+                );
+                _safeTransferFrom(_quoteToken, msg.sender, address(this), quoteAmount);
+            }
         }
 
         emit DealCreated(
@@ -171,11 +185,11 @@ contract OtcOption is Ownable {
                 address(this),
                 deal.amount
             );
-            if (!success) revert Option__DepositMarginFailed();
+            if (!success) revert Option__TransferFailed();
 
             // transfer premium to the seller (taker)
             success = IERC20(deal.quoteToken).transfer(msg.sender, deal.premium);
-            if (!success) revert Option__TransferPremiumFailed();
+            if (!success) revert Option__TransferFailed();
         } else {
             // taker is buyer: transfer premium to the seller (maker)
             bool success = IERC20(deal.quoteToken).transferFrom(
@@ -183,7 +197,7 @@ contract OtcOption is Ownable {
                 deal.maker,
                 deal.premium
             );
-            if (!success) revert Option__DepositPremiumFailed();
+            if (!success) revert Option__TransferFailed();
         }
 
         _deals[id].taker = msg.sender;
@@ -195,10 +209,10 @@ contract OtcOption is Ownable {
         Deal memory deal = getDeal(id);
         if (deal.isMakerBuyer) {
             bool success = IERC20(deal.quoteToken).transfer(msg.sender, deal.premium);
-            if (!success) revert Option__TransferPremiumFailed();
+            if (!success) revert Option__TransferFailed();
         } else {
             bool success = IERC20(deal.underlyingToken).transfer(msg.sender, deal.amount);
-            if (!success) revert Option__TransferMarginFailed();
+            if (!success) revert Option__TransferFailed();
         }
         _deals[id].status = DealStatus.Removed;
         emit DealRemoved(id);
@@ -230,7 +244,7 @@ contract OtcOption is Ownable {
         address receiver = exercised ? getDealBuyer(deal.id) : getDealSeller(deal.id);
 
         bool success = IERC20(deal.underlyingToken).transfer(receiver, deal.amount);
-        if (!success) revert Option__TransferMarginFailed();
+        if (!success) revert Option__TransferFailed();
 
         _deals[id].status = DealStatus.Settled;
         emit DealSettled(id, exercised);
@@ -286,13 +300,20 @@ contract OtcOption is Ownable {
      * @param id deal ID
      * @return decimals of (underlyingToken, quoteToken, priceFeed)
      */
-    function getDecimals(uint id) external view returns (uint8, uint8, uint8) {
+    function getDealDecimals(uint id) external view returns (uint8, uint8, uint8) {
         Deal memory deal = getDeal(id);
-        address priceFeedAddress = getPriceFeed(deal.underlyingToken, deal.quoteToken);
+        return getDecimals(deal.underlyingToken, deal.quoteToken);
+    }
+
+    function getDecimals(
+        address _underlyingToken,
+        address _quoteToken
+    ) public view returns (uint8, uint8, uint8) {
+        address priceFeedAddress = getPriceFeed(_underlyingToken, _quoteToken);
 
         return (
-            ERC20(deal.underlyingToken).decimals(),
-            ERC20(deal.quoteToken).decimals(),
+            ERC20(_underlyingToken).decimals(),
+            ERC20(_quoteToken).decimals(),
             AggregatorV3Interface(priceFeedAddress).decimals()
         );
     }

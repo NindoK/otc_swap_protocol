@@ -7,6 +7,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@chainlink/contracts/src/v0.8/tests/MockV3Aggregator.sol";
 import "./helpers/util.sol";
 import "../src/OtcOption.sol";
+import "../src/OtcMath.sol";
 import "./MockToken.sol";
 
 // forge test --match-path test\OtcOption.t.sol -vvv
@@ -32,6 +33,7 @@ contract OtcOptionTest is Test {
             address(quoteToken),
             address(mockAggregator)
         );
+        mockAggregator.updateAnswer(int256(42));
         vm.stopPrank();
     }
 
@@ -218,9 +220,30 @@ contract OtcOptionTest is Test {
         if (_isMakerBuyer) {
             quoteToken.mint(_premium);
             quoteToken.approve(address(otcOption), _premium);
+            assertEq(quoteToken.balanceOf(maker), _premium);
         } else {
-            underlyingToken.mint(_amount);
-            underlyingToken.approve(address(otcOption), _amount);
+            if (_isCall) {
+                underlyingToken.mint(_amount);
+                underlyingToken.approve(address(otcOption), _amount);
+                assertEq(underlyingToken.balanceOf(maker), _amount);
+            } else {
+                (uint8 ulyDec, uint8 quoteDec, uint8 priceDec) = otcOption.getDecimals(
+                    address(underlyingToken),
+                    address(quoteToken)
+                );
+                uint price = otcOption.getPrice(address(underlyingToken), address(quoteToken));
+                uint quoteAmount = OtcMath.getQuoteAmount(
+                    _amount,
+                    price,
+                    ulyDec,
+                    quoteDec,
+                    priceDec
+                );
+
+                quoteToken.mint(quoteAmount);
+                quoteToken.approve(address(otcOption), quoteAmount);
+                assertEq(quoteToken.balanceOf(maker), quoteAmount);
+            }
         }
 
         uint dealId = otcOption.createDeal(
@@ -233,6 +256,8 @@ contract OtcOptionTest is Test {
             _premium,
             _isMakerBuyer
         );
+        assertEq(quoteToken.balanceOf(maker), 0);
+        assertEq(underlyingToken.balanceOf(maker), 0);
 
         vm.stopPrank();
         return dealId;
@@ -255,17 +280,15 @@ contract OtcOptionTest is Test {
         vm.assume(_premium > 0);
 
         uint strike = _strike * 10 ** mockAggregator.decimals();
-        uint maturity = _maturity;
-        bool isCall = _isCall;
         uint amount = _amount * 10 ** underlyingToken.decimals();
         uint premium = _premium * 10 ** quoteToken.decimals();
 
-        uint dealId = _createDeal(strike, maturity, isCall, amount, premium, _isMakerBuyer);
+        uint dealId = _createDeal(strike, _maturity, _isCall, amount, premium, _isMakerBuyer);
 
         OtcOption.Deal memory deal = otcOption.getDeal(dealId);
         assertEq(deal.strike, strike);
-        assertEq(deal.maturity, maturity);
-        assertEq(deal.isCall, isCall);
+        assertEq(deal.maturity, _maturity);
+        assertEq(deal.isCall, _isCall);
         assertEq(deal.amount, amount);
         assertEq(deal.premium, premium);
         assertEq(deal.isMakerBuyer, _isMakerBuyer);
@@ -273,9 +296,8 @@ contract OtcOptionTest is Test {
         assertEq(deal.maker, address(maker));
         assertEq(deal.taker, address(0));
 
-        (uint8 underlyingTokenDec, uint8 quoteTokenDec, uint8 priceFeedDec) = otcOption.getDecimals(
-            dealId
-        );
+        (uint8 underlyingTokenDec, uint8 quoteTokenDec, uint8 priceFeedDec) = otcOption
+            .getDealDecimals(dealId);
         assertEq(underlyingTokenDec, underlyingToken.decimals());
         assertEq(quoteTokenDec, quoteToken.decimals());
         assertEq(priceFeedDec, mockAggregator.decimals());
