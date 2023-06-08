@@ -12,7 +12,7 @@ import { ethers } from "ethers"
 import networkMapping from "@constants/networkMapping"
 
 const ConfirmSwap = ({
-    rfsId /*rfs TODO we can consider just passing the rfs directly, since we already fetch it from the swap page and we have a list of rfs*/,
+    rfsId = 1 /*rfs TODO we can consider just passing the rfs directly, since we already fetch it from the swap page and we have a list of rfs*/,
 }) => {
     const [tokenData, setTokenData] = useState([])
     const [tokenOneAmount, setTokenOneAmount] = useState(null)
