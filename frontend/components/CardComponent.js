@@ -23,6 +23,14 @@ const CardComponent = (props) => {
     const dynamicStyle = {
         backgroundColor: props.condition ? "#A06D22" : "#348D8D",
     }
+    const Type = Object.freeze({
+        DYNAMIC: 1,
+        FIXED_USD: 2,
+        FIXED_AMOUNT: 3
+    });
+    const rfsType = props.rfs.typeRfs ==0? Type.DYNAMIC: props.rfs.usdPrice>0?Type.FIXED_USD: Type.FIXED_AMOUNT;
+
+
 
     return (
         <div className=" w-full flex justify-center mt-10 ">
@@ -38,7 +46,8 @@ const CardComponent = (props) => {
                     onClick={() => {
                         setOverlay(<OverlayOne />)
                         onOpen()
-//                        console.log(JSON.stringify(props.rfs))
+                        console.log(JSON.stringify(props.rfs))
+                        console.log(rfsType)
                     }}
                 >
                     <div className="ml-24 mt-12">{props.icon}</div>
