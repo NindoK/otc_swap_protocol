@@ -7,6 +7,10 @@ import dynamic from "next/dynamic"
 import Navbar from "@components/Navbar"
 import { ConnectButton } from "@rainbow-me/rainbowkit"
 import CoingeckoCachedResponse from "@constants/coingeckoCachedResponse"
+import { ethers } from "ethers"
+import networkMapping from "@constants/networkMapping"
+import OtcNexusAbi from "@constants/abis/OtcNexusAbi"
+
 
 const swap = () => {
     const [tokenData, setTokenData] = useState([])
@@ -20,6 +24,7 @@ const swap = () => {
     }
 
     const retrieveAvailableRfs = async () => {
+    console.log('retrieveAvailableRfs')
         const provider = new ethers.providers.Web3Provider(window.ethereum)
         const signer = provider.getSigner()
         const chainId = (await provider.getNetwork()).chainId
@@ -54,7 +59,7 @@ const swap = () => {
             setRfsDataAll(rfses);
     }
 
-    async function assembleCardComponentData() {
+     function assembleCardComponentData() {
       function findTokenDataForAddress(address, tokens) {
             let tokensWithCriteria = tokens.filter((token) => token.address == address);
             if(tokensWithCriteria.length != 1) {
@@ -63,7 +68,7 @@ const swap = () => {
             return tokensWithCriteria[0];
       }
       let cards = [];
-      rfses.filter((rfs)=>!rfs.removed).forEach((rfs) => {
+      rfsDataAll.filter((rfs)=>!rfs.removed).forEach((rfs) => {
       let token0Data = findTokenDataForAddress(rfs.token0, tokens);
       let tokensAcceptedData = tokensAccepted.map(address => findTokenDataForAddress(rfs.token0, tokens));
 
@@ -117,9 +122,13 @@ const swap = () => {
 
         useEffect(() => {
           const fetchData = async () => {
-            await fetchTokenData();
+          console.log(1)
+            fetchTokenData();
+          console.log(2)
             await retrieveAvailableRfs();
-            await assembleCardComponentData();
+          console.log(3)
+            assembleCardComponentData();
+          console.log(4)
           };
 
           fetchData();
