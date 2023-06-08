@@ -50,14 +50,21 @@ const swap = () => {
             }
             return tokensWithCriteria[0];
       }
+      function startsWithNumber(str) {
+          const regex = /^\d/;
+          return regex.test(str);
+      }
       function trimRfs(rfs) {
           let trimmedRfs = {};
 
           for(let key in rfs) {
-//          console.log(key)
+//              console.log(key)
+              if(startsWithNumber(key)) {
+                continue;
+              }
               if(rfs[key]._isBigNumber) {
                   // todo deadline might be big, we may want to convert eg let hexString = '0x01f4'; let decimalNumber = parseInt(hexString, 16); because we are passing string
-                  trimmedRfs[key] = rfs[key]._hex;
+                  trimmedRfs[key] = parseInt(rfs[key]._hex, 16);
               } else {
                   trimmedRfs[key] = rfs[key];
               }
@@ -75,6 +82,8 @@ const swap = () => {
 //      console.log(trimmedRfs);
       let token0Data = findTokenDataForAddress(rfs.token0.toLowerCase(), tokenData);
       let tokensAcceptedData = rfs.tokensAccepted.map(address => findTokenDataForAddress(address.toLowerCase(), tokenData));
+      trimmedRfs.token0Data=token0Data;
+      trimmedRfs.tokensAcceptedData=tokensAcceptedData;
 
       let showDiscount = false;
       let showPremium = false;
@@ -99,8 +108,7 @@ const swap = () => {
                 condition: true,
                 label: rfs.typeRfs === 0 ? "Dynamic" : "Fixed",
                 icon: (
-                    <img src={token0Data.logoURI} alt="" width="70" height="70">
-                    </img>
+                    <img src={token0Data.logoURI} alt="" width="70" height="70"/>
                 ),
                 title: token0Data.name + " /",
                 showDiscount: showDiscount,
