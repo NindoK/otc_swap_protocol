@@ -134,6 +134,19 @@ const CreateRfs = () => {
         fetchTokenData()
     }, [])
 
+    const isFormValid = () => {
+        return (
+         deadline !== '' &&
+          tokenOffered !== '' &&
+          amount0Offered !== '' &&
+          interactionType !== '' &&
+          rfsType !== '' &&
+          ((rfsType === 'Dynamic' && tokensAccepted !== '' && priceMultiplier !== '') ||
+            (rfsType === 'Fixed_Usd' && tokensAccepted !== '' && usdPrice !== '') ||
+            (rfsType === 'Fixed_Amount' && tokensAccepted !== '' && amount1Requested !== ''))
+        );
+      };
+
     return (
         <>
             <div className={`${styles.paddingX} ${styles.flexCenter} bg-black`}>
@@ -144,7 +157,7 @@ const CreateRfs = () => {
                     <ConnectButton showBalance={false} />
                 </div>
             </div>
-            <div className="flex lg:h-screen w-full bg-black">
+            <div className="flex h-screen w-full bg-black">
                 {/* gradient start */}
                 <div className="absolute z-[0] w-[40%] h-[35%] top-0 right-0 pink__gradient" />
                 <div className="absolute z-[0] w-[40%] h-[50%] rounded-full right-0 white__gradient bottom-40" />
@@ -341,12 +354,13 @@ const CreateRfs = () => {
                                     </div>
                                 )}
 
-                                <Button
+                                <div className="flex w-full justify-center">
+                                <Button isDisabled={!isFormValid()}
                                     className="bg-blue-gradient rounded-xl py-2 px-4 top-5"
                                     type="submit"
                                 >
                                     Submit
-                                </Button>
+                                </Button></div>
                             </div>
                         </div>
                     </form>
