@@ -182,25 +182,20 @@ contract OtcOption is Ownable {
 
         Deal memory deal = getDeal(id);
         if (deal.status != DealStatus.Open) revert Option__DealNotOpen();
-        if (deal.isMakerBuyer) {
-            // taker is seller: deposit margin
-            bool success = IERC20(deal.underlyingToken).transferFrom(
-                msg.sender,
-                address(this),
-                deal.amount
-            );
-            if (!success) revert Option__TransferFailed();
 
-            // transfer premium to the seller (taker)
-            success = IERC20(deal.quoteToken).transfer(msg.sender, deal.premium);
-            if (!success) revert Option__TransferFailed();
-        } else {
+        if (!deal.isMakerBuyer) {
             // taker is buyer: transfer premium to the seller (maker)
-            bool success = IERC20(deal.quoteToken).transferFrom(
-                msg.sender,
-                deal.maker,
-                deal.premium
-            );
+            _safeTransferFrom(deal.quoteToken, msg.sender, deal.maker, deal.premium);
+        } else {
+            if (deal.isCall) {
+                // taker is call seller: deposit margin
+                _safeTransferFrom(deal.underlyingToken, msg.sender, address(this), deal.amount);
+            } else {
+                // taker is put seller: deposit quote tokens
+                _safeTransferFrom(deal.quoteToken, msg.sender, address(this), deal.quoteAmount);
+            }
+            // transfer premium to the seller (taker)
+            bool success = IERC20(deal.quoteToken).transfer(msg.sender, deal.premium);
             if (!success) revert Option__TransferFailed();
         }
 

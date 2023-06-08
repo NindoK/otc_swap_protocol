@@ -406,10 +406,9 @@ contract OtcOptionTest is Test {
 
         uint dealId = _createDeal(strike, _maturity, _isCall, amount, premium, _isMakerBuyer);
         OtcOption.Deal memory deal = otcOption.getDeal(dealId);
-        uint quoteAmount = deal.quoteAmount;
 
         if (!_isMakerBuyer && !_isCall) {
-            assertEq(ERC20(quoteToken).balanceOf(address(otcOption)), quoteAmount);
+            assertEq(ERC20(quoteToken).balanceOf(address(otcOption)), deal.quoteAmount);
         }
 
         // taker cannot remove
@@ -433,7 +432,7 @@ contract OtcOptionTest is Test {
             } else {
                 // refund quote token
                 assertEq(ERC20(quoteToken).balanceOf(address(otcOption)), 0);
-                assertEq(ERC20(quoteToken).balanceOf(address(maker)), quoteAmount);
+                assertEq(ERC20(quoteToken).balanceOf(address(maker)), deal.quoteAmount);
             }
         }
 
@@ -444,8 +443,8 @@ contract OtcOptionTest is Test {
     }
 
     function test_takeDeal(
-        uint64 _strike,
-        uint64 _maturity,
+        uint32 _strike,
+        uint32 _maturity,
         bool _isCall,
         uint128 _amount,
         uint128 _premium,
@@ -457,24 +456,33 @@ contract OtcOptionTest is Test {
         vm.assume(_premium > 0);
 
         uint strike = _strike * 10 ** mockAggregator.decimals();
-        uint maturity = _maturity;
-        bool isCall = _isCall;
         uint amount = _amount * 10 ** underlyingToken.decimals();
         uint premium = _premium * 10 ** quoteToken.decimals();
 
-        uint dealId = _createDeal(strike, maturity, isCall, amount, premium, _isMakerBuyer);
+        uint dealId = _createDeal(strike, _maturity, _isCall, amount, premium, _isMakerBuyer);
 
         vm.startPrank(taker);
-        if (_isMakerBuyer) {
-            underlyingToken.mint(amount);
-            underlyingToken.approve(address(otcOption), amount);
-            otcOption.takeDeal(dealId);
-            assertEq(ERC20(underlyingToken).balanceOf(address(taker)), 0); // seller deposited the margin
-        } else {
+        if (!_isMakerBuyer) {
+            // taker is buyer
             quoteToken.mint(premium);
             quoteToken.approve(address(otcOption), premium);
             otcOption.takeDeal(dealId);
             assertEq(ERC20(quoteToken).balanceOf(address(taker)), 0); // buyer deposited the premium
+        } else {
+            if (_isCall) {
+                // taker is call seller
+                underlyingToken.mint(amount);
+                underlyingToken.approve(address(otcOption), amount);
+                otcOption.takeDeal(dealId);
+                assertEq(ERC20(underlyingToken).balanceOf(address(taker)), 0); // call seller deposited the margin
+            } else {
+                // taker is put seller
+                OtcOption.Deal memory deal = otcOption.getDeal(dealId);
+                quoteToken.mint(deal.quoteAmount);
+                quoteToken.approve(address(otcOption), deal.quoteAmount);
+                otcOption.takeDeal(dealId);
+                assertEq(ERC20(quoteToken).balanceOf(address(taker)), deal.premium); // put seller deposited the quote token
+            }
         }
         vm.stopPrank();
         assert(otcOption.getDeal(dealId).status == OtcOption.DealStatus.Taken);
