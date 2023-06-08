@@ -98,6 +98,11 @@ contract OtcOption is Ownable {
         if (!success) revert Option__TransferFailed();
     }
 
+    function _safeTransfer(address _token, address _to, uint _amount) internal {
+        bool success = IERC20(_token).transfer(_to, _amount);
+        if (!success) revert Option__TransferFailed();
+    }
+
     function getQuoteAmount(
         address _underlyingToken,
         address _quoteToken,
@@ -196,8 +201,7 @@ contract OtcOption is Ownable {
                 _safeTransferFrom(deal.quoteToken, msg.sender, address(this), deal.quoteAmount);
             }
             // transfer premium to the seller (taker)
-            bool success = IERC20(deal.quoteToken).transfer(msg.sender, deal.premium);
-            if (!success) revert Option__TransferFailed();
+            _safeTransfer(deal.quoteToken, msg.sender, deal.premium);
         }
 
         _deals[id].taker = msg.sender;
@@ -208,15 +212,12 @@ contract OtcOption is Ownable {
     function _removeDeal(uint id) internal {
         Deal memory deal = getDeal(id);
         if (deal.isMakerBuyer) {
-            bool success = IERC20(deal.quoteToken).transfer(msg.sender, deal.premium);
-            if (!success) revert Option__TransferFailed();
+            _safeTransfer(deal.quoteToken, msg.sender, deal.premium);
         } else {
             if (deal.isCall) {
-                bool success = IERC20(deal.underlyingToken).transfer(msg.sender, deal.amount);
-                if (!success) revert Option__TransferFailed();
+                _safeTransfer(deal.underlyingToken, msg.sender, deal.amount);
             } else {
-                bool success = IERC20(deal.quoteToken).transfer(msg.sender, deal.quoteAmount);
-                if (!success) revert Option__TransferFailed();
+                _safeTransfer(deal.quoteToken, msg.sender, deal.quoteAmount);
             }
         }
         _deals[id].status = DealStatus.Removed;
@@ -255,12 +256,10 @@ contract OtcOption is Ownable {
 
             if (deal.isCall) {
                 // call expires worthless and seller can settle: refund underlying token to the seller
-                bool success = IERC20(deal.underlyingToken).transfer(msg.sender, deal.amount);
-                if (!success) revert Option__TransferFailed();
+                _safeTransfer(deal.underlyingToken, msg.sender, deal.amount);
             } else {
                 // put expires worthless and seller can settle: refund quote token to the seller
-                bool success = IERC20(deal.quoteToken).transfer(msg.sender, deal.quoteAmount);
-                if (!success) revert Option__TransferFailed();
+                _safeTransfer(deal.quoteToken, msg.sender, deal.quoteAmount);
             }
         } else {
             // option is not exercisable and buyer cannot settle
@@ -269,13 +268,11 @@ contract OtcOption is Ownable {
             if (deal.isCall) {
                 // call is exercisable: buyer buys the margin with the quote token
                 _safeTransferFrom(deal.quoteToken, msg.sender, seller, deal.quoteAmount);
-                bool success = IERC20(deal.underlyingToken).transfer(msg.sender, deal.amount);
-                if (!success) revert Option__TransferFailed();
+                _safeTransfer(deal.underlyingToken, msg.sender, deal.amount);
             } else {
                 // put is exercisable: buyer sells the underlying in exchange for the quote token
                 _safeTransferFrom(deal.underlyingToken, msg.sender, seller, deal.amount);
-                bool success = IERC20(deal.quoteToken).transfer(msg.sender, deal.quoteAmount);
-                if (!success) revert Option__TransferFailed();
+                _safeTransfer(deal.quoteToken, msg.sender, deal.quoteAmount);
             }
         }
 

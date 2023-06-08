@@ -442,6 +442,34 @@ contract OtcOptionTest is Test {
         otcOption.takeDeal(dealId);
     }
 
+    function _takeDeal(uint dealId) private {
+        OtcOption.Deal memory deal = otcOption.getDeal(dealId);
+
+        vm.startPrank(taker);
+        if (!deal.isMakerBuyer) {
+            // taker is buyer
+            quoteToken.mint(deal.premium);
+            quoteToken.approve(address(otcOption), deal.premium);
+            otcOption.takeDeal(dealId);
+            assertEq(ERC20(quoteToken).balanceOf(address(taker)), 0); // buyer deposited the premium
+        } else {
+            if (deal.isCall) {
+                // taker is call seller
+                underlyingToken.mint(deal.amount);
+                underlyingToken.approve(address(otcOption), deal.amount);
+                otcOption.takeDeal(dealId);
+                assertEq(ERC20(underlyingToken).balanceOf(address(taker)), 0); // call seller deposited the margin
+            } else {
+                // taker is put seller
+                quoteToken.mint(deal.quoteAmount);
+                quoteToken.approve(address(otcOption), deal.quoteAmount);
+                otcOption.takeDeal(dealId);
+                assertEq(ERC20(quoteToken).balanceOf(address(taker)), deal.premium); // put seller deposited the quote token
+            }
+        }
+        vm.stopPrank();
+    }
+
     function test_takeDeal(
         uint32 _strike,
         uint32 _maturity,
@@ -461,30 +489,7 @@ contract OtcOptionTest is Test {
 
         uint dealId = _createDeal(strike, _maturity, _isCall, amount, premium, _isMakerBuyer);
 
-        vm.startPrank(taker);
-        if (!_isMakerBuyer) {
-            // taker is buyer
-            quoteToken.mint(premium);
-            quoteToken.approve(address(otcOption), premium);
-            otcOption.takeDeal(dealId);
-            assertEq(ERC20(quoteToken).balanceOf(address(taker)), 0); // buyer deposited the premium
-        } else {
-            if (_isCall) {
-                // taker is call seller
-                underlyingToken.mint(amount);
-                underlyingToken.approve(address(otcOption), amount);
-                otcOption.takeDeal(dealId);
-                assertEq(ERC20(underlyingToken).balanceOf(address(taker)), 0); // call seller deposited the margin
-            } else {
-                // taker is put seller
-                OtcOption.Deal memory deal = otcOption.getDeal(dealId);
-                quoteToken.mint(deal.quoteAmount);
-                quoteToken.approve(address(otcOption), deal.quoteAmount);
-                otcOption.takeDeal(dealId);
-                assertEq(ERC20(quoteToken).balanceOf(address(taker)), deal.premium); // put seller deposited the quote token
-            }
-        }
-        vm.stopPrank();
+        _takeDeal(dealId);
         assert(otcOption.getDeal(dealId).status == OtcOption.DealStatus.Taken);
 
         vm.startPrank(maker);
@@ -553,29 +558,7 @@ contract OtcOptionTest is Test {
         uint dealId = _createDeal(strike, _maturity, _isCall, amount, premium, _isMakerBuyer);
         OtcOption.Deal memory deal = otcOption.getDeal(dealId);
 
-        vm.startPrank(taker);
-        if (!_isMakerBuyer) {
-            // taker is buyer
-            quoteToken.mint(premium);
-            quoteToken.approve(address(otcOption), premium);
-            otcOption.takeDeal(dealId);
-            assertEq(ERC20(quoteToken).balanceOf(address(taker)), 0); // buyer deposited the premium
-        } else {
-            if (_isCall) {
-                // taker is call seller
-                underlyingToken.mint(amount);
-                underlyingToken.approve(address(otcOption), amount);
-                otcOption.takeDeal(dealId);
-                assertEq(ERC20(underlyingToken).balanceOf(address(taker)), 0); // call seller deposited the margin
-            } else {
-                // taker is put seller
-                quoteToken.mint(deal.quoteAmount);
-                quoteToken.approve(address(otcOption), deal.quoteAmount);
-                otcOption.takeDeal(dealId);
-                assertEq(ERC20(quoteToken).balanceOf(address(taker)), deal.premium); // put seller deposited the quote token
-            }
-        }
-        vm.stopPrank();
+        _takeDeal(dealId);
 
         // forward
         vm.warp(_maturity);
@@ -641,29 +624,7 @@ contract OtcOptionTest is Test {
         uint dealId = _createDeal(strike, _maturity, _isCall, amount, premium, _isMakerBuyer);
         OtcOption.Deal memory deal = otcOption.getDeal(dealId);
 
-        vm.startPrank(taker);
-        if (!_isMakerBuyer) {
-            // taker is buyer
-            quoteToken.mint(premium);
-            quoteToken.approve(address(otcOption), premium);
-            otcOption.takeDeal(dealId);
-            assertEq(ERC20(quoteToken).balanceOf(address(taker)), 0); // buyer deposited the premium
-        } else {
-            if (_isCall) {
-                // taker is call seller
-                underlyingToken.mint(amount);
-                underlyingToken.approve(address(otcOption), amount);
-                otcOption.takeDeal(dealId);
-                assertEq(ERC20(underlyingToken).balanceOf(address(taker)), 0); // call seller deposited the margin
-            } else {
-                // taker is put seller
-                quoteToken.mint(deal.quoteAmount);
-                quoteToken.approve(address(otcOption), deal.quoteAmount);
-                otcOption.takeDeal(dealId);
-                assertEq(ERC20(quoteToken).balanceOf(address(taker)), deal.premium); // put seller deposited the quote token
-            }
-        }
-        vm.stopPrank();
+        _takeDeal(dealId);
 
         // forward
         vm.warp(_maturity);
