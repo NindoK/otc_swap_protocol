@@ -1,4 +1,5 @@
-import { Box, Flex, Select, Tag, TagCloseButton, TagLabel } from "@chakra-ui/react"
+import { AddIcon } from "@chakra-ui/icons"
+import { Box, Flex, IconButton, Select, Tag, TagCloseButton, TagLabel } from "@chakra-ui/react"
 import axios from "axios"
 import React, { useEffect, useState } from "react"
 
@@ -28,11 +29,25 @@ const MultipleTags = ({ setTokensAccepted }) => {
 
     const handleInputKeyDown = (event) => {
         if (event.key === "Enter" && inputValue.trim() !== "") {
-            setTags([...tags, inputValue.trim()])
-            setTokensAccepted([...tags, inputValue.trim()])
-            setInputValue("")
+
+          addTag();
         }
-    }
+      };
+
+      const handleAddTag = () => {
+        if (inputValue.trim() !== "") {
+          addTag();
+        }
+      };
+    
+      const addTag = () => {
+        const trimmedValue = inputValue.trim();
+        // Check if the tag already exists
+        if (!tags.includes(trimmedValue)) {
+          setTags([...tags, trimmedValue]);
+        }
+        setInputValue("");
+      };
 
     const handleRemoveTag = (tag) => {
         const updatedTags = tags.filter((t) => t !== tag)
@@ -49,6 +64,8 @@ const MultipleTags = ({ setTokensAccepted }) => {
                 ))}
             </Box>
 
+            
+
             <Select
                 placeholder="Select options"
                 isMulti
@@ -59,11 +76,30 @@ const MultipleTags = ({ setTokensAccepted }) => {
                 mt={2}
             >
                 {tokenData.slice(0, 20).map((token) => (
+
+                  
                     <option key={`${token.name}-${token.symbol}`} value={token.address}>
                         {token.symbol}
+
                     </option>
                 ))}
             </Select>
+
+            <button
+        onClick={handleAddTag}
+        disabled={inputValue.trim() === ""}
+        style={{
+          marginTop: "5px",
+          backgroundColor: "green",
+          color: "white",
+          margin: "5px 120px",
+          border: "none",
+          borderRadius: "50px",
+          cursor: "pointer",
+        }}
+      >
+        +
+      </button>
         </Flex>
     )
 }

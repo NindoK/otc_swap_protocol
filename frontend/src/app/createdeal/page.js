@@ -84,6 +84,7 @@ const CreateDeal = () => {
 
     return (
         <React.Fragment>
+        
             <div className={`${styles.paddingX} ${styles.flexCenter} bg-black`}>
                 <div className={`${styles.boxWidth}`}>
                     <Navbar />
@@ -162,6 +163,7 @@ const CreateDeal = () => {
                                     name="optionType"
                                     value={createDealFormData.optionType}
                                     onChange={handleOptionChange}
+                                    
                                 >
                                     <option>Call</option>
                                     <option>Put</option>

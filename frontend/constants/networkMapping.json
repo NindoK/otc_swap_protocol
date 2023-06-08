@@ -1,6 +1,10 @@
 {
     "31337": {
         "OtcNexus": "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0",
-        "OtcOptions": "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9"
+        "OtcOption": "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9"
+    },
+    "80001": {
+        "OtcNexus": "0x9a45b4A0EB5A5Aa015A751abAef0e6e92D8daFDE",
+        "OtcOption": "0x9c6EFA879Fac0B30e28f5736fF554963BEB4f286"
     }
 }
