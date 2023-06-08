@@ -11,6 +11,7 @@ import {
     FormHelperText,
     FormLabel,
     Input,
+    useNumberInput,
     NumberInput,
     NumberInputField,
     Select,
