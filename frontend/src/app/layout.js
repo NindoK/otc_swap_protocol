@@ -6,11 +6,12 @@ import { Montserrat } from "@next/font/google"
 import "@rainbow-me/rainbowkit/styles.css"
 import { getDefaultWallets, RainbowKitProvider, darkTheme } from "@rainbow-me/rainbowkit"
 import { configureChains, createConfig, WagmiConfig } from "wagmi"
-import { arbitrum, goerli, mainnet, optimism, polygon } from "wagmi/chains"
+import { arbitrum, goerli, mainnet, optimism, polygon, polygonMumbai} from "wagmi/chains"
 import { publicProvider } from "wagmi/providers/public"
 
 const { chains, publicClient, webSocketPublicClient } = configureChains(
     [
+        polygonMumbai,
         mainnet,
         polygon,
         optimism,

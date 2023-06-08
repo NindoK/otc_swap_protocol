@@ -141,7 +141,7 @@ const CreateRfs = () => {
                     <ConnectButton showBalance={false} />
                 </div>
             </div>
-            <div className="flex h-screen w-full bg-black">
+            <div className="flex h-fit w-full bg-black">
                 {/* gradient start */}
                 <div className="absolute z-[0] w-[40%] h-[35%] top-0 right-0 pink__gradient" />
                 <div className="absolute z-[0] w-[40%] h-[50%] rounded-full right-0 white__gradient bottom-40" />
