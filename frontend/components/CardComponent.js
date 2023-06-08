@@ -54,9 +54,16 @@ const CardComponent = (props) => {
                     align="stretch"
                     className="absolute top-10 right-32 font-montserrat text-md font-medium"
                 >
+                  {props.showDiscount && (
                     <h3 className="text-white">
                         Discount : <span className="text-red-500">{props.discount}</span>
                     </h3>
+                    )}
+                    {props.showPremium && (
+                    <h3 className="text-white">
+                        Discount : <span className="text-green-500">{props.premium}</span>
+                    </h3>
+                    )}
                     <h3 className="text-white">
                         Price : <span className="text-green-600">{props.price}</span>
                     </h3>

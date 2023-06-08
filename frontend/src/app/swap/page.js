@@ -1,28 +1,42 @@
 "use client"
-import React from "react"
+import React, { useState, useEffect }  from "react"
 import Sidebar from "@components/Sidebar"
 import CardComponent from "@components/CardComponent"
 import { CardData } from "@components/CardData"
 import dynamic from "next/dynamic"
 import Navbar from "@components/Navbar"
 import { ConnectButton } from "@rainbow-me/rainbowkit"
+import CoingeckoCachedResponse from "@constants/coingeckoCachedResponse"
 
 const swap = () => {
+    const [tokenData, setTokenData] = useState([])
+    const [rfsDataAll, setRfsDataAll] = useState([])
+    const [cardComponentData, setCardComponentData] = useState([])
+
+    function fetchTokenData() {
+//            const response = await axios.get("https://tokens.coingecko.com/uniswap/all.json")
+// workaround
+        setTokenData(CoingeckoCachedResponse.tokens);
+    }
+
     const retrieveAvailableRfs = async () => {
         const provider = new ethers.providers.Web3Provider(window.ethereum)
         const signer = provider.getSigner()
         const chainId = (await provider.getNetwork()).chainId
-        const otcNexus = new ethers.Contract(networkMapping[chainId].OtcNexus, OtcNexusAbi, signer)
+        const otcNexus = new ethers.Contract(networkMapping[chainId].OtcNexus, OtcNexusAbi, signer);
+        let rfses = [];
 
-        // Retrieve all past NewRFS events from the contract.
+        // Retrieve all past RfsCreated events from the contract.
         contract
-            .getPastEvents("NewRFS", {
+            .getPastEvents("RfsCreated", {
                 fromBlock: 0, // Starting block
                 toBlock: "latest", // Ending block
             })
             .then((events) => {
-                // For each NewRFS event, fetch the corresponding RFS and update the front-end.
+                // For each RfsCreated event, fetch the corresponding RFS and update the front-end.
+                //todo then filter removed rfses; either from event or verify rfs.removed flag is working
                 events.forEach((event) => {
+                    console.log(event)
                     const rfsId = event.returnValues.id
 
                     contract.methods
@@ -30,13 +44,87 @@ const swap = () => {
                         .call()
                         .then((rfs) => {
                             console.log("Received RFS:", rfs)
+                            rfses.push(rfs);
                             // Now you can update your front-end to include this RFS.
                         })
                         .catch(console.error)
                 })
             })
-            .catch(console.error)
+            .catch(console.error);
+            setRfsDataAll(rfses);
     }
+
+    async function assembleCardComponentData() {
+      function findTokenDataForAddress(address, tokens) {
+            let tokensWithCriteria = tokens.filter((token) => token.address == address);
+            if(tokensWithCriteria.length != 1) {
+              console.log("Wrong amount of tokens found" + tokensWithCriteria);
+            }
+            return tokensWithCriteria[0];
+      }
+      let cards = [];
+      rfses.filter((rfs)=>!rfs.removed).forEach((rfs) => {
+      let token0Data = findTokenDataForAddress(rfs.token0, tokens);
+      let tokensAcceptedData = tokensAccepted.map(address => findTokenDataForAddress(rfs.token0, tokens));
+
+      let showDiscount = false;
+      let showPremium = false;
+      let discount = '';
+      let premium = '';
+      // dynamic
+      if(rfs.typeRfs == 0 && rfs.priceMultiplier >0) {
+          if (rfs.priceMultiplier === 100) {
+            showDiscount = true;
+            discount = 'none';
+          } else if ( rfs.priceMultiplier < 100) {
+            showDiscount = true;
+            discount = `${100 - rfs.priceMultiplier}%`;
+         } else {
+            showPremium = true;
+            premium = `${rfs.priceMultiplier-100}%`;
+         }
+      }
+
+        cards.push(
+            {
+                condition: true,
+                label: rfs.typeRfs === 0 ? "Dynamic" : "Fixed",
+                icon: (
+                    <img src={token0Data.logoURI} alt="" width="70" height="70">
+                    </img>
+                ),
+                title: token0Data.name + " /",
+                showDiscount: showDiscount,
+                showPremium: showPremium,
+                discount: discount,
+                premium: premium,
+                Price: "0.1621",
+                TTokens: rfs.currentAmount0,
+                TValue: "1.3M",
+                assets: (
+                    <AvatarGroup spacing={"0.5rem"} size="sm" max={tokensAcceptedData.length}>
+                            {tokensAcceptedData.map((token, index) => (
+                              <Avatar key={index} name={token.name} src={token.logo} />
+                                ))}
+                    </AvatarGroup>
+                ),
+            });
+        });
+        setCardComponentData(cards);
+      }
+
+
+
+        useEffect(() => {
+          const fetchData = async () => {
+            await fetchTokenData();
+            await retrieveAvailableRfs();
+            await assembleCardComponentData();
+          };
+
+          fetchData();
+        }, []);
+
 
     return (
         <div className="flex h-fit w-full bg-black">
@@ -48,7 +136,7 @@ const swap = () => {
             <Sidebar />
 
             <ul className="mt-36 ml-40">
-                {CardData.map((val, key) => {
+                {cardComponentData.map((val, key) => {
                     return (
                         <li>
                             <CardComponent
@@ -57,7 +145,10 @@ const swap = () => {
                                 label={val.label}
                                 icon={val.icon}
                                 assets={val.assets}
-                                discount={val.Discount}
+                                showDiscount={val.showDiscount}
+                                showPremium={val.showPremium}
+                                discount={val.discount}
+                                premium={val.premium}
                                 price={val.Price}
                                 ttokens={val.TTokens}
                                 tvalue={val.TValue}
