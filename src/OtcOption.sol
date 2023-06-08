@@ -33,6 +33,7 @@ contract OtcOption is Ownable {
         uint maturity,
         bool isCall,
         uint amount,
+        uint quoteAmount,
         uint premium,
         bool isMakerBuyer,
         address maker
@@ -56,6 +57,7 @@ contract OtcOption is Ownable {
         uint maturity;
         bool isCall;
         uint amount;
+        uint quoteAmount;
         uint premium;
         bool isMakerBuyer;
         DealStatus status;
@@ -95,6 +97,16 @@ contract OtcOption is Ownable {
         if (!success) revert Option__TransferFailed();
     }
 
+    function getQuoteAmount(
+        address _underlyingToken,
+        address _quoteToken,
+        uint _amount,
+        uint _price
+    ) public view returns (uint) {
+        (uint8 ulyDec, uint8 quoteDec, uint8 priceDec) = getDecimals(_underlyingToken, _quoteToken);
+        return OtcMath.getQuoteAmount(_amount, _price, ulyDec, quoteDec, priceDec);
+    }
+
     function createDeal(
         address _underlyingToken,
         address _quoteToken,
@@ -113,6 +125,8 @@ contract OtcOption is Ownable {
         if (_premium == 0) revert Option__InvalidPremium();
         getPriceFeed(_underlyingToken, _quoteToken);
 
+        uint quoteAmount = getQuoteAmount(_underlyingToken, _quoteToken, _amount, _strike);
+
         Deal memory deal = Deal(
             _dealCounter,
             _underlyingToken,
@@ -121,6 +135,7 @@ contract OtcOption is Ownable {
             _maturity,
             _isCall,
             _amount,
+            quoteAmount,
             _premium,
             _isMakerBuyer,
             DealStatus.Open,
@@ -140,18 +155,6 @@ contract OtcOption is Ownable {
                 _safeTransferFrom(_underlyingToken, msg.sender, address(this), _amount);
             } else {
                 // maker is put seller: deposit quote tokens
-                uint price = getPrice(_underlyingToken, _quoteToken);
-                (uint8 ulyDec, uint8 quoteDec, uint8 priceDec) = getDecimals(
-                    _underlyingToken,
-                    _quoteToken
-                );
-                uint quoteAmount = OtcMath.getQuoteAmount(
-                    _amount,
-                    price,
-                    ulyDec,
-                    quoteDec,
-                    priceDec
-                );
                 _safeTransferFrom(_quoteToken, msg.sender, address(this), quoteAmount);
             }
         }
@@ -164,6 +167,7 @@ contract OtcOption is Ownable {
             deal.maturity,
             deal.isCall,
             deal.amount,
+            deal.quoteAmount,
             deal.premium,
             deal.isMakerBuyer,
             msg.sender
@@ -211,8 +215,13 @@ contract OtcOption is Ownable {
             bool success = IERC20(deal.quoteToken).transfer(msg.sender, deal.premium);
             if (!success) revert Option__TransferFailed();
         } else {
-            bool success = IERC20(deal.underlyingToken).transfer(msg.sender, deal.amount);
-            if (!success) revert Option__TransferFailed();
+            if (deal.isCall) {
+                bool success = IERC20(deal.underlyingToken).transfer(msg.sender, deal.amount);
+                if (!success) revert Option__TransferFailed();
+            } else {
+                bool success = IERC20(deal.quoteToken).transfer(msg.sender, deal.quoteAmount);
+                if (!success) revert Option__TransferFailed();
+            }
         }
         _deals[id].status = DealStatus.Removed;
         emit DealRemoved(id);
