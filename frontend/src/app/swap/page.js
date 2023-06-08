@@ -89,7 +89,7 @@ const swap = () => {
                 discount: discount,
                 premium: premium,
                 Price: "0.1621",
-                TTokens: rfs.currentAmount0,
+                TTokens: rfs.currentAmount0.toNumber(),
                 TValue: "1.3M",
                 assets: (
                     <AvatarGroup spacing={"0.5rem"} size="sm" max={tokensAcceptedData.length}>
@@ -100,6 +100,7 @@ const swap = () => {
                 ),
             });
         });
+        console.log("cards")
         console.log(cards)
         setCardComponentData(cards);
       }
