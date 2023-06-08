@@ -38,6 +38,7 @@ const CardComponent = (props) => {
                     onClick={() => {
                         setOverlay(<OverlayOne />)
                         onOpen()
+//                        console.log(JSON.stringify(props.rfs))
                     }}
                 >
                     <div className="ml-24 mt-12">{props.icon}</div>

@@ -50,10 +50,28 @@ const swap = () => {
             }
             return tokensWithCriteria[0];
       }
+      function trimRfs(rfs) {
+          let trimmedRfs = {};
+
+          for(let key in rfs) {
+//          console.log(key)
+              if(rfs[key]._isBigNumber) {
+                  // todo deadline might be big, we may want to convert eg let hexString = '0x01f4'; let decimalNumber = parseInt(hexString, 16); because we are passing string
+                  trimmedRfs[key] = rfs[key]._hex;
+              } else {
+                  trimmedRfs[key] = rfs[key];
+              }
+          }
+
+          return trimmedRfs;
+      }
       console.log('rfs read');
       console.log(rfsDataAll);
       let cards = [];
       rfsDataAll.forEach((rfs) => {
+      let trimmedRfs = trimRfs(rfs);
+//      console.log("trimmedRfs");
+//      console.log(trimmedRfs);
       let token0Data = findTokenDataForAddress(rfs.token0.toLowerCase(), tokenData);
       let tokensAcceptedData = rfs.tokensAccepted.map(address => findTokenDataForAddress(address.toLowerCase(), tokenData));
 
@@ -98,6 +116,7 @@ const swap = () => {
                                 ))}
                     </AvatarGroup>
                 ),
+                rfs:trimmedRfs
             });
         });
         console.log("cards")
@@ -151,6 +170,7 @@ const swap = () => {
                                 ttokens={val.TTokens}
                                 tvalue={val.TValue}
                                 title={val.title}
+                                rfs={val.rfs}
                             />
                         </li>
                     )
