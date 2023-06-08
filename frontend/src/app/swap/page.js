@@ -1,42 +1,128 @@
 "use client"
-import React from "react"
+import React, { useState, useEffect }  from "react"
 import Sidebar from "@components/Sidebar"
 import CardComponent from "@components/CardComponent"
 import { CardData } from "@components/CardData"
 import dynamic from "next/dynamic"
 import Navbar from "@components/Navbar"
 import { ConnectButton } from "@rainbow-me/rainbowkit"
+import CoingeckoCachedResponse from "@constants/coingeckoCachedResponse"
+import { ethers } from "ethers"
+import networkMapping from "@constants/networkMapping"
+import OtcNexusAbi from "@constants/abis/OtcNexusAbi"
+import { Avatar, AvatarGroup } from "@chakra-ui/react"
+
 
 const swap = () => {
+    const [tokenData, setTokenData] = useState([])
+    const [rfsDataAll, setRfsDataAll] = useState([])
+    const [cardComponentData, setCardComponentData] = useState([])
+
+    function fetchTokenData() {
+//            const response = await axios.get("https://tokens.coingecko.com/uniswap/all.json")
+// workaround
+        setTokenData(CoingeckoCachedResponse.tokens);
+    }
+
     const retrieveAvailableRfs = async () => {
+    console.log('retrieveAvailableRfs')
         const provider = new ethers.providers.Web3Provider(window.ethereum)
         const signer = provider.getSigner()
         const chainId = (await provider.getNetwork()).chainId
-        const otcNexus = new ethers.Contract(networkMapping[chainId].OtcNexus, OtcNexusAbi, signer)
-
-        // Retrieve all past NewRFS events from the contract.
-        contract
-            .getPastEvents("NewRFS", {
-                fromBlock: 0, // Starting block
-                toBlock: "latest", // Ending block
-            })
-            .then((events) => {
-                // For each NewRFS event, fetch the corresponding RFS and update the front-end.
-                events.forEach((event) => {
-                    const rfsId = event.returnValues.id
-
-                    contract.methods
-                        .idToRfs(rfsId)
-                        .call()
-                        .then((rfs) => {
-                            console.log("Received RFS:", rfs)
-                            // Now you can update your front-end to include this RFS.
-                        })
-                        .catch(console.error)
-                })
-            })
-            .catch(console.error)
+        const contract = new ethers.Contract(networkMapping[chainId].OtcNexus, OtcNexusAbi, signer);
+        let rfses = [];
+        let maxId = await contract.rfsIdCounter();
+        for(let i = 1; i<maxId; i++) {
+                let rfs = await contract.getRfs(i);
+                console.log(rfs)
+                if(!rfs.removed) {
+                  rfses.push(rfs)
+                }
+        }
+        setRfsDataAll(rfses);
     }
+
+     const assembleCardComponentData = async () => {
+      function findTokenDataForAddress(address, tokens) {
+            let tokensWithCriteria = tokens.filter((token) => token.address == address);
+            if(tokensWithCriteria.length != 1) {
+              console.log("Wrong amount of tokens found" + tokensWithCriteria);
+            }
+            return tokensWithCriteria[0];
+      }
+      console.log('rfs read');
+      console.log(rfsDataAll);
+      let cards = [];
+      rfsDataAll.forEach((rfs) => {
+      let token0Data = findTokenDataForAddress(rfs.token0.toLowerCase(), tokenData);
+      let tokensAcceptedData = rfs.tokensAccepted.map(address => findTokenDataForAddress(address.toLowerCase(), tokenData));
+
+      let showDiscount = false;
+      let showPremium = false;
+      let discount = '';
+      let premium = '';
+      // dynamic
+      if(rfs.typeRfs == 0 && rfs.priceMultiplier >0) {
+          if (rfs.priceMultiplier === 100) {
+            showDiscount = true;
+            discount = 'none';
+          } else if ( rfs.priceMultiplier < 100) {
+            showDiscount = true;
+            discount = `${100 - rfs.priceMultiplier}%`;
+         } else {
+            showPremium = true;
+            premium = `${rfs.priceMultiplier-100}%`;
+         }
+      }
+
+        cards.push(
+            {
+                condition: true,
+                label: rfs.typeRfs === 0 ? "Dynamic" : "Fixed",
+                icon: (
+                    <img src={token0Data.logoURI} alt="" width="70" height="70">
+                    </img>
+                ),
+                title: token0Data.name + " /",
+                showDiscount: showDiscount,
+                showPremium: showPremium,
+                discount: discount,
+                premium: premium,
+                Price: "0.1621",
+                TTokens: rfs.currentAmount0.toNumber(),
+                TValue: "1.3M",
+                assets: (
+                    <AvatarGroup spacing={"0.5rem"} size="sm" max={tokensAcceptedData.length}>
+                            {tokensAcceptedData.map((token, index) => (
+                              <Avatar key={index} name={token.name} src={token.logo} />
+                                ))}
+                    </AvatarGroup>
+                ),
+            });
+        });
+        console.log("cards")
+        console.log(cards)
+        setCardComponentData(cards);
+      }
+
+
+          useEffect(() => {
+            const fetchData = async () => {
+              fetchTokenData();
+              await retrieveAvailableRfs();
+            };
+
+            fetchData();
+          }, []);
+
+          // New useEffect that runs assembleCardComponentData when rfsDataAll state changes
+          useEffect(() => {
+            const fetchData = async () => {
+              await assembleCardComponentData();
+            };
+            fetchData();
+          }, [rfsDataAll]);
+
 
     return (
         <div className="flex h-fit w-full bg-black">
@@ -48,7 +134,7 @@ const swap = () => {
             <Sidebar />
 
             <ul className="mt-36 ml-40">
-                {CardData.map((val, key) => {
+                {cardComponentData.map((val, key) => {
                     return (
                         <li>
                             <CardComponent
@@ -57,7 +143,10 @@ const swap = () => {
                                 label={val.label}
                                 icon={val.icon}
                                 assets={val.assets}
-                                discount={val.Discount}
+                                showDiscount={val.showDiscount}
+                                showPremium={val.showPremium}
+                                discount={val.discount}
+                                premium={val.premium}
                                 price={val.Price}
                                 ttokens={val.TTokens}
                                 tvalue={val.TValue}
