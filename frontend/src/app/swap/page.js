@@ -10,6 +10,7 @@ import CoingeckoCachedResponse from "@constants/coingeckoCachedResponse"
 import { ethers } from "ethers"
 import networkMapping from "@constants/networkMapping"
 import OtcNexusAbi from "@constants/abis/OtcNexusAbi"
+import { Avatar, AvatarGroup } from "@chakra-ui/react"
 
 
 const swap = () => {
@@ -53,8 +54,8 @@ const swap = () => {
       console.log(rfsDataAll);
       let cards = [];
       rfsDataAll.forEach((rfs) => {
-      let token0Data = findTokenDataForAddress(rfs.token0, tokenData);
-      let tokensAcceptedData = rfs.tokensAccepted.map(address => findTokenDataForAddress(rfs.token0, tokenData));
+      let token0Data = findTokenDataForAddress(rfs.token0.toLowerCase(), tokenData);
+      let tokensAcceptedData = rfs.tokensAccepted.map(address => findTokenDataForAddress(address.toLowerCase(), tokenData));
 
       let showDiscount = false;
       let showPremium = false;
