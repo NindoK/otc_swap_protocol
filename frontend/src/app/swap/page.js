@@ -10,14 +10,15 @@ import CoingeckoCachedResponse from "@constants/coingeckoCachedResponse"
 import { ethers } from "ethers"
 import networkMapping from "@constants/networkMapping"
 import OtcNexusAbi from "@constants/abis/OtcNexusAbi"
-import { Avatar, AvatarGroup } from "@chakra-ui/react"
+import { Avatar, AvatarGroup, Button, Drawer, DrawerBody, DrawerCloseButton, DrawerContent, DrawerFooter, DrawerHeader, DrawerOverlay, Input, useDisclosure } from "@chakra-ui/react"
 
 
 const swap = () => {
     const [tokenData, setTokenData] = useState([])
     const [rfsDataAll, setRfsDataAll] = useState([])
     const [cardComponentData, setCardComponentData] = useState([])
-
+    const { isOpen, onOpen, onClose } = useDisclosure()
+    const btnRef = React.useRef()
     function fetchTokenData() {
 //            const response = await axios.get("https://tokens.coingecko.com/uniswap/all.json")
 // workaround
@@ -125,13 +126,41 @@ const swap = () => {
 
 
     return (
-        <div className="flex h-fit w-full bg-black">
+        <div className="flex h-screen w-full bg-black">
             {/* gradient start */}
             <div className="absolute z-[0] w-[40%] h-[35%] top-0 right-0 pink__gradient" />
             <div className="absolute z-[0] w-[40%] h-[50%] rounded-full right-0 white__gradient bottom-40" />
             <div className="absolute z-[0] w-[50%] h-[50%] left-0 bottom-40 blue__gradient" />
             {/* gradient end */}
             <Sidebar />
+
+
+            <Button ref={btnRef} colorScheme='teal' onClick={onOpen}>
+        Open
+      </Button>
+      <Drawer
+        isOpen={isOpen}
+        placement='left'
+        onClose={onClose}
+        finalFocusRef={btnRef}
+      >
+        <DrawerOverlay />
+        <DrawerContent>
+          <DrawerCloseButton />
+          <DrawerHeader>Create your account</DrawerHeader>
+
+          <DrawerBody>
+            <Input placeholder='Type here...' />
+          </DrawerBody>
+
+          <DrawerFooter>
+            <Button variant='outline' mr={3} onClick={onClose}>
+              Cancel
+            </Button>
+            <Button colorScheme='blue'>Save</Button>
+          </DrawerFooter>
+        </DrawerContent>
+      </Drawer>
 
             <ul className="mt-36 ml-40">
                 {cardComponentData.map((val, key) => {
