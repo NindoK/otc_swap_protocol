@@ -44,13 +44,10 @@ const CreateRfs = () => {
 
     async function fetchTokenData() {
         try {
-            console.log("Fetching token data...")
             const response = await axios.get("https://tokens.coingecko.com/uniswap/all.json")
-            console.log(response)
 
             // Process the response data
             const tokens = response.data.tokens
-            console.log(tokens)
 
             setTokenData(tokens)
         } catch (error) {
@@ -64,43 +61,19 @@ const CreateRfs = () => {
         const signer = provider.getSigner()
         const chainId = (await provider.getNetwork()).chainId
         const otcNexus = new ethers.Contract(networkMapping[chainId].OtcNexus, OtcNexusAbi, signer)
-        console.log(otcNexus)
         const interactionTypeSelected = interactionType === "Deposited" ? 0 : 1
         const deadlineInUnixtimestamp = new Date(deadline).getTime() / 1000
-        // let tokensAcceptedLowerCased = tokensAccepted.map((token) => token.toLowerCase())
-        // tokensAcceptedLowerCased.push("0XC02AAA39B223FE8D0A0E5C4F27EAD9083C756CC2".toLowerCase())
-        let tx
-        const rfsIdCounter = await otcNexus.rfsIdCounter()
-        console.log("RFS ID Counter: ", rfsIdCounter.toString())
-        const rfs = await otcNexus.getRfs((rfsIdCounter - 1).toString())
-        console.log("RFS: ", rfs)
-        // console.log(
-        //     tokenOffered.toLowerCase(),
-        //     tokensAcceptedLowerCased,
-        //     amount0Offered,
-        //     priceMultiplier,
-        //     deadlineInUnixtimestamp,
-        //     interactionTypeSelected
-        // )
 
-        console.log(
-            tokenOffered.toLowerCase(),
-            [tokensAccepted.toLowerCase()],
-            amount0Offered,
-            parseFloat(amount1Requested),
-            0,
-            deadlineInUnixtimestamp,
-            interactionTypeSelected
-        )
+        let tx
         try {
             if (rfsType === "Dynamic") {
                 tx = await otcNexus.createDynamicRfs(
-                    "0x93567d6B6553bDe2b652FB7F197a229b93813D3f".toLowerCase(),
-                    ["0xdAC17F958D2ee523a2206206994597C13D831ec7".toLowerCase()],
-                    40,
-                    90,
-                    1686168300,
-                    0
+                    tokenOffered,
+                    tokensAccepted,
+                    amount0Offered,
+                    priceMultiplier,
+                    deadlineInUnixtimestamp,
+                    interactionTypeSelected
                 )
             } else if (rfsType === "Fixed_Usd") {
                 tx = await otcNexus.createFixedRfs(
@@ -109,14 +82,13 @@ const CreateRfs = () => {
                     amount0Offered,
                     0,
                     usdPrice,
-                    deadline,
+                    deadlineInUnixtimestamp,
                     interactionTypeSelected
                 )
             } else if (rfsType === "Fixed_Amount") {
-                //TODO TO BE ADJUSTED
                 tx = await otcNexus.createFixedRfs(
-                    tokenOffered.toLowerCase(),
-                    [tokensAccepted.toLowerCase()],
+                    tokenOffered,
+                    tokensAccepted,
                     amount0Offered,
                     parseFloat(amount1Requested),
                     0,
@@ -125,6 +97,18 @@ const CreateRfs = () => {
                 )
             }
             const receipt = await tx.wait()
+            console.log(
+                "The transaction have been successfully completed. You can fine the trnsaction with the current txn hash: ",
+                receipt.transactionHash
+            )
+
+            console.log(
+                "You paid a total of: ",
+                ethers.utils.formatEther(
+                    receipt.cumulativeGasUsed.mul(receipt.effectiveGasPrice),
+                    "ether"
+                )
+            )
         } catch (error) {
             console.log(error.stack)
         }
@@ -178,7 +162,7 @@ const CreateRfs = () => {
                                         onChange={(e) => setTokenOffered(e.target.value)}
                                         placeholder="-None-"
                                     >
-                                        {tokenData.map((token) => (
+                                        {tokenData.slice(0, 20).map((token) => (
                                             <option
                                                 key={`${token.name}-${token.symbol}`}
                                                 value={token.address}
@@ -244,7 +228,6 @@ const CreateRfs = () => {
                                             <FormLabel>Tokens accepted</FormLabel>
                                             <Box p={4}>
                                                 <MultipleTags
-                                                    tokensAccepted={tokensAccepted}
                                                     setTokensAccepted={setTokensAccepted}
                                                 />
                                             </Box>
@@ -266,7 +249,6 @@ const CreateRfs = () => {
                                             <FormLabel>Tokens accepted</FormLabel>
                                             <Box p={4}>
                                                 <MultipleTags
-                                                    tokensAccepted={tokensAccepted}
                                                     setTokensAccepted={setTokensAccepted}
                                                 />
                                             </Box>{" "}
@@ -302,7 +284,9 @@ const CreateRfs = () => {
                                             </FormLabel>
                                             <Select
                                                 value={tokensAccepted}
-                                                onChange={(e) => setTokensAccepted(e.target.value)}
+                                                onChange={(e) =>
+                                                    setTokensAccepted([e.target.value])
+                                                }
                                                 placeholder="-None-"
                                             >
                                                 {tokenData.slice(0, 20).map((token) => (
