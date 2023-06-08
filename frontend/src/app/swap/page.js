@@ -31,7 +31,6 @@ const swap = () => {
         const contract = new ethers.Contract(networkMapping[chainId].OtcNexus, OtcNexusAbi, signer);
         let rfses = [];
         let maxId = await contract.rfsIdCounter();
-//        console.log(maxId)
         for(let i = 1; i<maxId; i++) {
                 let rfs = await contract.getRfs(i);
                 console.log(rfs)
@@ -42,7 +41,7 @@ const swap = () => {
         setRfsDataAll(rfses);
     }
 
-     function assembleCardComponentData() {
+     const assembleCardComponentData = async () => {
       function findTokenDataForAddress(address, tokens) {
             let tokensWithCriteria = tokens.filter((token) => token.address == address);
             if(tokensWithCriteria.length != 1) {
@@ -50,10 +49,12 @@ const swap = () => {
             }
             return tokensWithCriteria[0];
       }
+      console.log('rfs read');
+      console.log(rfsDataAll);
       let cards = [];
-      rfsDataAll.filter((rfs)=>!rfs.removed).forEach((rfs) => {
-      let token0Data = findTokenDataForAddress(rfs.token0, tokens);
-      let tokensAcceptedData = tokensAccepted.map(address => findTokenDataForAddress(rfs.token0, tokens));
+      rfsDataAll.forEach((rfs) => {
+      let token0Data = findTokenDataForAddress(rfs.token0, tokenData);
+      let tokensAcceptedData = rfs.tokensAccepted.map(address => findTokenDataForAddress(rfs.token0, tokenData));
 
       let showDiscount = false;
       let showPremium = false;
@@ -98,24 +99,27 @@ const swap = () => {
                 ),
             });
         });
+        console.log(cards)
         setCardComponentData(cards);
       }
 
 
+          useEffect(() => {
+            const fetchData = async () => {
+              fetchTokenData();
+              await retrieveAvailableRfs();
+            };
 
-        useEffect(() => {
-          const fetchData = async () => {
-          console.log(1)
-            fetchTokenData();
-          console.log(2)
-            await retrieveAvailableRfs();
-          console.log(3)
-            assembleCardComponentData();
-          console.log(4)
-          };
+            fetchData();
+          }, []);
 
-          fetchData();
-        }, []);
+          // New useEffect that runs assembleCardComponentData when rfsDataAll state changes
+          useEffect(() => {
+            const fetchData = async () => {
+              await assembleCardComponentData();
+            };
+            fetchData();
+          }, [rfsDataAll]);
 
 
     return (
