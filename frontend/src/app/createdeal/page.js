@@ -11,8 +11,10 @@ import {
     FormHelperText,
     FormLabel,
     Input,
-    Select,
     useNumberInput,
+    NumberInput,
+    NumberInputField,
+    Select,
 } from "@chakra-ui/react"
 const CreateDeal = () => {
     const [createDealFormData, setCreateDealFormData] = useState({
