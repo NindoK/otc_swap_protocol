@@ -62,7 +62,8 @@ const swap = () => {
                   trimmedRfs[key] = rfs[key];
               }
           }
-
+          const effectiveType = rfs.typeRfs ==0? 'DYNAMIC': rfs.usdPrice>0?'FIXED_USD': 'FIXED_AMOUNT';
+          trimmedRfs.effectiveType = effectiveType;
           return trimmedRfs;
       }
       console.log('rfs read');
