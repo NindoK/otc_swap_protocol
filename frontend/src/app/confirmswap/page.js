@@ -1,6 +1,6 @@
 "use client"
 import React, { useCallback } from "react"
-import Sidebar from "../components/Sidebar"
+import Sidebar from "@components/Sidebar"
 import { useState, useEffect } from "react"
 import { Input, Popover, Modal } from "antd"
 import { DownOutlined, SettingOutlined } from "@ant-design/icons"
