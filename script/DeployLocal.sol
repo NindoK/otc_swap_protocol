@@ -29,6 +29,31 @@ contract DeployLocal is Script {
         OtcNexus otcNexus = new OtcNexus(address(otcToken));
         OtcOption otcOption = new OtcOption();
         //        MockV3Aggregator mockChainlinkAggregator = new MockV3Aggregator(8, 2000*(10**8));
+        address[] memory tokensAccepted = new address[](1);
+        tokensAccepted[0] = 0x1E5193ccC53f25638Aa22a940af899B692e10B09;
+        otcNexus.createFixedRfs(
+            0xd24DFf6117936B6ff97108CF26c1dD8865743d87,
+            tokensAccepted,
+            4400,
+            500,
+            0,
+            1687505340,
+            OtcNexus.TokenInteractionType.TOKEN_APPROVED
+        );
+
+        address[] memory tokensAcceptedFixedUsd = new address[](2);
+        tokensAcceptedFixedUsd[0] = 0x1E5193ccC53f25638Aa22a940af899B692e10B09;
+        tokensAcceptedFixedUsd[1] = 0x45804880De22913dAFE09f4980848ECE6EcbAf78;
+        otcNexus.createFixedRfs(
+            0x355a824bEa1adc22733978A3748271E1bbB34130,
+            tokensAcceptedFixedUsd,
+            4400,
+            0,
+            1504,
+            1687505340,
+            OtcNexus.TokenInteractionType.TOKEN_APPROVED
+        );
+
         otcNexus.setPriceFeeds(
             0x93567d6B6553bDe2b652FB7F197a229b93813D3f,
             0xFF3EEb22B5E3dE6e705b44749C2559d704923FD7
