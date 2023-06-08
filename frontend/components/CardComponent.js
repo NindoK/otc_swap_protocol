@@ -96,7 +96,7 @@ const CardComponent = (props) => {
                     <ModalCloseButton />
                     <ModalBody>
                         <p>
-                        You can get coin {props.rfs.token0Data.symbol} for the following coins: {props.rfs.tokensAcceptedData.map((token) => token.symbol)}. You are free to fill only a part of the user’s request.
+                        You can get coin {props.rfs.token0Data.symbol} for the following coins: {props.rfs.tokensAcceptedData.map((token) => token.symbol).join(', ')}. You are free to fill only a part of the user’s request.
                         </p>
                         <p>
                         <br/>
