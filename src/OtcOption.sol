@@ -23,6 +23,7 @@ error Option__DealExpired();
 error Option__DealNotExpired();
 error Option__DealNotFound();
 error Option__DealHasNoTaker();
+error Option__InvalidSettler();
 
 contract OtcOption is Ownable {
     event DealCreated(
@@ -233,25 +234,53 @@ contract OtcOption is Ownable {
         if (!isDealExpired(id)) revert Option__DealNotExpired();
         Deal memory deal = getDeal(id);
 
-        // if there is no taker, remove deal
-        if (deal.taker == address(0)) {
+        // if there is no taker or was not exercised after 24h, remove deal
+        if (deal.taker == address(0) || block.timestamp - deal.maturity >= 24 hours) {
             _removeDeal(id);
             return;
         }
 
+        // only maker or taker can settle
+        if (msg.sender != deal.maker && msg.sender != deal.taker) revert Option__InvalidSettler();
+
+        // check if exercisable
         uint price = getPrice(deal.underlyingToken, deal.quoteToken);
-        bool exercised = (deal.isCall && price >= deal.strike) ||
+        bool exercisable = (deal.isCall && price >= deal.strike) ||
             (!deal.isCall && price <= deal.strike);
 
-        // if exercised: transfer underlying tokens to the buyer
-        // otherwise expired worthless: refund margin to the seller
-        address receiver = exercised ? getDealBuyer(deal.id) : getDealSeller(deal.id);
+        address seller = getDealSeller(id);
+        if (msg.sender == seller) {
+            // option is exercisable and seller cannot settle
+            if (exercisable) revert Option__InvalidSettler();
 
-        bool success = IERC20(deal.underlyingToken).transfer(receiver, deal.amount);
-        if (!success) revert Option__TransferFailed();
+            if (deal.isCall) {
+                // call expires worthless and seller can settle: refund underlying token to the seller
+                bool success = IERC20(deal.underlyingToken).transfer(msg.sender, deal.amount);
+                if (!success) revert Option__TransferFailed();
+            } else {
+                // put expires worthless and seller can settle: refund quote token to the seller
+                bool success = IERC20(deal.quoteToken).transfer(msg.sender, deal.quoteAmount);
+                if (!success) revert Option__TransferFailed();
+            }
+        } else {
+            // option is not exercisable and buyer cannot settle
+            if (!exercisable) revert Option__InvalidSettler();
+
+            if (deal.isCall) {
+                // call is exercisable: buyer buys the margin with the quote token
+                _safeTransferFrom(deal.quoteToken, msg.sender, seller, deal.quoteAmount);
+                bool success = IERC20(deal.underlyingToken).transfer(msg.sender, deal.amount);
+                if (!success) revert Option__TransferFailed();
+            } else {
+                // put is exercisable: buyer sells the underlying in exchange for the quote token
+                _safeTransferFrom(deal.underlyingToken, msg.sender, seller, deal.amount);
+                bool success = IERC20(deal.quoteToken).transfer(msg.sender, deal.quoteAmount);
+                if (!success) revert Option__TransferFailed();
+            }
+        }
 
         _deals[id].status = DealStatus.Settled;
-        emit DealSettled(id, exercised);
+        emit DealSettled(id, exercisable);
     }
 
     function getDeal(uint id) public view returns (Deal memory) {
