@@ -28,35 +28,18 @@ const swap = () => {
         const provider = new ethers.providers.Web3Provider(window.ethereum)
         const signer = provider.getSigner()
         const chainId = (await provider.getNetwork()).chainId
-        const otcNexus = new ethers.Contract(networkMapping[chainId].OtcNexus, OtcNexusAbi, signer);
+        const contract = new ethers.Contract(networkMapping[chainId].OtcNexus, OtcNexusAbi, signer);
         let rfses = [];
-
-        // Retrieve all past RfsCreated events from the contract.
-        contract
-            .getPastEvents("RfsCreated", {
-                fromBlock: 0, // Starting block
-                toBlock: "latest", // Ending block
-            })
-            .then((events) => {
-                // For each RfsCreated event, fetch the corresponding RFS and update the front-end.
-                //todo then filter removed rfses; either from event or verify rfs.removed flag is working
-                events.forEach((event) => {
-                    console.log(event)
-                    const rfsId = event.returnValues.id
-
-                    contract.methods
-                        .idToRfs(rfsId)
-                        .call()
-                        .then((rfs) => {
-                            console.log("Received RFS:", rfs)
-                            rfses.push(rfs);
-                            // Now you can update your front-end to include this RFS.
-                        })
-                        .catch(console.error)
-                })
-            })
-            .catch(console.error);
-            setRfsDataAll(rfses);
+        let maxId = await contract.rfsIdCounter();
+//        console.log(maxId)
+        for(let i = 1; i<maxId; i++) {
+                let rfs = await contract.getRfs(i);
+                console.log(rfs)
+                if(!rfs.removed) {
+                  rfses.push(rfs)
+                }
+        }
+        setRfsDataAll(rfses);
     }
 
      function assembleCardComponentData() {
