@@ -5,6 +5,7 @@ import Navbar from "@components/Navbar"
 import styles from "../style"
 import axios from "axios"
 import { ConnectButton } from "@rainbow-me/rainbowkit"
+import { useToast } from '@chakra-ui/react'
 import {
     Avatar,
     Box,
@@ -32,6 +33,7 @@ import OtcNexusAbi from "@constants/abis/OtcNexusAbi"
 import coinGeckoCachedResponse from "@constants/coingeckoCachedResponse"
 
 const CreateRfs = () => {
+    const toast=useToast();
     const [tokenData, setTokenData] = useState([])
     const [interactionType, setInteractionType] = useState("")
     const [rfsType, setRfsType] = useState("")
@@ -134,6 +136,12 @@ const CreateRfs = () => {
                 )
             }
             const receipt = await tx.wait()
+            if(receipt)toast({
+                title: 'rfs created!',
+                status: 'success',
+                duration: 9000,
+                isClosable: true,
+              });
             console.log(
                 "The transaction have been successfully completed. You can fine the trnsaction with the current txn hash: ",
                 receipt.transactionHash
@@ -147,7 +155,14 @@ const CreateRfs = () => {
                 )
             )
         } catch (error) {
-            console.log(error.stack)
+            console.log(error.stack);
+            toast({
+                title: 'There was some error!',
+                description:error.message,
+                status: 'error',
+                duration: 9000,
+                isClosable: true,
+              });
         }
     }
 

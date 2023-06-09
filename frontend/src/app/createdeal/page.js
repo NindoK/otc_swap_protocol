@@ -15,8 +15,15 @@ import {
     NumberInput,
     NumberInputField,
     Select,
+   
 } from "@chakra-ui/react"
+import { useToast } from '@chakra-ui/react'
+import { BigNumber, ethers } from "ethers"
+import networkMapping from "@constants/networkMapping"
+import OtcOptionAbi from "@constants/abis/OtcOptionAbi"
+
 const CreateDeal = () => {
+    const toast=useToast();
     const [createDealFormData, setCreateDealFormData] = useState({
         underlyingToken: "",
         quoteToken: "",
@@ -27,6 +34,18 @@ const CreateDeal = () => {
         premium: "",
         side: "",
     })
+
+    const tokenData = [
+        {
+            symbol: "mWETH",
+            address: "0xB4D7B61B19aa9b2F3f03B2892De317CB95Dcef92",
+        },
+        {
+            symbol: "mDAI",
+            address: "0x56c575fBf5Bc242b6086326b89f839063acd7fCb",
+        },
+    ]
+    // const tokenData = networkMapping[chainId]["mockTokens"]
 
     const handleUTInputChange = (e) => {
         setCreateDealFormData((prevData) => ({
@@ -77,21 +96,74 @@ const CreateDeal = () => {
         }))
     }
 
-    const handleSubmit = (event) => {
+    const handleSubmit = async (event) => {
         event.preventDefault()
-        console.log(JSON.stringify(createDealFormData))
+        const provider = new ethers.providers.Web3Provider(window.ethereum)
+        const signer = provider.getSigner()
+        const chainId = (await provider.getNetwork()).chainId
+        const otcOption = new ethers.Contract(
+            networkMapping[chainId].OtcOption,
+            OtcOptionAbi,
+            signer
+        )
+        // console.log(otcOption)
+
+        try {
+            const info = createDealFormData
+
+            const [ulyTokenDec, quoteTokenDec, priceFeedDec] = await otcOption.getDecimals(
+                info["underlyingToken"],
+                info["quoteToken"]
+            )
+            const inputInfo = {
+                ulyToken: info["underlyingToken"],
+                quoteToken: info["quoteToken"],
+                strike: (parseFloat(info["strike"]) * 10 ** priceFeedDec).toString(),
+                maturity: new Date(info["maturity"]).getTime() / 1000,
+                isCall: info["optionType"].toLowerCase() === "call",
+                amount: (parseFloat(info["amount"]) * 10 ** ulyTokenDec).toString(),
+                premium: (parseFloat(info["premium"]) * 10 ** quoteTokenDec).toString(),
+                isMakerBuyer: info["side"].toLowerCase() === "buy",
+            }
+            console.log(inputInfo)
+
+            const tx = await otcOption.createDeal(
+                inputInfo["ulyToken"],
+                inputInfo["quoteToken"],
+                inputInfo["strike"],
+                inputInfo["maturity"],
+                inputInfo["isCall"],
+                inputInfo["amount"],
+                inputInfo["premium"],
+                inputInfo["isMakerBuyer"]
+            )
+            const receipt = await tx.wait()
+            console.log(receipt)
+            if(receipt)toast({
+                title: 'Deal created!',
+                status: 'success',
+                duration: 9000,
+                isClosable: true,
+              });
+        } catch (error) {
+            console.error(error)
+            toast({
+                title: 'There was some error!',
+                status: 'error',
+                duration: 9000,
+                isClosable: true,
+              });
+        }
     }
 
     return (
         <React.Fragment>
-        
             <div className={`${styles.paddingX} ${styles.flexCenter} bg-black`}>
                 <div className={`${styles.boxWidth}`}>
                     <Navbar />
                 </div>
-              
-                    <ConnectButton showBalance={false} />
-               
+
+                <ConnectButton showBalance={false} />
             </div>
             <div className="flex lg:h-screen w-full bg-black">
                 {/* gradient start */}
@@ -110,24 +182,32 @@ const CreateDeal = () => {
                         <div className="lg:flex gap-14 ">
                             <FormControl isRequired className="flex flex-col lg:my-5 my-3">
                                 <FormLabel className=" font-bold">Underlying Token</FormLabel>
-                                <Input
-                                    name="underlyingToken"
-                                    variant="flushed"
-                                    placeholder="Address"
+                                <Select
                                     value={createDealFormData.underlyingToken}
                                     onChange={handleUTInputChange}
-                                />
+                                    placeholder="-None-"
+                                >
+                                    {tokenData.map((token) => (
+                                        <option key={token.symbol} value={token.address}>
+                                            <span>{token.symbol}</span>
+                                        </option>
+                                    ))}
+                                </Select>
                             </FormControl>
 
                             <FormControl isRequired className="flex flex-col my-5">
                                 <FormLabel className=" font-bold">Quote Token</FormLabel>
-                                <Input
-                                    name="quoteToken"
-                                    variant="flushed"
-                                    placeholder="Address"
+                                <Select
                                     value={createDealFormData.quoteToken}
                                     onChange={handleQTInputChange}
-                                />
+                                    placeholder="-None-"
+                                >
+                                    {tokenData.map((token) => (
+                                        <option key={token.symbol} value={token.address}>
+                                            <span>{token.symbol}</span>
+                                        </option>
+                                    ))}
+                                </Select>
                             </FormControl>
                         </div>
 
@@ -136,7 +216,7 @@ const CreateDeal = () => {
                                 <FormLabel className=" font-bold">Strike</FormLabel>
                                 <Input
                                     type="number"
-                                    placeholder="strike amount"
+                                    placeholder="Strike"
                                     value={createDealFormData.strike}
                                     onChange={handleStrikeChange}
                                 />
@@ -148,7 +228,7 @@ const CreateDeal = () => {
                                     name="maturity"
                                     placeholder="Select Date and Time"
                                     size="md"
-                                    type="date"
+                                    type="datetime-local"
                                     value={createDealFormData.maturity}
                                     onChange={handleMaturityChange}
                                 />
@@ -163,7 +243,6 @@ const CreateDeal = () => {
                                     name="optionType"
                                     value={createDealFormData.optionType}
                                     onChange={handleOptionChange}
-                                    
                                 >
                                     <option>Call</option>
                                     <option>Put</option>
@@ -199,7 +278,7 @@ const CreateDeal = () => {
                                 <FormLabel className=" font-bold">Premium</FormLabel>
                                 <Input
                                     type="number"
-                                    placeholder="premium"
+                                    placeholder="Premium"
                                     value={createDealFormData.premium}
                                     onChange={handlePremiumChange}
                                 />
