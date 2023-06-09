@@ -1,7 +1,7 @@
 "use client"
 
 import styles from "./style"
-
+import "./globals.css"
 import dynamic from "next/dynamic"
 import Feature1 from "@components/Feature1"
 import Navbar from "@components/Navbar"
@@ -15,15 +15,15 @@ import Footer from "@components/Footer"
 import { ConnectButton } from "@rainbow-me/rainbowkit"
 
 export default function Home() {
-    return (
-        <div className="bg-black w-full overflow-hidden ">
+    return (<>
+    <div className="bg-black w-full overflow-hidden ">
             <div className={`${styles.paddingX} ${styles.flexCenter}`}>
                 <div className={`${styles.boxWidth}`}>
                     <Navbar />
                 </div>
-                <div className="h-fit w-60 text-center bg-blue-gradient p-3 pl-4 -mr-50 rounded-xl z-30">
-                    <ConnectButton showBalance={false} />
-                </div>
+                
+                <ConnectButton showBalance={false} />
+               
             </div>
 
             <div className={`bg-black ${styles.flexStart}`}>
@@ -44,5 +44,7 @@ export default function Home() {
                 </div>
             </div>
         </div>
+    </>
+        
     )
 }

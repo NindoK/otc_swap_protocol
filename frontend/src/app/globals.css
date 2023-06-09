@@ -220,3 +220,39 @@
   .ant-modal-close-icon:hover {
     color: white !important;
   }
+
+  body button.iekbcc0.iekbcc9.ju367v73.ju367v7o.ju367v9c.ju367vn.ju367vec.ju367vex.ju367v11.ju367v1c.ju367v2b.ju367v8o._12cbo8i3.ju367v8m._12cbo8i4._12cbo8i6 {
+    /* Add your custom CSS styles here */
+    background-color: skyblue;
+    padding: 10px;
+    border-radius: 10px;
+    color: white;
+  }
+
+  div.iekbcc0.ju367va.ju367v1n {
+    
+    color: black;
+  }
+
+  button.iekbcc0.iekbcc9.ju367v4.ju367v9x.ju367vn.ju367vec.ju367vfo.ju367va.ju367v11.ju367v1c.ju367v8o._12cbo8i3.ju367v8m._12cbo8i4._12cbo8i6 {
+   display: flex;
+   background: whitesmoke;
+  
+   padding: 10px;
+   gap:10px;
+   border: gray 2px solid;
+   border-radius: 10px;
+  }
+
+  div.iekbcc0.ju367v4.ju367va.ju367v1k.ju367v25{
+    display: flex !important;
+    gap: 2px;
+  }
+div.iekbcc0.ju367v4.ju367va.ju367v1k{
+  display: flex;
+}
+div.iekbcc0.ju367va.ju367v1n{
+  display: flex;
+  gap:5px
+ 
+}
