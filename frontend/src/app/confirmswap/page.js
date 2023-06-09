@@ -13,6 +13,7 @@ import networkMapping from "@constants/networkMapping"
 import coingeckoCachedResponse from "@constants/coingeckoCachedResponse"
 import mumbaiAddressesFeedAggregators from "@constants/mumbaiAddressesFeedAggregators"
 import FeedAggregatorMumbaiAbi from "@constants/abis/FeedAggregatorMumbaiAbi"
+import { ConnectButton } from "@rainbow-me/rainbowkit"
 
 const ConfirmSwap = () => {
     const [tokenData, setTokenData] = useState([])
@@ -156,155 +157,161 @@ const ConfirmSwap = () => {
             {/* gradient end */}
 
             <Sidebar />
+            <div className="w-full flex flex-col ">
 
+            <div className="w-full flex justify-end py-3 pr-2 z-10">
+            <ConnectButton/>
+            </div>
             <Modal
-                open={isOpen}
-                footer={null}
-                onCancel={() => setIsOpen(false)}
-                title="Select a token"
-            >
-                <div className=" mt-5 flex flex-col border-t-2 border-t-slate-300 gap-2 max-h-80 overflow-y-auto ">
-                    <input
-                        type="text"
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        placeholder="Search token"
-                        className="p-2 my-2 mx-2 rounded-md bg-transparent text-gray-400 border-2"
-                    />
-                    {rfs &&
-                        filteredTokens?.map((e, i) => {
-                            return (
-                                <div
-                                    className=" hover:cursor-pointer hover:bg-[#1f2639] flex justify-start  align-middle pl-5 pt-2 pb-2"
-                                    key={i}
-                                    onClick={() => modifyToken(e)}
-                                >
+            open={isOpen}
+            footer={null}
+            onCancel={() => setIsOpen(false)}
+            title="Select a token"
+        >
+            <div className=" mt-5 flex flex-col border-t-2 border-t-slate-300 gap-2 max-h-80 overflow-y-auto ">
+                <input
+                    type="text"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    placeholder="Search token"
+                    className="p-2 my-2 mx-2 rounded-md bg-transparent text-gray-400 border-2"
+                />
+                {rfs &&
+                    filteredTokens?.map((e, i) => {
+                        return (
+                            <div
+                                className=" hover:cursor-pointer hover:bg-[#1f2639] flex justify-start  align-middle pl-5 pt-2 pb-2"
+                                key={i}
+                                onClick={() => modifyToken(e)}
+                            >
+                                <Image
+                                    src={e?.logoURI}
+                                    alt="logo"
+                                    height={10}
+                                    width={30}
+                                    className="rounded-full mr-1 p-1"
+                                />
+                                <div className=" font-montserrat ml-2 font-medium text-sm">
+                                    {e?.name}
+                                </div>
+                                <div className=" ml-2 text-xs font-light text-[#51596f]">
+                                    {e?.symbol}
+                                </div>
+                            </div>
+                        )
+                    })}
+            </div>
+        </Modal>
+        {rfs && ( // if rfs is not null then render the page else render nothing (null)
+            <div className="w-full flex h-full justify-center items-center">
+                <div className="w-[500px] bg-gray-950 bg-opacity-20 shadow-lg border-opacity-18 border border-gray-600 h-fit rounded-2xl flex flex-col px-10 z-10">
+                    <div className="flex justify-between align-middle width-[98%] my-5">
+                        <h2 className=" font-montserrat text-white text-xl  font-bold">Swap</h2>
+                        <Popover title="Settings" trigger="click" placement="bottomRight">
+                            <SettingOutlined className="text-[#51586f] font-bold transition duration-300 hover:cursor-pointer hover:rotate-90 hover:text-white" />
+                        </Popover>
+                    </div>
+
+                    <div className="relative mb-3">
+                        <Input
+                            type="text"
+                            placeholder="0"
+                            pattern="^-?\d*[.,]?\d*$"
+                            value={tokenOneAmount}
+                            onChange={changeAmount}
+                        />
+                        <Input
+                            type="text"
+                            placeholder="0"
+                            pattern="^-?\d*[.,]?\d*$"
+                            value={tokenTwoAmount}
+                            disabled={true}
+                        />
+                        <div className="absolute min-w-[80px] h-8 bg-[#3a4157] top-[30px] right-[20px] rounded-full flex justify-start align-middle gap-1 font-bold text-base pr-[8px]">
+                            {tokenOne && (
+                                <>
                                     <Image
-                                        src={e?.logoURI}
-                                        alt="logo"
+                                        src={tokenOne?.logoURI}
+                                        alt="assetlogoURI"
+                                        height={10}
+                                        width={30}
+                                        className="rounded-full mr-2 p-1"
+                                    />
+                                    <p className="text-gray-400  mt-1">{tokenOne?.symbol}</p>
+                                </>
+                            )}
+                        </div>
+                        <div
+                            onClick={() => openModal(2)}
+                            className="hover:cursor-pointer  absolute min-w-[80px] h-8 bg-[#3a4157] top-[135px] right-[20px] rounded-full flex justify-start align-middle gap-1 font-bold text-base pr-[8px]"
+                        >
+                            {tokenTwo && (
+                                <>
+                                    <Image
+                                        src={tokenTwo?.logoURI}
+                                        alt="assetlogoURI"
                                         height={10}
                                         width={30}
                                         className="rounded-full mr-1 p-1"
                                     />
-                                    <div className=" font-montserrat ml-2 font-medium text-sm">
-                                        {e?.name}
-                                    </div>
-                                    <div className=" ml-2 text-xs font-light text-[#51596f]">
-                                        {e?.symbol}
-                                    </div>
-                                </div>
-                            )
-                        })}
-                </div>
-            </Modal>
-            {rfs && ( // if rfs is not null then render the page else render nothing (null)
-                <div className="w-full flex h-full justify-center items-center">
-                    <div className="w-[500px] bg-gray-950 bg-opacity-20 shadow-lg border-opacity-18 border border-gray-600 h-fit rounded-2xl flex flex-col px-10 z-10">
-                        <div className="flex justify-between align-middle width-[98%] my-5">
-                            <h2 className=" font-montserrat text-white text-xl  font-bold">Swap</h2>
-                            <Popover title="Settings" trigger="click" placement="bottomRight">
-                                <SettingOutlined className="text-[#51586f] font-bold transition duration-300 hover:cursor-pointer hover:rotate-90 hover:text-white" />
-                            </Popover>
+                                    <p className="text-gray-400  mt-1">{tokenTwo?.symbol}</p>
+                                </>
+                            )}
+                            <DownOutlined className="text-gray-300 font-bold mt-2" />
                         </div>
 
-                        <div className="relative mb-3">
-                            <Input
-                                type="text"
-                                placeholder="0"
-                                pattern="^-?\d*[.,]?\d*$"
-                                value={tokenOneAmount}
-                                onChange={changeAmount}
-                            />
-                            <Input
-                                type="text"
-                                placeholder="0"
-                                pattern="^-?\d*[.,]?\d*$"
-                                value={tokenTwoAmount}
-                                disabled={true}
-                            />
-                            <div className="absolute min-w-[80px] h-8 bg-[#3a4157] top-[30px] right-[20px] rounded-full flex justify-start align-middle gap-1 font-bold text-base pr-[8px]">
-                                {tokenOne && (
-                                    <>
-                                        <Image
-                                            src={tokenOne?.logoURI}
-                                            alt="assetlogoURI"
-                                            height={10}
-                                            width={30}
-                                            className="rounded-full mr-2 p-1"
-                                        />
-                                        <p className="text-gray-400  mt-1">{tokenOne?.symbol}</p>
-                                    </>
-                                )}
-                            </div>
-                            <div
-                                onClick={() => openModal(2)}
-                                className="hover:cursor-pointer  absolute min-w-[80px] h-8 bg-[#3a4157] top-[135px] right-[20px] rounded-full flex justify-start align-middle gap-1 font-bold text-base pr-[8px]"
-                            >
-                                {tokenTwo && (
-                                    <>
-                                        <Image
-                                            src={tokenTwo?.logoURI}
-                                            alt="assetlogoURI"
-                                            height={10}
-                                            width={30}
-                                            className="rounded-full mr-1 p-1"
-                                        />
-                                        <p className="text-gray-400  mt-1">{tokenTwo?.symbol}</p>
-                                    </>
-                                )}
-                                <DownOutlined className="text-gray-300 font-bold mt-2" />
-                            </div>
-
-                            <VStack align="start" className=" mb-5 mt-5">
-                                <h2 className=" font-montserrat font-bold text-lg text-white te">
-                                    Current swap price :
+                        <VStack align="start" className=" mb-5 mt-5">
+                            <h2 className=" font-montserrat font-bold text-lg text-white te">
+                                Current swap price :
+                            </h2>
+                            <p className="font-montserrat font-medium text-sm text-gray-400">
+                                {`${swapRate} ${tokenTwo?.symbol}/${tokenOne?.symbol}`}
+                            </p>
+                        </VStack>
+                        <VStack align="start" className=" mb-5 justify-start ">
+                            <h2 className=" font-montserrat font-bold text-ml text-white">
+                                Maker Address :
+                            </h2>
+                            <p className="font-montserrat font-medium text-sm text-gray-400">
+                                {rfs.maker}
+                            </p>
+                        </VStack>
+                        {rfs.priceMultiplier != 0 && (
+                            <HStack className=" mb-5">
+                                <h2 className=" font-montserrat font-bold text-lg text-white">
+                                    Discount/Premium :
                                 </h2>
-                                <p className="font-montserrat font-medium text-sm text-gray-400">
-                                    {`${swapRate} ${tokenTwo?.symbol}/${tokenOne?.symbol}`}
+                                <p
+                                    className={`font-montserrat font-medium text-sm `}
+                                    style={{
+                                        color: rfs.priceMultiplier > 100 ? "#ff000" : "#00ff00",
+                                    }}
+                                >
+                                    {rfs.priceMultiplier > 100
+                                        ? `+${rfs.priceMultiplier - 100}`
+                                        : `-${100 - rfs.priceMultiplier}`}
+                                    %
                                 </p>
-                            </VStack>
-                            <VStack align="start" className=" mb-5 justify-start ">
-                                <h2 className=" font-montserrat font-bold text-ml text-white">
-                                    Maker Address :
-                                </h2>
-                                <p className="font-montserrat font-medium text-sm text-gray-400">
-                                    {rfs.maker}
-                                </p>
-                            </VStack>
-                            {rfs.priceMultiplier != 0 && (
-                                <HStack className=" mb-5">
-                                    <h2 className=" font-montserrat font-bold text-lg text-white">
-                                        Discount/Premium :
-                                    </h2>
-                                    <p
-                                        className={`font-montserrat font-medium text-sm `}
-                                        style={{
-                                            color: rfs.priceMultiplier > 100 ? "#ff000" : "#00ff00",
-                                        }}
-                                    >
-                                        {rfs.priceMultiplier > 100
-                                            ? `+${rfs.priceMultiplier - 100}`
-                                            : `-${100 - rfs.priceMultiplier}`}
-                                        %
-                                    </p>
-                                </HStack>
-                            )}
-                            {error && (
-                                <div className="w-full flex justify-center mb-5 mt-5">
-                                    <p className="text-red-500 font-montserrat font-bold text-sm">
-                                        {error}
-                                    </p>
-                                </div>
-                            )}
+                            </HStack>
+                        )}
+                        {error && (
                             <div className="w-full flex justify-center mb-5 mt-5">
-                                <Button className="bg-blue-gradient rounded-xl h-fit w-fit py-2  px-16">
-                                    Swap
-                                </Button>
+                                <p className="text-red-500 font-montserrat font-bold text-sm">
+                                    {error}
+                                </p>
                             </div>
+                        )}
+                        <div className="w-full flex justify-center mb-5 mt-5">
+                            <Button className="bg-blue-gradient rounded-xl h-fit w-fit py-2  px-16">
+                                Swap
+                            </Button>
                         </div>
                     </div>
                 </div>
-            )}
+            </div>
+        )}
+         </div>
+            
         </div>
     )
 }
