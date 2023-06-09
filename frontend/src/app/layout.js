@@ -8,7 +8,7 @@ import { getDefaultWallets, RainbowKitProvider, darkTheme,lightTheme } from "@ra
 import { configureChains, createConfig, WagmiConfig } from "wagmi"
 import { arbitrum, goerli, mainnet, optimism, polygon, polygonMumbai} from "wagmi/chains"
 import { publicProvider } from "wagmi/providers/public"
-import ReduxProvider from "@components/store"
+
 
 const { chains, publicClient, webSocketPublicClient } = configureChains(
     [
@@ -44,7 +44,7 @@ const montserrat = Montserrat({
 export default function RootLayout({ children }) {
     return (
         <html lang="en">
-        <ReduxProvider>
+       
             <CacheProvider>
                 <ChakraProvider>
                     <WagmiConfig config={wagmiConfig}>
@@ -61,7 +61,7 @@ export default function RootLayout({ children }) {
                     </WagmiConfig>
                 </ChakraProvider>
             </CacheProvider>
-            </ReduxProvider>
+         
         </html>
     )
 }

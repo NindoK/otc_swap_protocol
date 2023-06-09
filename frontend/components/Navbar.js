@@ -32,6 +32,11 @@ const Navbar = () => {
                         Swap
                     </li>
                 </Link>
+                <Link href="/takedeal">
+                    <li className="font-montserrat font-normal cursor-pointer text-[16px] text-white mr-10">
+                        Take a deal
+                    </li>
+                </Link>
             </ul>
 
             <div className="sm:hidden flex flex-1 justify-end items-center">

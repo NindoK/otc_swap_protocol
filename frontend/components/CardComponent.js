@@ -14,21 +14,19 @@ import {
 import dynamic from "next/dynamic"
 import Link from "next/link"
 
-import { useDispatch } from "react-redux"
+
 
 const OverlayOne = () => <ModalOverlay bg="none" backdropFilter="blur(10px) " />
 
 const CardComponent = (props) => {
-    const dispatch = useDispatch();
+
     const [overlay, setOverlay] = useState(<OverlayOne />)
     const { isOpen, onOpen, onClose } = useDisclosure()
     const dynamicStyle = {
         backgroundColor: props.condition ? "#A06D22" : "#348D8D",
     }
     const data={icon:props.icon,title:props.title};
-    const handleClick = () => {
-        dispatch({ type: 'SET_DATA', payload: data });
-      };
+    
     console.log(props)
     return (
         
