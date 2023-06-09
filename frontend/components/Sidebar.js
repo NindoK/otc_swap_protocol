@@ -45,9 +45,7 @@ const Sidebar = () => {
                 </li>
             </Link>
 
-            <li className=" absolute bottom-6  text-white text-xl font-bold tracking-wider font-montserrat pl-6  hover:cursor-pointer">
-                Settings
-            </li>
+            
         </ul></div>
         {!isOpen&&<div className="sm:hidden pl-3 pt-3 w-full flex justify-start " ref={btnRef}  onClick={onOpen}>
             <Image

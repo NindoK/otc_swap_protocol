@@ -5,6 +5,7 @@ import React, { useState } from "react"
 import { BigNumber, ethers } from "ethers"
 import networkMapping from "@constants/networkMapping"
 import OtcOptionAbi from "@constants/abis/OtcOptionAbi"
+import { ConnectButton } from "@rainbow-me/rainbowkit"
 
 const page = () => {
     const [searchTerm, setSearchTerm] = useState("")
@@ -100,7 +101,7 @@ const page = () => {
     }
 
     return (
-        <div className="flex min-h-fit h-screen w-full bg-black">
+        <div className="flex min-h-screen h-fit w-full bg-black">
             {/* gradient start */}
             <div className="absolute z-[0] w-[40%] h-[35%] top-0 right-0 pink__gradient" />
             <div className="absolute z-[0] w-[40%] h-[50%] rounded-full right-0 white__gradient bottom-40" />
@@ -109,6 +110,10 @@ const page = () => {
             <Sidebar />
 
             <div className="w-full flex flex-col ">
+
+               <div className="w-full flex justify-end py-3 pr-2 z-10">
+               <ConnectButton/>
+               </div>
                 <div className=" w-full flex justify-start">
                     <input
                         type="text"
