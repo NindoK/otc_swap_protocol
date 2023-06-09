@@ -17,7 +17,8 @@ const swap = () => {
     const [rfsDataAll, setRfsDataAll] = useState([])
     const [cardComponentData, setCardComponentData] = useState([])
 
-    async function fetchTokenData() {
+
+    function fetchTokenData() {
         //            const response = await axios.get("https://tokens.coingecko.com/uniswap/all.json")
         // workaround
         setTokenData(CoingeckoCachedResponse.tokens)
@@ -38,6 +39,7 @@ const swap = () => {
         }
         setRfsDataAll(rfses)
     }, []) // assuming there are no dependencies. If there are, include them in the array.
+
 
     const assembleCardComponentData = async () => {
         function findTokenDataForAddress(address, tokens) {
@@ -98,6 +100,7 @@ const swap = () => {
                     premium = `${rfs.priceMultiplier - 100}%`
                 }
             }
+
             cards.push({
                 condition: true,
                 label: rfs.typeRfs === 0 ? "Dynamic" : "Fixed",
@@ -120,6 +123,7 @@ const swap = () => {
                 rfs: trimmedRfs,
             })
         })
+
         setCardComponentData(cards)
     }
 
@@ -148,6 +152,11 @@ const swap = () => {
             <div className="absolute z-[0] w-[50%] h-[50%] left-0 bottom-40 blue__gradient" />
             {/* gradient end */}
             <Sidebar />
+
+
+            <div className="w-full flex flex-row justify-end">
+                <ConnectButton />
+            </div>
 
             <ul className="mt-36 ml-40">
                 {cardComponentData.map((val, key) => {
