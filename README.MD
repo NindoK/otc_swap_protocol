@@ -27,6 +27,23 @@ We used Foundry, Solidity, React, NextJs, Chakra UI, ChainLink.
 
 ## Documentation
 
+### PayPal integration description
+
+##### Definitions:
+A meta txn is an EIP-712 signed message.
+Relayer refers to an entity (usually a server or service) that broadcasts transactions to the Ethereum network on behalf of the user. This service facilitates the interaction between the Ethereum network and off-chain systems, such as the PayPal payment system.
+
+##### Process:
+
+The user A wants to perform swap (ie. buy altcoin) using PayPal account. The maker B had made his/ her PayPal account known to smart contract while creating RFS.
+
+A process, known as a meta-transaction, is initiated where a relayer (a third-party service) conducts the transaction on behalf of the user A. The relayer invokes a function via Chainlink that interfaces with PayPal's source code and API to verify if the payment has been approved. If the payment is indeed authorized, it's then captured.
+
+After the payment is successfully captured, the relayer triggers a transaction to transfer the desired tokens from the otcnexus protocol to User A's account. Note that these tokens must be pre-deposited within the contract.
+
+Following the successful token transfer, a final payment is issued to User B via PayPal, again utilizing Chainlink's functions. The ultimate aim is to create a seamless experience for the user to purchase tokens directly with their PayPal account from a smart contract.
+
+
 ### Definitions
 
 - OTC: out of the counter. It is a trading activity that happens peer-to-peer without involving an exchange.
@@ -64,22 +81,6 @@ Therefore we have the following RFS types. In this context Listed Altcoins are a
 | Fixed USD RFS - Token(s) Accepted    | Yes               | Yes                       | Yes                   |
 | Fixed Amount RFS - Token Offered     | No              | Yes                       | Yes                   |
 | Fixed Amount RFS - Token(s) Accepted | No             | Yes                       | Yes                   |
-
-### PayPal integration description
-
-##### Definitions:
-A meta txn is an EIP-712 signed message. 
-Relayer refers to an entity (usually a server or service) that broadcasts transactions to the Ethereum network on behalf of the user. This service facilitates the interaction between the Ethereum network and off-chain systems, such as the PayPal payment system.
-
-##### Process:
-
-The user A wants to perform swap (ie. buy altcoin) using PayPal account. The maker B had made his/ her PayPal account known to smart contract while creating RFS.
-
-A process, known as a meta-transaction, is initiated where a relayer (a third-party service) conducts the transaction on behalf of the user A. The relayer invokes a function via Chainlink that interfaces with PayPal's source code and API to verify if the payment has been approved. If the payment is indeed authorized, it's then captured.
-
-After the payment is successfully captured, the relayer triggers a transaction to transfer the desired tokens from the otcnexus protocol to User A's account. Note that these tokens must be pre-deposited within the contract.
-
-Following the successful token transfer, a final payment is issued to User B via PayPal, again utilizing Chainlink's functions. The ultimate aim is to create a seamless experience for the user to purchase tokens directly with their PayPal account from a smart contract.
 
 
 ## Developer's guide
