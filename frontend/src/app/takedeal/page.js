@@ -6,6 +6,7 @@ import { BigNumber, ethers } from "ethers"
 import networkMapping from "@constants/networkMapping"
 import OtcOptionAbi from "@constants/abis/OtcOptionAbi"
 import { ConnectButton } from "@rainbow-me/rainbowkit"
+import { RepeatIcon } from "@chakra-ui/icons"
 
 const page = () => {
     const [searchTerm, setSearchTerm] = useState("")
@@ -134,7 +135,13 @@ const page = () => {
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                     />
-                    <button onClick={handleRefresh}>Refresh</button>
+                    <RepeatIcon
+                        className="mt-10 ml-5 hover:cursor-pointer"
+                        w={8}
+                        h={8}
+                        color="white"
+                        onClick={handleRefresh}
+                    />
                 </div>
 
                 <ul className="mt-6 ml-40 flex flex-row gap-5 flex-wrap">
