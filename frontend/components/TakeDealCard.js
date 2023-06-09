@@ -1,10 +1,115 @@
 import { VStack } from "@chakra-ui/react"
 import { Button } from "antd"
 import React from "react"
+import { ethers } from "ethers"
+import networkMapping from "@constants/networkMapping"
+import OtcOptionAbi from "@constants/abis/OtcOptionAbi"
+import { useToast } from "@chakra-ui/react"
 
 const TakeDealCard = (props) => {
+    const toast = useToast()
+
+    const onTakeClick = async () => {
+        try {
+            const provider = new ethers.providers.Web3Provider(window.ethereum)
+            const signer = provider.getSigner()
+            const chainId = (await provider.getNetwork()).chainId
+            console.log(chainId)
+            const contract = new ethers.Contract(
+                networkMapping[chainId].OtcOption,
+                OtcOptionAbi,
+                signer
+            )
+            const tx = await contract.takeDeal(props.id)
+            console.log(tx)
+            const receipt = await tx.wait()
+            console.log(receipt)
+            if (receipt)
+                toast({
+                    title: "Deal taken!",
+                    status: "success",
+                    duration: 9000,
+                    isClosable: true,
+                })
+        } catch (e) {
+            console.error(e)
+            toast({
+                title: "There was some error!",
+                status: "error",
+                duration: 9000,
+                isClosable: true,
+            })
+        }
+    }
+
+    const onRemoveClick = async () => {
+        try {
+            const provider = new ethers.providers.Web3Provider(window.ethereum)
+            const signer = provider.getSigner()
+            const chainId = (await provider.getNetwork()).chainId
+            console.log(chainId)
+            const contract = new ethers.Contract(
+                networkMapping[chainId].OtcOption,
+                OtcOptionAbi,
+                signer
+            )
+            const tx = await contract.removeDeal(props.id)
+            console.log(tx)
+            const receipt = await tx.wait()
+            console.log(receipt)
+            if (receipt)
+                toast({
+                    title: "Deal removed!",
+                    status: "success",
+                    duration: 9000,
+                    isClosable: true,
+                })
+        } catch (e) {
+            console.error(e)
+            toast({
+                title: "There was some error!",
+                status: "error",
+                duration: 9000,
+                isClosable: true,
+            })
+        }
+    }
+
+    const onSettleClick = async () => {
+        try {
+            const provider = new ethers.providers.Web3Provider(window.ethereum)
+            const signer = provider.getSigner()
+            const chainId = (await provider.getNetwork()).chainId
+            console.log(chainId)
+            const contract = new ethers.Contract(
+                networkMapping[chainId].OtcOption,
+                OtcOptionAbi,
+                signer
+            )
+            const tx = await contract.settleDeal(props.id)
+            console.log(tx)
+            const receipt = await tx.wait()
+            console.log(receipt)
+            if (receipt)
+                toast({
+                    title: "Deal settled!",
+                    status: "success",
+                    duration: 9000,
+                    isClosable: true,
+                })
+        } catch (e) {
+            console.error(e)
+            toast({
+                title: "There was some error!",
+                status: "error",
+                duration: 9000,
+                isClosable: true,
+            })
+        }
+    }
+
     return (
-        <div class=" transition-all h-fit ease-out duration-500 border-2 border-[#5ce1e6] hover:shadow-xl hover:scale-105 relative flex flex-col items-center rounded-[20px]  w-[300px]  p-4 bg-gray-950 bg-opacity-50 shadow-lg border-opacity-18  ">
+        <div class=" transition-all h-fit ease-out duration-500 border-2 border-[#5ce1e6] hover:shadow-xl hover:scale-105 relative flex flex-col items-center rounded-[20px]  w-[350px]  p-4 bg-gray-950 bg-opacity-50 shadow-lg border-opacity-18  ">
             <div class="relative flex h-32 w-full justify-center rounded-xl bg-cover">
                 <img
                     src="https://horizon-tailwind-react-git-tailwind-components-horizon-ui.vercel.app/static/media/banner.ef572d78f29b0fee0a09.png"
@@ -32,13 +137,22 @@ const TakeDealCard = (props) => {
             </div>
 
             <div className=" flex-row flex justify-between gap-3 mb-3">
-                <Button className="bg-gray-dark border-2 border-gray-black text-gray-400 rounded-md  px-4 top-5 ">
+                <Button
+                    className="bg-gray-dark border-2 border-gray-black text-gray-400 rounded-md  px-4 top-5 "
+                    onClick={onTakeClick}
+                >
                     Take
                 </Button>
-                <Button className="bg-gray-dark border-2 border-gray-black rounded-md px-4 top-5 text-gray-400">
+                <Button
+                    className="bg-gray-dark border-2 border-gray-black rounded-md px-4 top-5 text-gray-400"
+                    onClick={onRemoveClick}
+                >
                     Remove
                 </Button>
-                <Button className="bg-gray-dark border-2 border-gray-black rounded-md  px-4 top-5 text-gray-400">
+                <Button
+                    className="bg-gray-dark border-2 border-gray-black rounded-md  px-4 top-5 text-gray-400"
+                    onClick={onSettleClick}
+                >
                     Settle
                 </Button>
             </div>
