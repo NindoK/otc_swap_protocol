@@ -180,7 +180,14 @@ const CardComponent = (props) => {
                                 {props.rfs.token0Data.symbol} to {props.rfs.amount1} of{" "}
                                 {props.rfs.tokensAcceptedData[0].symbol}.
                                 <br />
-                                (!) Note - you can swap a fraction of this request and you are free
+                                <br />
+                                <WarningIcon
+                                    className="mr-3"
+                                    w={4}
+                                    h={4}
+                                    color="lightskyblue"
+                                />
+                                Note - you can swap a fraction of this request and you are free
                                 to fill the whole request.
                             </p>
                         )}

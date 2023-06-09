@@ -10,15 +10,27 @@ import CoingeckoCachedResponse from "@constants/coingeckoCachedResponse"
 import { ethers } from "ethers"
 import networkMapping from "@constants/networkMapping"
 import OtcNexusAbi from "@constants/abis/OtcNexusAbi"
-import { Avatar, AvatarGroup } from "@chakra-ui/react"
+import {
+    Avatar,
+    AvatarGroup,
+    Button,
+    Drawer,
+    DrawerBody,
+    DrawerCloseButton,
+    DrawerContent,
+    DrawerFooter,
+    DrawerHeader,
+    DrawerOverlay,
+    Input,
+    useDisclosure,
+} from "@chakra-ui/react"
 
 const swap = () => {
     const [tokenData, setTokenData] = useState([])
     const [rfsDataAll, setRfsDataAll] = useState([])
     const [cardComponentData, setCardComponentData] = useState([])
 
-
-    function fetchTokenData() {
+    async function fetchTokenData() {
         //            const response = await axios.get("https://tokens.coingecko.com/uniswap/all.json")
         // workaround
         setTokenData(CoingeckoCachedResponse.tokens)
@@ -39,7 +51,6 @@ const swap = () => {
         }
         setRfsDataAll(rfses)
     }, []) // assuming there are no dependencies. If there are, include them in the array.
-
 
     const assembleCardComponentData = async () => {
         function findTokenDataForAddress(address, tokens) {
@@ -100,7 +111,6 @@ const swap = () => {
                     premium = `${rfs.priceMultiplier - 100}%`
                 }
             }
-
             cards.push({
                 condition: true,
                 label: rfs.typeRfs === 0 ? "Dynamic" : "Fixed",
@@ -123,7 +133,6 @@ const swap = () => {
                 rfs: trimmedRfs,
             })
         })
-
         setCardComponentData(cards)
     }
 
@@ -152,11 +161,6 @@ const swap = () => {
             <div className="absolute z-[0] w-[50%] h-[50%] left-0 bottom-40 blue__gradient" />
             {/* gradient end */}
             <Sidebar />
-
-
-            <div className="w-full flex flex-row justify-end">
-                <ConnectButton />
-            </div>
 
             <ul className="mt-36 ml-40">
                 {cardComponentData.map((val, key) => {

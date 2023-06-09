@@ -42,8 +42,9 @@ const CreateRfs = () => {
     const [amount1Requested, setAmount1Requested] = useState(0) //uint256
     const [deadline, setDeadline] = useState(0) //unix timestamp
     const [usdPrice, setUsdPrice] = useState(0) //uint256
-    const [chainId, setChainId] = useState(null)
     const deadlineInputRef = useRef();
+
+    const [chainId, setChainId] = useState(null)
     async function fetchTokenData() {
         try {
             const provider = new ethers.providers.Web3Provider(window.ethereum)
@@ -97,9 +98,6 @@ const CreateRfs = () => {
                     interactionTypeSelected
                 )
             } else if (rfsType === "Fixed_Usd") {
-            console.log("Fixed_Usd")
-            console.log(tokensAccepted);
-
                 tx = await otcNexus.createFixedRfs(
                     tokenOffered,
                     tokensAccepted,
@@ -110,8 +108,6 @@ const CreateRfs = () => {
                     interactionTypeSelected
                 )
             } else if (rfsType === "Fixed_Amount") {
-            console.log("Fixed_Amount")
-            console.log(tokensAccepted);
                 tx = await otcNexus.createFixedRfs(
                     tokenOffered,
                     tokensAccepted,
@@ -149,18 +145,17 @@ const CreateRfs = () => {
     }, [])
 
     const isFormValid = () => {
-    console.log(tokensAccepted);
         return (
-            deadline !== "" &&
-            tokenOffered !== "" &&
-            amount0Offered !== "" &&
-            interactionType !== "" &&
-            rfsType !== "" &&
-            ((rfsType === "Dynamic" && tokensAccepted !== "" && priceMultiplier !== "") ||
-                (rfsType === "Fixed_Usd" && tokensAccepted !== "" && usdPrice !== "") ||
-                (rfsType === "Fixed_Amount" && tokensAccepted !== "" && amount1Requested !== ""))
-        )
-    }
+         deadline !== '' &&
+          tokenOffered !== '' &&
+          amount0Offered !== '' &&
+          interactionType !== '' &&
+          rfsType !== '' &&
+          ((rfsType === 'Dynamic' && tokensAccepted.length>0 && priceMultiplier!== '') ||
+            (rfsType === 'Fixed_Usd' && tokensAccepted.length>0 && usdPrice>0) ||
+            (rfsType === 'Fixed_Amount' && tokensAccepted.length>0 && amount1Requested>0))
+        );
+      };
 
     return (
         <>
