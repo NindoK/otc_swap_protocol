@@ -44,7 +44,9 @@ const MultipleTags = ({ setTokensAccepted }) => {
         const trimmedValue = inputValue.trim();
         // Check if the tag already exists
         if (!tags.includes(trimmedValue)) {
-          setTags([...tags, trimmedValue]);
+          const updatedTags = [...tags, trimmedValue]
+          setTags(updatedTags);
+          setTokensAccepted(updatedTags)
         }
         setInputValue("");
       };
@@ -52,6 +54,7 @@ const MultipleTags = ({ setTokensAccepted }) => {
     const handleRemoveTag = (tag) => {
         const updatedTags = tags.filter((t) => t !== tag)
         setTags(updatedTags)
+        setTokensAccepted(updatedTags)
     }
     return (
         <Flex direction="column" width="300px">
@@ -74,6 +77,7 @@ const MultipleTags = ({ setTokensAccepted }) => {
                 onChange={handleInputChange}
                 onKeyDown={handleInputKeyDown}
                 mt={2}
+                required={false}
             >
                 {tokenData.slice(0, 20).map((token) => (
 
@@ -85,21 +89,23 @@ const MultipleTags = ({ setTokensAccepted }) => {
                 ))}
             </Select>
 
+      {tags.length <5  && (
             <button
-        onClick={handleAddTag}
-        disabled={inputValue.trim() === ""}
-        style={{
-          marginTop: "5px",
-          backgroundColor: "green",
-          color: "white",
-          margin: "5px 120px",
-          border: "none",
-          borderRadius: "50px",
-          cursor: "pointer",
-        }}
-      >
+                  onClick={handleAddTag}
+                  disabled={inputValue.trim() === ""}
+                  style={{
+                    marginTop: "5px",
+                    backgroundColor: "green",
+                    color: "white",
+                    margin: "5px 120px",
+                    border: "none",
+                    borderRadius: "50px",
+                    cursor: "pointer",
+                  }}
+                >
         +
       </button>
+      )}
         </Flex>
     )
 }

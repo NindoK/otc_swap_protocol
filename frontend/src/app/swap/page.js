@@ -1,5 +1,5 @@
 "use client"
-import React, { useState, useEffect, useCallback } from "react"
+import React, { useState, useEffect }  from "react"
 import Sidebar from "@components/Sidebar"
 import CardComponent from "@components/CardComponent"
 import { CardData } from "@components/CardData"
@@ -10,7 +10,20 @@ import CoingeckoCachedResponse from "@constants/coingeckoCachedResponse"
 import { ethers } from "ethers"
 import networkMapping from "@constants/networkMapping"
 import OtcNexusAbi from "@constants/abis/OtcNexusAbi"
-import { Avatar, AvatarGroup } from "@chakra-ui/react"
+import {
+    Avatar,
+    AvatarGroup,
+    Button,
+    Drawer,
+    DrawerBody,
+    DrawerCloseButton,
+    DrawerContent,
+    DrawerFooter,
+    DrawerHeader,
+    DrawerOverlay,
+    Input,
+    useDisclosure,
+} from "@chakra-ui/react"
 
 const swap = () => {
     const [tokenData, setTokenData] = useState([])

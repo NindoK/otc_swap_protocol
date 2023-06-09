@@ -2,11 +2,13 @@
 import { Box, Slider, SliderFilledTrack, SliderThumb, SliderTrack, Text } from "@chakra-ui/react"
 import React, { useState } from "react"
 
-const PercentageSlider = () => {
+const PercentageSlider = ({setPriceMultiplier}) => {
     const [value, setValue] = useState(0)
 
     const handleSliderChange = (newValue) => {
-        setValue(newValue)
+        setValue(newValue);
+        setPriceMultiplier(newValue)
+
     }
 
     return (
