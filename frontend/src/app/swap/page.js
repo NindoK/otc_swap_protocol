@@ -1,5 +1,5 @@
 "use client"
-import React, { useState, useEffect }  from "react"
+import React, { useState, useEffect } from "react"
 import Sidebar from "@components/Sidebar"
 import CardComponent from "@components/CardComponent"
 import { CardData } from "@components/CardData"
@@ -10,106 +10,118 @@ import CoingeckoCachedResponse from "@constants/coingeckoCachedResponse"
 import { ethers } from "ethers"
 import networkMapping from "@constants/networkMapping"
 import OtcNexusAbi from "@constants/abis/OtcNexusAbi"
-import { Avatar, AvatarGroup, Button, Drawer, DrawerBody, DrawerCloseButton, DrawerContent, DrawerFooter, DrawerHeader, DrawerOverlay, Input, useDisclosure } from "@chakra-ui/react"
-
+import {
+    Avatar,
+    AvatarGroup,
+    Button,
+    Drawer,
+    DrawerBody,
+    DrawerCloseButton,
+    DrawerContent,
+    DrawerFooter,
+    DrawerHeader,
+    DrawerOverlay,
+    Input,
+    useDisclosure,
+} from "@chakra-ui/react"
 
 const swap = () => {
     const [tokenData, setTokenData] = useState([])
     const [rfsDataAll, setRfsDataAll] = useState([])
     const [cardComponentData, setCardComponentData] = useState([])
-    
+
     function fetchTokenData() {
-//            const response = await axios.get("https://tokens.coingecko.com/uniswap/all.json")
-// workaround
-        setTokenData(CoingeckoCachedResponse.tokens);
+        //            const response = await axios.get("https://tokens.coingecko.com/uniswap/all.json")
+        // workaround
+        setTokenData(CoingeckoCachedResponse.tokens)
     }
 
     const retrieveAvailableRfs = async () => {
-    console.log('retrieveAvailableRfs')
+        console.log("retrieveAvailableRfs")
         const provider = new ethers.providers.Web3Provider(window.ethereum)
         const signer = provider.getSigner()
         const chainId = (await provider.getNetwork()).chainId
-        const contract = new ethers.Contract(networkMapping[chainId].OtcNexus, OtcNexusAbi, signer);
-        let rfses = [];
-        let maxId = await contract.rfsIdCounter();
-        for(let i = 1; i<maxId; i++) {
-                let rfs = await contract.getRfs(i);
-                console.log(rfs)
-                if(!rfs.removed) {
-                  rfses.push(rfs)
-                }
+        const contract = new ethers.Contract(networkMapping[chainId].OtcNexus, OtcNexusAbi, signer)
+        let rfses = []
+        let maxId = await contract.rfsIdCounter()
+        for (let i = 1; i < maxId; i++) {
+            let rfs = await contract.getRfs(i)
+            console.log(rfs)
+            if (!rfs.removed) {
+                rfses.push(rfs)
+            }
         }
-        setRfsDataAll(rfses);
+        setRfsDataAll(rfses)
     }
 
-     const assembleCardComponentData = async () => {
-      function findTokenDataForAddress(address, tokens) {
-            let tokensWithCriteria = tokens.filter((token) => token.address == address);
-            if(tokensWithCriteria.length != 1) {
-              console.log("Wrong amount of tokens found" + tokensWithCriteria);
+    const assembleCardComponentData = async () => {
+        function findTokenDataForAddress(address, tokens) {
+            let tokensWithCriteria = tokens.filter((token) => token.address == address)
+            if (tokensWithCriteria.length != 1) {
+                console.log("Wrong amount of tokens found" + tokensWithCriteria)
             }
-            return tokensWithCriteria[0];
-      }
-      function startsWithNumber(str) {
-          const regex = /^\d/;
-          return regex.test(str);
-      }
-      function trimRfs(rfs) {
-          let trimmedRfs = {};
+            return tokensWithCriteria[0]
+        }
+        function startsWithNumber(str) {
+            const regex = /^\d/
+            return regex.test(str)
+        }
+        function trimRfs(rfs) {
+            let trimmedRfs = {}
 
-          for(let key in rfs) {
-//              console.log(key)
-              if(startsWithNumber(key)) {
-                continue;
-              }
-              if(rfs[key]._isBigNumber) {
-                  // todo deadline might be big, we may want to convert eg let hexString = '0x01f4'; let decimalNumber = parseInt(hexString, 16); because we are passing string
-                  trimmedRfs[key] = parseInt(rfs[key]._hex, 16);
-              } else {
-                  trimmedRfs[key] = rfs[key];
-              }
-          }
-          const effectiveType = rfs.typeRfs ==0? 'DYNAMIC': rfs.usdPrice>0?'FIXED_USD': 'FIXED_AMOUNT';
-          trimmedRfs.effectiveType = effectiveType;
-          return trimmedRfs;
-      }
-      console.log('rfs read');
-      console.log(rfsDataAll);
-      let cards = [];
-      rfsDataAll.forEach((rfs) => {
-      let trimmedRfs = trimRfs(rfs);
-//      console.log("trimmedRfs");
-//      console.log(trimmedRfs);
-      let token0Data = findTokenDataForAddress(rfs.token0.toLowerCase(), tokenData);
-      let tokensAcceptedData = rfs.tokensAccepted.map(address => findTokenDataForAddress(address.toLowerCase(), tokenData));
-      trimmedRfs.token0Data=token0Data;
-      trimmedRfs.tokensAcceptedData=tokensAcceptedData;
+            for (let key in rfs) {
+                //              console.log(key)
+                if (startsWithNumber(key)) {
+                    continue
+                }
+                if (rfs[key]._isBigNumber) {
+                    // todo deadline might be big, we may want to convert eg let hexString = '0x01f4'; let decimalNumber = parseInt(hexString, 16); because we are passing string
+                    trimmedRfs[key] = parseInt(rfs[key]._hex, 16)
+                } else {
+                    trimmedRfs[key] = rfs[key]
+                }
+            }
+            const effectiveType =
+                rfs.typeRfs == 0 ? "DYNAMIC" : rfs.usdPrice > 0 ? "FIXED_USD" : "FIXED_AMOUNT"
+            trimmedRfs.effectiveType = effectiveType
+            return trimmedRfs
+        }
+        console.log("rfs read")
+        console.log(rfsDataAll)
+        let cards = []
+        rfsDataAll.forEach((rfs) => {
+            let trimmedRfs = trimRfs(rfs)
+            //      console.log("trimmedRfs");
+            //      console.log(trimmedRfs);
+            let token0Data = findTokenDataForAddress(rfs.token0.toLowerCase(), tokenData)
+            let tokensAcceptedData = rfs.tokensAccepted.map((address) =>
+                findTokenDataForAddress(address.toLowerCase(), tokenData)
+            )
+            trimmedRfs.token0Data = token0Data
+            trimmedRfs.tokensAcceptedData = tokensAcceptedData
 
-      let showDiscount = false;
-      let showPremium = false;
-      let discount = '';
-      let premium = '';
-      // dynamic
-      if(rfs.typeRfs == 0 && rfs.priceMultiplier >0) {
-          if (rfs.priceMultiplier === 100) {
-            showDiscount = true;
-            discount = 'none';
-          } else if ( rfs.priceMultiplier < 100) {
-            showDiscount = true;
-            discount = `${100 - rfs.priceMultiplier}%`;
-         } else {
-            showPremium = true;
-            premium = `${rfs.priceMultiplier-100}%`;
-         }
-      }
+            let showDiscount = false
+            let showPremium = false
+            let discount = ""
+            let premium = ""
+            // dynamic
+            if (rfs.typeRfs == 0 && rfs.priceMultiplier > 0) {
+                if (rfs.priceMultiplier === 100) {
+                    showDiscount = true
+                    discount = "none"
+                } else if (rfs.priceMultiplier < 100) {
+                    showDiscount = true
+                    discount = `${100 - rfs.priceMultiplier}%`
+                } else {
+                    showPremium = true
+                    premium = `${rfs.priceMultiplier - 100}%`
+                }
+            }
 
-        cards.push(
-            {
+            cards.push({
                 condition: true,
                 label: rfs.typeRfs === 0 ? "Dynamic" : "Fixed",
-                icon: (
-                    <img src={token0Data.logoURI} alt="" width="70" height="70"/>
-                ),
+                icon: <img src={token0Data.logoURI} alt="" width="70" height="70" />,
                 title: token0Data.name + " /",
                 showDiscount: showDiscount,
                 showPremium: showPremium,
@@ -120,37 +132,35 @@ const swap = () => {
                 TValue: "1.3M",
                 assets: (
                     <AvatarGroup spacing={"0.5rem"} size="sm" max={tokensAcceptedData.length}>
-                            {tokensAcceptedData.map((token, index) => (
-                              <Avatar key={index} name={token.name} src={token.logo} />
-                                ))}
+                        {tokensAcceptedData.map((token, index) => (
+                            <Avatar key={index} name={token.name} src={token.logo} />
+                        ))}
                     </AvatarGroup>
                 ),
-                rfs:trimmedRfs
-            });
-        });
+                rfs: trimmedRfs,
+            })
+        })
         console.log("cards")
         console.log(cards)
-        setCardComponentData(cards);
-      }
+        setCardComponentData(cards)
+    }
 
+    useEffect(() => {
+        const fetchData = async () => {
+            fetchTokenData()
+            await retrieveAvailableRfs()
+        }
 
-          useEffect(() => {
-            const fetchData = async () => {
-              fetchTokenData();
-              await retrieveAvailableRfs();
-            };
+        fetchData()
+    }, [])
 
-            fetchData();
-          }, []);
-
-          // New useEffect that runs assembleCardComponentData when rfsDataAll state changes
-          useEffect(() => {
-            const fetchData = async () => {
-              await assembleCardComponentData();
-            };
-            fetchData();
-          }, [rfsDataAll]);
-
+    // New useEffect that runs assembleCardComponentData when rfsDataAll state changes
+    useEffect(() => {
+        const fetchData = async () => {
+            await assembleCardComponentData()
+        }
+        fetchData()
+    }, [rfsDataAll])
 
     return (
         <div className="flex h-fit w-full bg-black">
@@ -161,10 +171,9 @@ const swap = () => {
             {/* gradient end */}
             <Sidebar />
 
-
-           <div className="w-full flex flex-row justify-end">
-           <ConnectButton/>
-           </div>
+            <div className="w-full flex flex-row justify-end">
+                <ConnectButton />
+            </div>
 
             <ul className="mt-36 ml-40">
                 {cardComponentData.map((val, key) => {
