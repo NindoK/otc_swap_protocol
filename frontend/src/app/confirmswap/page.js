@@ -10,8 +10,10 @@ import { HStack, Button, VStack } from "@chakra-ui/react"
 import OtcNexusAbi from "@constants/abis/OtcNexusAbi"
 import { ethers } from "ethers"
 import networkMapping from "@constants/networkMapping"
-
-import { useRouter } from "next/router"
+import coingeckoCachedResponse from "@constants/coingeckoCachedResponse"
+import mumbaiAddressesFeedAggregators from "@constants/mumbaiAddressesFeedAggregators"
+import FeedAggregatorMumbaiAbi from "@constants/abis/FeedAggregatorMumbaiAbi"
+import { convert } from "encoding"
 const ConfirmSwap = (
     {
         // rfsId = 2 /*rfs TODO we can consider just passing the rfs directly, since we already fetch it from the swap page and we have a list of rfs*/,
@@ -28,12 +30,22 @@ const ConfirmSwap = (
     const [swapRate, setSwapRate] = useState("")
     const [rfs, setRfs] = useState(null)
 
-    const changeAmount = (e) => {
-        const value = parseFloat(e.target.value)
-        if (!isNaN(value)) {
-            setTokenOneAmount(e.target.value)
+    const handlePctRangeChange = (event) => {
+        const inputValue = event.target.value
+        const convertedValue = inputValue.replace(",", ".")
+
+        if (event.target.value === "" || isNumberValid(convertedValue)) {
+            setPctRangeInput(convertedValue)
+            setPercentage(convertedValue)
         }
-        //TODO Automatically calculate the correspective token amount given the current swapRate
+    }
+    const changeAmount = (e) => {
+        const value = e.target.value
+        const convertedValue = value.replace(",", ".")
+        const valid = /^-?\d*[.,]?\d*$/.test(convertedValue)
+
+        if (valid || e.target.value == "") setTokenTwoAmount(convertedValue * swapRate)
+        setTokenOneAmount(convertedValue)
     }
 
     const filteredTokens = tokenData.filter((e) =>
@@ -52,16 +64,29 @@ const ConfirmSwap = (
     const fetchTokenData = useCallback(
         async (rfsObject) => {
             try {
-                const response = await axios.get("https://tokens.coingecko.com/uniswap/all.json")
+                let onlyTokensAccepted, token0
+                if (coingeckoCachedResponse) {
+                    const tokens = coingeckoCachedResponse.tokens
+                    onlyTokensAccepted = tokens.filter((token) =>
+                        rfsObject.tokensAccepted.includes(ethers.utils.getAddress(token.address))
+                    )
+                    token0 = tokens.filter(
+                        (token) => rfsObject.token0 === ethers.utils.getAddress(token.address)
+                    )[0]
+                } else {
+                    const response = await axios.get(
+                        "https://tokens.coingecko.com/uniswap/all.json"
+                    )
 
-                // Process the response data
-                const tokens = response.data.tokens
-                const onlyTokensAccepted = tokens.filter((token) =>
-                    rfsObject.tokensAccepted.includes(ethers.utils.getAddress(token.address))
-                )
-                const token0 = tokens.filter(
-                    (token) => rfsObject.token0 === ethers.utils.getAddress(token.address)
-                )[0]
+                    // Process the response data
+                    const tokens = response.data.tokens
+                    const onlyTokensAccepted = tokens.filter((token) =>
+                        rfsObject.tokensAccepted.includes(ethers.utils.getAddress(token.address))
+                    )
+                    const token0 = tokens.filter(
+                        (token) => rfsObject.token0 === ethers.utils.getAddress(token.address)
+                    )[0]
+                }
                 setTokenData(onlyTokensAccepted)
                 setTokenOne(token0)
                 setTokenTwo(onlyTokensAccepted[0])
@@ -83,21 +108,40 @@ const ConfirmSwap = (
         )
         const rfsId = window.localStorage.getItem("rfsIdSelected")
         const rfsObject = await otcNexus.getRfs(rfsId)
-        console.log(rfsObject)
         setRfs(rfsObject)
         fetchTokenData(rfsObject)
     }
 
     const getCurrentSwapRate = async () => {
-        //TODO: Implement this
-        //Query some API for the current swap rate if it's dynamic and apply rfs.priceMultiplier
-        //otherwise calculate given the current token amounts/price
-        setSwapRate("1300 CRV/BNB")
+        const price = window.localStorage.getItem("currentSelectedPrice")
+        console.log(price)
+        let swapRate
+        if (price && price !== "N/A") {
+            for (let i = 0; i < tokenData.length; i++) {
+                if (mumbaiAddressesFeedAggregators[tokenData[i].address]) {
+                    const provider = new ethers.providers.Web3Provider(window.ethereum)
+                    const contract = new ethers.Contract(
+                        mumbaiAddressesFeedAggregators[tokenData[i].address],
+                        FeedAggregatorMumbaiAbi,
+                        provider
+                    )
+                    const decimals = await contract.decimals()
+                    const priceWithDecimals = await contract.latestAnswer()
+                    swapRate = price / (priceWithDecimals / 10 ** decimals)
+                }
+            }
+        } else {
+            swapRate = rfs.initialAmount0 / rfs.amount1
+        }
+        setSwapRate(swapRate)
     }
 
     useEffect(() => {
-        getRfsData()
         getCurrentSwapRate()
+    }, [tokenData])
+
+    useEffect(() => {
+        getRfsData()
     }, [])
 
     return (
@@ -160,8 +204,20 @@ const ConfirmSwap = (
                         </div>
 
                         <div className="relative mb-3">
-                            <Input placeholder="0" value={tokenOneAmount} onChange={changeAmount} />
-                            <Input placeholder="0" value={tokenTwoAmount} disabled={true} />
+                            <Input
+                                type="text"
+                                placeholder="0"
+                                pattern="^-?\d*[.,]?\d*$"
+                                value={tokenOneAmount}
+                                onChange={changeAmount}
+                            />
+                            <Input
+                                type="text"
+                                placeholder="0"
+                                pattern="^-?\d*[.,]?\d*$"
+                                value={tokenTwoAmount}
+                                disabled={true}
+                            />
                             <div className="absolute min-w-[80px] h-8 bg-[#3a4157] top-[30px] right-[20px] rounded-full flex justify-start align-middle gap-1 font-bold text-base pr-[8px]">
                                 {tokenOne && (
                                     <>
@@ -200,7 +256,7 @@ const ConfirmSwap = (
                                     Current swap price :
                                 </h2>
                                 <p className="font-montserrat font-medium text-sm text-gray-400">
-                                    {swapRate}
+                                    {`${swapRate} ${tokenTwo?.symbol}/${tokenOne?.symbol}`}
                                 </p>
                             </VStack>
                             <VStack align="start" className=" mb-5 justify-start ">

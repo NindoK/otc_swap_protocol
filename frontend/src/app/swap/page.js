@@ -157,8 +157,8 @@ const swap = () => {
                 showPremium: showPremium,
                 discount: discount,
                 premium: premium,
-                Price: price !== undefined && price !== "N/A" ? `$ ${formatNumber(price)}` : "N/A",
-
+                price: price !== undefined && price !== "N/A" ? `$ ${formatNumber(price)}` : "N/A",
+                rawPrice: price,
                 TTokens: rfs.currentAmount0.toNumber(),
                 TValue:
                     totalValue !== undefined && totalValue !== "N/A"
@@ -219,7 +219,8 @@ const swap = () => {
                                 showPremium={val.showPremium}
                                 discount={val.discount}
                                 premium={val.premium}
-                                price={val.Price}
+                                price={val.price}
+                                rawPrice={val.rawPrice}
                                 ttokens={val.TTokens}
                                 tvalue={val.TValue}
                                 title={val.title}
