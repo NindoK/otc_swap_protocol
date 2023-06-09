@@ -1,5 +1,5 @@
 "use client"
-import React, { useState, useEffect } from "react"
+import React, { useState, useEffect, useCallback } from "react"
 import Sidebar from "@components/Sidebar"
 import CardComponent from "@components/CardComponent"
 import { CardData } from "@components/CardData"
@@ -10,25 +10,13 @@ import CoingeckoCachedResponse from "@constants/coingeckoCachedResponse"
 import { ethers } from "ethers"
 import networkMapping from "@constants/networkMapping"
 import OtcNexusAbi from "@constants/abis/OtcNexusAbi"
-import {
-    Avatar,
-    AvatarGroup,
-    Button,
-    Drawer,
-    DrawerBody,
-    DrawerCloseButton,
-    DrawerContent,
-    DrawerFooter,
-    DrawerHeader,
-    DrawerOverlay,
-    Input,
-    useDisclosure,
-} from "@chakra-ui/react"
+import { Avatar, AvatarGroup } from "@chakra-ui/react"
 
 const swap = () => {
     const [tokenData, setTokenData] = useState([])
     const [rfsDataAll, setRfsDataAll] = useState([])
     const [cardComponentData, setCardComponentData] = useState([])
+
 
     function fetchTokenData() {
         //            const response = await axios.get("https://tokens.coingecko.com/uniswap/all.json")
@@ -36,8 +24,7 @@ const swap = () => {
         setTokenData(CoingeckoCachedResponse.tokens)
     }
 
-    const retrieveAvailableRfs = async () => {
-        console.log("retrieveAvailableRfs")
+    const retrieveAvailableRfs = useCallback(async () => {
         const provider = new ethers.providers.Web3Provider(window.ethereum)
         const signer = provider.getSigner()
         const chainId = (await provider.getNetwork()).chainId
@@ -46,13 +33,13 @@ const swap = () => {
         let maxId = await contract.rfsIdCounter()
         for (let i = 1; i < maxId; i++) {
             let rfs = await contract.getRfs(i)
-            console.log(rfs)
             if (!rfs.removed) {
                 rfses.push(rfs)
             }
         }
         setRfsDataAll(rfses)
-    }
+    }, []) // assuming there are no dependencies. If there are, include them in the array.
+
 
     const assembleCardComponentData = async () => {
         function findTokenDataForAddress(address, tokens) {
@@ -86,13 +73,9 @@ const swap = () => {
             trimmedRfs.effectiveType = effectiveType
             return trimmedRfs
         }
-        console.log("rfs read")
-        console.log(rfsDataAll)
         let cards = []
         rfsDataAll.forEach((rfs) => {
             let trimmedRfs = trimRfs(rfs)
-            //      console.log("trimmedRfs");
-            //      console.log(trimmedRfs);
             let token0Data = findTokenDataForAddress(rfs.token0.toLowerCase(), tokenData)
             let tokensAcceptedData = rfs.tokensAccepted.map((address) =>
                 findTokenDataForAddress(address.toLowerCase(), tokenData)
@@ -140,8 +123,7 @@ const swap = () => {
                 rfs: trimmedRfs,
             })
         })
-        console.log("cards")
-        console.log(cards)
+
         setCardComponentData(cards)
     }
 
@@ -170,6 +152,7 @@ const swap = () => {
             <div className="absolute z-[0] w-[50%] h-[50%] left-0 bottom-40 blue__gradient" />
             {/* gradient end */}
             <Sidebar />
+
 
             <div className="w-full flex flex-row justify-end">
                 <ConnectButton />

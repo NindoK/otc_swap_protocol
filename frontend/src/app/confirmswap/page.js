@@ -11,9 +11,12 @@ import OtcNexusAbi from "@constants/abis/OtcNexusAbi"
 import { ethers } from "ethers"
 import networkMapping from "@constants/networkMapping"
 
-const ConfirmSwap = ({
-    rfsId = 2 /*rfs TODO we can consider just passing the rfs directly, since we already fetch it from the swap page and we have a list of rfs*/,
-}) => {
+import { useRouter } from "next/router"
+const ConfirmSwap = (
+    {
+        // rfsId = 2 /*rfs TODO we can consider just passing the rfs directly, since we already fetch it from the swap page and we have a list of rfs*/,
+    }
+) => {
     const [tokenData, setTokenData] = useState([])
     const [tokenOneAmount, setTokenOneAmount] = useState(null)
     const [tokenTwoAmount, setTokenTwoAmount] = useState(null)
@@ -78,6 +81,7 @@ const ConfirmSwap = ({
             OtcNexusAbi,
             provider
         )
+        const rfsId = window.localStorage.getItem("rfsIdSelected")
         const rfsObject = await otcNexus.getRfs(rfsId)
         console.log(rfsObject)
         setRfs(rfsObject)
@@ -231,4 +235,3 @@ const ConfirmSwap = ({
 }
 
 export default ConfirmSwap
-
