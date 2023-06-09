@@ -13,27 +13,27 @@ const Navbar = () => {
         <nav className="w-full flex py-6 justify-between items-center navbar">
             <Link href="/">
                 <h1 className="hover:cursor-pointer font-montserrat font-extrabold text-2xl text-white">
-                    Logo
+                    OtcNexus
                 </h1>
             </Link>
             <ul className="list-none sm:flex hidden justify-end items-center flex-1">
                 <Link href="/createrfs">
-                    <li className="font-montserrat font-normal cursor-pointer text-[16px] text-white mr-10 ">
+                    <li className="font-montserrat font-normal cursor-pointer text-[16px] text-white mr-10 h-fit w-fit py-2 px-4 bg-gray-dark border-4 border-gray-900 rounded-xl transition-all  ease-out duration-500 hover:shadow-xl hover:scale-105">
                         Create RFS
                     </li>
                 </Link>
                 <Link href="/createdeal">
-                    <li className="font-montserrat font-normal cursor-pointer text-[16px] text-white mr-10 ">
+                    <li className="font-montserrat font-normal cursor-pointer text-[16px] text-white mr-10 h-fit w-fit py-2 px-4 bg-gray-dark border-4 border-gray-900 rounded-xl transition-all  ease-out duration-500 hover:shadow-xl hover:scale-105">
                         Create A Deal
                     </li>
                 </Link>
                 <Link href="/swap">
-                    <li className="font-montserrat font-normal cursor-pointer text-[16px] text-white mr-10">
+                    <li className="font-montserrat font-normal cursor-pointer text-[16px] text-white mr-10 h-fit w-fit py-2 px-8 bg-gray-dark border-4 border-gray-900 rounded-xl transition-all  ease-out duration-500 hover:shadow-xl hover:scale-105">
                         Swap
                     </li>
                 </Link>
                 <Link href="/takedeal">
-                    <li className="font-montserrat font-normal cursor-pointer text-[16px] text-white mr-10">
+                    <li className="font-montserrat font-normal cursor-pointer text-[16px] text-white mr-10 h-fit w-fit py-2 px-4 bg-gray-dark border-4 border-gray-900 rounded-xl transition-all  ease-out duration-500 hover:shadow-xl hover:scale-105">
                         Take a deal
                     </li>
                 </Link>

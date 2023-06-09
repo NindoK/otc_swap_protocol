@@ -10,27 +10,27 @@ export const feedback = [
         id: "feedback-1",
 
         name: "Nindo K",
-        title: "Founder & Leader",
+        title: "Developer",
         img: person1,
     },
     {
         id: "feedback-2",
 
         name: "Aliroody",
-        title: "Founder & Leader",
+        title: "Developer",
         img: person2,
     },
     {
         id: "feedback-3",
 
         name: "Sakshi Shah",
-        title: "Founder & Leader",
+        title: "Developer",
         img: person3,
     },
     {
         id: "feedback-4",
         name: "Quantoor",
-        title: "Founder & Leader",
+        title: "Developer",
         img: person4,
     },
 ]
@@ -62,7 +62,7 @@ const Devs = () => {
                 </h2>
             </div>
 
-            <div className="flex lg:gap-10 lg:pl-20 flex-wrap sm:justify-start justify-center w-full feedback-container relative z-[1]">
+            <div className="flex lg:gap-28 lg:pl-20 flex-wrap sm:justify-start justify-center w-full feedback-container relative z-[1]">
                 {feedback.map((card) => (
                     <FeedbackCard key={card.id} {...card} />
                 ))}

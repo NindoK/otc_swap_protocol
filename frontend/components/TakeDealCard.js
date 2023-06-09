@@ -12,8 +12,8 @@ const TakeDealCard = (props) => {
                 />
                 <div class="absolute top-8 flex-col flex items-center justify-center text-gray-black z-10 font-montserrat font-bold">
                     <h3>Deal ID: {props.id}</h3>
-                    <h3>Underlying token: {props.underlyingToken.substring(0, 6)}</h3>
-                    <h3>Quote token: {props.quoteToken.substring(0, 6)}</h3>
+                    <h3>Underlying token: {props.underlyingtoken.substring(0, 6)}</h3>
+                    <h3>Quote token: {props.quotetoken.substring(0, 6)}</h3>
                 </div>
             </div>
             <div class=" flex-row flex justify-between gap-3 mt-1 text-gray-400 z-10 font-montserrat font-semibold text-sm">
