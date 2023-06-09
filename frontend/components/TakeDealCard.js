@@ -11,16 +11,16 @@ const TakeDealCard = (props) => {
                     class="absolute flex h-32 w-full justify-center rounded-xl bg-cover"
                 />
                 <div class="absolute top-8 flex-col flex items-center justify-center text-gray-black z-10 font-montserrat font-bold">
-                    <h3>Deal Id:{props.id}</h3>
+                    <h3>Deal ID: {props.id}</h3>
                     <h3>Underlying token: {props.underlyingtoken}</h3>
-                    <h3>Qoute token: {props.quotetoken}</h3>
+                    <h3>Quote token: {props.quotetoken}</h3>
                 </div>
             </div>
             <div class=" flex-row flex justify-between gap-3 text-gray-400 z-10 font-montserrat font-semibold text-sm">
                 <VStack className="text-start">
                     <h4>Strike: {props.strike}</h4>
                     <h4>Maturity: {props.maturity}</h4>
-                    <h4>Option call: {props.optioncall}</h4>
+                    <h4>Option Type: {props.optioncall}</h4>
                     <h4>Buyer: {props.buyer}</h4>
                 </VStack>
                 <VStack>
@@ -30,15 +30,15 @@ const TakeDealCard = (props) => {
                     <h4>Seller: {props.seller}</h4>
                 </VStack>
             </div>
-            
+
             <div className=" flex-row flex justify-between gap-3 mb-3">
-                <Button className="bg-gray-dark border-2 border-gray-black text-gray-400 rounded-md  px-4 top-5 " >
-                    Take 
+                <Button className="bg-gray-dark border-2 border-gray-black text-gray-400 rounded-md  px-4 top-5 ">
+                    Take
                 </Button>
-                <Button className="bg-gray-dark border-2 border-gray-black rounded-md px-4 top-5 text-gray-400" >
-                    Remove 
+                <Button className="bg-gray-dark border-2 border-gray-black rounded-md px-4 top-5 text-gray-400">
+                    Remove
                 </Button>
-                <Button className="bg-gray-dark border-2 border-gray-black rounded-md  px-4 top-5 text-gray-400" >
+                <Button className="bg-gray-dark border-2 border-gray-black rounded-md  px-4 top-5 text-gray-400">
                     Settle
                 </Button>
             </div>
