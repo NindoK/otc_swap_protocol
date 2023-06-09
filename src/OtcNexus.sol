@@ -14,26 +14,32 @@ error OtcNexus__InvalidPriceMultiplier();
 error OtcNexus__InvalidDeadline();
 error OtcNexus__InvalidTokenAddresses();
 error OtcNexus__InvalidTokenAndAmountMismatch();
+error OtcNexus__InvalidTokenIndex();
+error OtcNexus__InvalidAggregatorAddress();
+error OtcNexus__InvalidRfsType();
+error OtcNexus__InvalidTakerAddress();
+error OtcNexus__InvalidInteractionTypeForPaypal();
+
+error OtcNexus__OnlyFixedOrDynamicAllowed();
+error OtcNexus__OnlyFixedPriceOrAmountAllowed();
+error OtcNexus__OnlyOneTokenAccepted();
+error OtcNexus__OnlyRelayer();
+error OtcNexus__NotMaker();
+
 error OtcNexus__AllowanceToken0TooLow();
 error OtcNexus__AllowanceToken1TooLow();
 error OtcNexus__ApproveToken0Failed();
 error OtcNexus__DepositToken0Failed();
-error OtcNexus__RfsRemoved();
 error OtcNexus__Amount1TooHigh();
 error OtcNexus__Amount0TooHigh();
+error OtcNexus__TransferTokenFailed();
 error OtcNexus__TransferToken0Failed();
 error OtcNexus__TransferToken1Failed();
-error OtcNexus__NotMaker();
 error OtcNexus__RefundToken0Failed();
-error OtcNexus__OnlyFixedOrDynamicAllowed();
-error OtcNexus__OnlyFixedPriceOrAmountAllowed();
-error OtcNexus__OnlyOneTokenAccepted();
-error OtcNexus__InvalidTokenIndex();
-error OtcNexus__InvalidAggregatorAddress();
-error OtcNexus__InvalidRfsType();
+
+error OtcNexus__RfsRemoved();
 error OtcNexus__NoRewardsToClaim();
 error OtcNexus__NoTokensToClaim();
-error OtcNexus__TransferTokenFailed();
 
 /**
  * @title OtcNexus
@@ -42,6 +48,7 @@ error OtcNexus__TransferTokenFailed();
 contract OtcNexus is Ownable {
     // rfs with id 0 will mean null in the context: getRfs(_id).id == 0 => RFS is not found
     uint256 public rfsIdCounter = 1;
+    address private relayer;
     uint8 public makerFeeIfDeposited;
     uint8 public makerFeeIfNotDeposited;
     uint8 public takerFee;
@@ -92,6 +99,11 @@ contract OtcNexus is Ownable {
         uint8 priceMultiplier,
         uint256 deadline
     );
+
+    modifier onlyRelayer() {
+        if (msg.sender != relayer) revert OtcNexus__OnlyRelayer();
+        _;
+    }
 
     constructor(address _otcTokenAddress) {
         makerFeeIfDeposited = 25; // 0.25%
@@ -362,6 +374,85 @@ contract OtcNexus is Ownable {
     }
 
     /**
+     * @notice take a fixed price RFS when the taker pays with paypal
+     * @param _id id of the RFS
+     * @param _token0Bought amount of tokens that are bought
+     * @param _takerAddress address of the taker
+     * @return success
+     *
+     *  Requirements:
+     *
+     * - The caller must be the relayer.
+     */
+    function takeFixedRfsPaypal(
+        uint256 _id,
+        uint256 _token0Bought,
+        address _takerAddress
+    ) external onlyRelayer returns (bool success) {
+        return takeRfsPaypal(_id, _token0Bought, _takerAddress, RfsType.FIXED);
+    }
+
+    /**
+     * @notice take a dynamic price RFS when the taker pays with paypal
+     * @param _id id of the RFS
+     * @param _token0Bought amount of tokens that are bought
+     * @param _takerAddress address of the taker
+     * @return success
+     *
+     *  Requirements:
+     *
+     * - The caller must be the relayer.
+     */
+    function takeDynamicRfsPaypal(
+        uint256 _id,
+        uint256 _token0Bought,
+        address _takerAddress
+    ) external onlyRelayer returns (bool success) {
+        return takeRfsPaypal(_id, _token0Bought, _takerAddress, RfsType.DYNAMIC);
+    }
+
+    /**
+     * @notice take a fixed price RFS when the taker pays with paypal
+     * @param _id id of the RFS
+     * @param _token0Bought amount of tokens that are bought
+     * @param _takerAddress address of the taker
+     * @param expectedRfsType type of the Rfs: FIXED or DYNAMIC
+     * @return success
+     *
+     *  Requirements:
+     *
+     * - The caller must be the relayer.
+     */
+    function takeRfsPaypal(
+        uint256 _id,
+        uint256 _token0Bought,
+        address _takerAddress,
+        RfsType expectedRfsType
+    ) internal returns (bool success) {
+        RFS memory rfs = getRfs(_id);
+
+        // sanity checks
+        if (rfs.interactionType == TokenInteractionType.TOKEN_DEPOSITED)
+            revert OtcNexus__InvalidInteractionTypeForPaypal();
+        if (rfs.removed || rfs.id == 0) revert OtcNexus__RfsRemoved();
+        if (rfs.typeRfs != expectedRfsType) revert OtcNexus__InvalidRfsType();
+        if (_token0Bought == 0) revert OtcNexus__InvalidTokenAmount();
+        if (rfs.typeRfs == RfsType.FIXED && rfs.usdPrice == 0)
+            revert OtcNexus__OnlyFixedOrDynamicAllowed();
+
+        // transfer token0 to the taker
+        success = IERC20(rfs.token0).transfer(_takerAddress, _token0Bought);
+
+        if (!success) revert OtcNexus__TransferToken0Failed();
+
+        // update RFS
+        updateRfs(rfs, _token0Bought, 0);
+        computeRewards(rfs.maker, _takerAddress, _token0Bought, rfs.initialAmount0);
+
+        emit RfsFilled(_id, _takerAddress, _token0Bought, 0);
+    }
+
+    /**
      * @dev This function updates the RFS structure, decreasing the amounts
      * of token0 and (in case of the presence of token1) token1.
      *
@@ -480,6 +571,19 @@ contract OtcNexus is Ownable {
      */
     function setOtcTokenAddress(address _otcTokenAddress) external onlyOwner {
         otcToken = OtcToken(_otcTokenAddress);
+    }
+
+    /**
+     * @dev This function allows the owner of the contract to set the address of the relayer
+     *
+     * This function can only be called by the owner of the contract.
+     * @param _relayerAddress the address of the relayer
+     * Requirements:
+     *
+     * - The caller must be the owner of the contract.
+     */
+    function setRelayerAddress(address _relayerAddress) external onlyOwner {
+        relayer = _relayerAddress;
     }
 
     /**
