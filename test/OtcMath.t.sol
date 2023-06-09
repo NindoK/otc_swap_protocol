@@ -21,4 +21,29 @@ contract OtcMathTest is Test {
         uint takerAmount0 = OtcMath.getTakerAmount0(makerAmount0, makerAmount1, takerAmount1);
         assertEq(takerAmount0, (uint(takerAmount1) * uint(makerAmount0)) / uint(makerAmount1));
     }
+
+    function test_getQuoteAmount(
+        uint128 ulyAmount,
+        uint64 price,
+        uint8 ulyDec,
+        uint8 quoteDec,
+        uint8 priceDec
+    ) public {
+        vm.assume(ulyAmount > 10);
+        vm.assume(price > 10);
+        ulyDec = uint8(bound(ulyDec, 6, 18));
+        quoteDec = uint8(bound(quoteDec, 6, 18));
+        priceDec = uint8(bound(priceDec, 6, 11));
+        uint quoteAmount = OtcMath.getQuoteAmount(
+            uint(ulyAmount),
+            uint(price),
+            ulyDec,
+            quoteDec,
+            priceDec
+        );
+        assertEq(
+            quoteAmount,
+            (uint(ulyAmount) * uint(price) * 10 ** priceDec) / 10 ** ulyDec / 10 ** quoteDec
+        );
+    }
 }

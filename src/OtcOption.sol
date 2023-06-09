@@ -5,6 +5,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
+import "./OtcMath.sol";
 
 error Option__InvalidUnderlyingToken();
 error Option__InvalidQuoteToken();
@@ -14,16 +15,15 @@ error Option__InvalidAmount();
 error Option__InvalidPremium();
 
 error Option__InvalidPriceFeed();
-error Option__DepositPremiumFailed();
-error Option__DepositMarginFailed();
-error Option__TransferPremiumFailed();
-error Option__TransferMarginFailed();
+error Option__NotEnoughAllowance();
+error Option__TransferFailed();
 error Option__NotDealMaker();
 error Option__DealNotOpen();
 error Option__DealExpired();
 error Option__DealNotExpired();
 error Option__DealNotFound();
 error Option__DealHasNoTaker();
+error Option__InvalidSettler();
 
 contract OtcOption is Ownable {
     event DealCreated(
@@ -34,6 +34,7 @@ contract OtcOption is Ownable {
         uint maturity,
         bool isCall,
         uint amount,
+        uint quoteAmount,
         uint premium,
         bool isMakerBuyer,
         address maker
@@ -57,6 +58,7 @@ contract OtcOption is Ownable {
         uint maturity;
         bool isCall;
         uint amount;
+        uint quoteAmount;
         uint premium;
         bool isMakerBuyer;
         DealStatus status;
@@ -89,6 +91,28 @@ contract OtcOption is Ownable {
         return priceFeed;
     }
 
+    function _safeTransferFrom(address _token, address _from, address _to, uint _amount) internal {
+        if (IERC20(_token).allowance(_from, address(this)) < _amount)
+            revert Option__NotEnoughAllowance();
+        bool success = IERC20(_token).transferFrom(_from, _to, _amount);
+        if (!success) revert Option__TransferFailed();
+    }
+
+    function _safeTransfer(address _token, address _to, uint _amount) internal {
+        bool success = IERC20(_token).transfer(_to, _amount);
+        if (!success) revert Option__TransferFailed();
+    }
+
+    function getQuoteAmount(
+        address _underlyingToken,
+        address _quoteToken,
+        uint _amount,
+        uint _price
+    ) public view returns (uint) {
+        (uint8 ulyDec, uint8 quoteDec, uint8 priceDec) = getDecimals(_underlyingToken, _quoteToken);
+        return OtcMath.getQuoteAmount(_amount, _price, ulyDec, quoteDec, priceDec);
+    }
+
     function createDeal(
         address _underlyingToken,
         address _quoteToken,
@@ -105,6 +129,9 @@ contract OtcOption is Ownable {
         if (_maturity <= block.timestamp) revert Option__InvalidMaturity();
         if (_amount == 0) revert Option__InvalidAmount();
         if (_premium == 0) revert Option__InvalidPremium();
+        getPriceFeed(_underlyingToken, _quoteToken);
+
+        uint quoteAmount = getQuoteAmount(_underlyingToken, _quoteToken, _amount, _strike);
 
         Deal memory deal = Deal(
             _dealCounter,
@@ -114,6 +141,7 @@ contract OtcOption is Ownable {
             _maturity,
             _isCall,
             _amount,
+            quoteAmount,
             _premium,
             _isMakerBuyer,
             DealStatus.Open,
@@ -124,22 +152,17 @@ contract OtcOption is Ownable {
         // store new deal
         _deals[deal.id] = deal;
 
-        if (deal.isMakerBuyer) {
+        if (_isMakerBuyer) {
             // maker is buyer: deposit premium
-            bool success = IERC20(deal.quoteToken).transferFrom(
-                msg.sender,
-                address(this),
-                _premium
-            );
-            if (!success) revert Option__DepositPremiumFailed();
+            _safeTransferFrom(_quoteToken, msg.sender, address(this), _premium);
         } else {
-            // maker is seller: deposit underlying tokens
-            bool success = IERC20(deal.underlyingToken).transferFrom(
-                msg.sender,
-                address(this),
-                _amount
-            );
-            if (!success) revert Option__DepositMarginFailed();
+            if (_isCall) {
+                // maker is call seller: deposit underlying tokens
+                _safeTransferFrom(_underlyingToken, msg.sender, address(this), _amount);
+            } else {
+                // maker is put seller: deposit quote tokens
+                _safeTransferFrom(_quoteToken, msg.sender, address(this), quoteAmount);
+            }
         }
 
         emit DealCreated(
@@ -150,6 +173,7 @@ contract OtcOption is Ownable {
             deal.maturity,
             deal.isCall,
             deal.amount,
+            deal.quoteAmount,
             deal.premium,
             deal.isMakerBuyer,
             msg.sender
@@ -164,26 +188,20 @@ contract OtcOption is Ownable {
 
         Deal memory deal = getDeal(id);
         if (deal.status != DealStatus.Open) revert Option__DealNotOpen();
-        if (deal.isMakerBuyer) {
-            // taker is seller: deposit margin
-            bool success = IERC20(deal.underlyingToken).transferFrom(
-                msg.sender,
-                address(this),
-                deal.amount
-            );
-            if (!success) revert Option__DepositMarginFailed();
 
-            // transfer premium to the seller (taker)
-            success = IERC20(deal.quoteToken).transfer(msg.sender, deal.premium);
-            if (!success) revert Option__TransferPremiumFailed();
-        } else {
+        if (!deal.isMakerBuyer) {
             // taker is buyer: transfer premium to the seller (maker)
-            bool success = IERC20(deal.quoteToken).transferFrom(
-                msg.sender,
-                deal.maker,
-                deal.premium
-            );
-            if (!success) revert Option__DepositPremiumFailed();
+            _safeTransferFrom(deal.quoteToken, msg.sender, deal.maker, deal.premium);
+        } else {
+            if (deal.isCall) {
+                // taker is call seller: deposit margin
+                _safeTransferFrom(deal.underlyingToken, msg.sender, address(this), deal.amount);
+            } else {
+                // taker is put seller: deposit quote tokens
+                _safeTransferFrom(deal.quoteToken, msg.sender, address(this), deal.quoteAmount);
+            }
+            // transfer premium to the seller (taker)
+            _safeTransfer(deal.quoteToken, msg.sender, deal.premium);
         }
 
         _deals[id].taker = msg.sender;
@@ -194,11 +212,13 @@ contract OtcOption is Ownable {
     function _removeDeal(uint id) internal {
         Deal memory deal = getDeal(id);
         if (deal.isMakerBuyer) {
-            bool success = IERC20(deal.quoteToken).transfer(msg.sender, deal.premium);
-            if (!success) revert Option__TransferPremiumFailed();
+            _safeTransfer(deal.quoteToken, msg.sender, deal.premium);
         } else {
-            bool success = IERC20(deal.underlyingToken).transfer(msg.sender, deal.amount);
-            if (!success) revert Option__TransferMarginFailed();
+            if (deal.isCall) {
+                _safeTransfer(deal.underlyingToken, msg.sender, deal.amount);
+            } else {
+                _safeTransfer(deal.quoteToken, msg.sender, deal.quoteAmount);
+            }
         }
         _deals[id].status = DealStatus.Removed;
         emit DealRemoved(id);
@@ -215,25 +235,49 @@ contract OtcOption is Ownable {
         if (!isDealExpired(id)) revert Option__DealNotExpired();
         Deal memory deal = getDeal(id);
 
-        // if there is no taker, remove deal
-        if (deal.taker == address(0)) {
+        // if there is no taker or was not exercised after 24h, remove deal
+        if (deal.taker == address(0) || block.timestamp - deal.maturity >= 24 hours) {
             _removeDeal(id);
             return;
         }
 
+        // only maker or taker can settle
+        if (msg.sender != deal.maker && msg.sender != deal.taker) revert Option__InvalidSettler();
+
+        // check if exercisable
         uint price = getPrice(deal.underlyingToken, deal.quoteToken);
-        bool exercised = (deal.isCall && price >= deal.strike) ||
+        bool exercisable = (deal.isCall && price >= deal.strike) ||
             (!deal.isCall && price <= deal.strike);
 
-        // if exercised: transfer underlying tokens to the buyer
-        // otherwise expired worthless: refund margin to the seller
-        address receiver = exercised ? getDealBuyer(deal.id) : getDealSeller(deal.id);
+        address seller = getDealSeller(id);
+        if (msg.sender == seller) {
+            // option is exercisable and seller cannot settle
+            if (exercisable) revert Option__InvalidSettler();
 
-        bool success = IERC20(deal.underlyingToken).transfer(receiver, deal.amount);
-        if (!success) revert Option__TransferMarginFailed();
+            if (deal.isCall) {
+                // call expires worthless and seller can settle: refund underlying token to the seller
+                _safeTransfer(deal.underlyingToken, msg.sender, deal.amount);
+            } else {
+                // put expires worthless and seller can settle: refund quote token to the seller
+                _safeTransfer(deal.quoteToken, msg.sender, deal.quoteAmount);
+            }
+        } else {
+            // option is not exercisable and buyer cannot settle
+            if (!exercisable) revert Option__InvalidSettler();
+
+            if (deal.isCall) {
+                // call is exercisable: buyer buys the margin with the quote token
+                _safeTransferFrom(deal.quoteToken, msg.sender, seller, deal.quoteAmount);
+                _safeTransfer(deal.underlyingToken, msg.sender, deal.amount);
+            } else {
+                // put is exercisable: buyer sells the underlying in exchange for the quote token
+                _safeTransferFrom(deal.underlyingToken, msg.sender, seller, deal.amount);
+                _safeTransfer(deal.quoteToken, msg.sender, deal.quoteAmount);
+            }
+        }
 
         _deals[id].status = DealStatus.Settled;
-        emit DealSettled(id, exercised);
+        emit DealSettled(id, exercisable);
     }
 
     function getDeal(uint id) public view returns (Deal memory) {
@@ -286,13 +330,20 @@ contract OtcOption is Ownable {
      * @param id deal ID
      * @return decimals of (underlyingToken, quoteToken, priceFeed)
      */
-    function getDecimals(uint id) external view returns (uint8, uint8, uint8) {
+    function getDealDecimals(uint id) external view returns (uint8, uint8, uint8) {
         Deal memory deal = getDeal(id);
-        address priceFeedAddress = getPriceFeed(deal.underlyingToken, deal.quoteToken);
+        return getDecimals(deal.underlyingToken, deal.quoteToken);
+    }
+
+    function getDecimals(
+        address _underlyingToken,
+        address _quoteToken
+    ) public view returns (uint8, uint8, uint8) {
+        address priceFeedAddress = getPriceFeed(_underlyingToken, _quoteToken);
 
         return (
-            ERC20(deal.underlyingToken).decimals(),
-            ERC20(deal.quoteToken).decimals(),
+            ERC20(_underlyingToken).decimals(),
+            ERC20(_quoteToken).decimals(),
             AggregatorV3Interface(priceFeedAddress).decimals()
         );
     }
