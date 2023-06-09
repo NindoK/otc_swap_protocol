@@ -1,6 +1,6 @@
 import React from "react"
 import styles from "@src/app/style"
-import robot from "@public/robot.png"
+import feature2 from "@public/feature2.png"
 import Image from "next/image"
 const Hero = () => {
     return (
@@ -15,15 +15,11 @@ const Hero = () => {
                 <h1 className="font-montserrat font-semibold ss:text-[68px] text-[52px] text-white ss:leading-[100.8px] leading-[75px] w-full">
                     Protocol.
                 </h1>
-                <p className={`${styles.paragraph} max-w-[470px] mt-5`}>
-                    Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer volutpat
-                    consectetur risus, id consectetur sem dictum quis. Nullam vulputate placerat
-                    mauris, vitae ultrices quam.
-                </p>
+                
             </div>
 
             <div className={`flex-1 flex ${styles.flexCenter} md:my-0 my-10 relative`}>
-                <Image src={robot} alt="billing" className="w-[100%] h-[100%] relative z-[5]" />
+                <Image src={feature2} alt="hero" className="w-[100%] h-[100%] relative z-[5]" />
 
                 {/* gradient start */}
                 <div className="absolute z-[0] w-[80%] h-[55%] top-0 pink__gradient" />

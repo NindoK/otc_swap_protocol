@@ -190,7 +190,7 @@ const CreateDeal = () => {
                                placeholder="-None-"
                            >
                                {tokenData.map((token) => (
-                                   <option key={token.symbol} value={token.address}>
+                                   <option key={token.symbol} value={token.address} className=" bg-gray-black text-gray-800">
                                        <span>{token.symbol}</span>
                                    </option>
                                ))}
@@ -205,7 +205,7 @@ const CreateDeal = () => {
                                placeholder="-None-"
                            >
                                {tokenData.map((token) => (
-                                   <option key={token.symbol} value={token.address}>
+                                   <option key={token.symbol} value={token.address} className=" bg-gray-black text-gray-800">
                                        <span>{token.symbol}</span>
                                    </option>
                                ))}
@@ -246,8 +246,8 @@ const CreateDeal = () => {
                                value={createDealFormData.optionType}
                                onChange={handleOptionChange}
                            >
-                               <option>Call</option>
-                               <option>Put</option>
+                               <option className=" text-gray-800">Call</option>
+                               <option className=" text-gray-800">Put</option>
                            </Select>
                        </FormControl>
 
@@ -271,8 +271,8 @@ const CreateDeal = () => {
                                value={createDealFormData.side}
                                onChange={handleSideChange}
                            >
-                               <option>Buy</option>
-                               <option>Sell</option>
+                               <option className=" text-gray-800">Buy</option>
+                               <option className=" text-gray-800">Sell</option>
                            </Select>
                        </FormControl>
 

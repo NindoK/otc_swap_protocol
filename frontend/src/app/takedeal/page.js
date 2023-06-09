@@ -144,8 +144,8 @@ const page = () => {
                                 <TakeDealCard
                                     key={key}
                                     id={val.id}
-                                    underlyingToken={val.underlyingToken}
-                                    quoteToken={val.quoteToken}
+                                    underlyingtoken={val.underlyingToken}
+                                    quotetoken={val.quoteToken}
                                     strike={val.strike}
                                     maturity={val.maturity}
                                     optionType={val.optionType}

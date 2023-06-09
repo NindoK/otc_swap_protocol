@@ -1,12 +1,12 @@
 import React from "react"
 import styles, { layout } from "@src/app/style"
 import Image from "next/image"
-import bill from "@public/bill.png"
+import hero from "@public/hero.png"
 const Feature2 = () => {
     return (
         <section id="product" className={`${layout.sectionReverse} lg:pl-24`}>
             <div className={layout.sectionImgReverse}>
-                <Image src={bill} alt="billing" className="w-[100%] h-[100%] relative z-[5]" />
+                <Image src={hero} alt="logo" className="w-[100%] h-[100%] relative z-[5]" />
 
                 {/* gradient start */}
                 <div className="absolute z-[3] -left-80 top-0 w-[90%] h-[80%] rounded-full pink__gradient" />
@@ -16,12 +16,10 @@ const Feature2 = () => {
 
             <div className={layout.sectionInfo}>
                 <h2 className={styles.heading2}>
-                    Lorem ipsum dolor sit amet, <br className="sm:block hidden" /> consectetur
-                    adipiscing elit.
+                Unleash the Potential of Decentralized Finance <br className="sm:block hidden" /> 
                 </h2>
                 <p className={`${styles.paragraph} max-w-[470px] mt-5`}>
-                    Elit enim sed massa etiam. Mauris eu adipiscing ultrices ametodio aenean neque.
-                    Fusce ipsum orci rhoncus aliporttitor integer platea placerat.
+                Step into the world of decentralized finance and unlock its true potential. Our protocol enables you to participate in peer-to-peer trading directly on the blockchain, eliminating intermediaries and counterparty risks. Experience simplicity, transparency, and be part of the decentralized finance revolution.
                 </p>
             </div>
         </section>
