@@ -5,7 +5,7 @@
     },
     "80001": {
         "OtcNexus": "0x8C15c02B310810C32f935627098ddc56c9e5Bd6A",
-        "OtcOption": "0xdf0Cf8362A5982d1171080163eA1Ee9F7E729DD8",
+        "OtcOption": "0x116835647CE63506867DD9f86d609511A9E8d3d2",
         "mockTokens": [
             {
                 "symbol": "mWETH",
