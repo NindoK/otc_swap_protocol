@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useEffect, useState } from "react"
+import React, { useEffect, useState, useRef } from "react"
 import Navbar from "@components/Navbar"
 import styles from "../style"
 import axios from "axios"
@@ -41,6 +41,7 @@ const CreateRfs = () => {
     const [amount1Requested, setAmount1Requested] = useState(0) //uint256
     const [deadline, setDeadline] = useState(0) //unix timestamp
     const [usdPrice, setUsdPrice] = useState(0) //uint256
+    const deadlineInputRef = useRef();
 
     async function fetchTokenData() {
         try {
@@ -54,6 +55,12 @@ const CreateRfs = () => {
             console.error("Error fetching token data:", error)
         }
     }
+
+    const handleDeadlineChange = (e) => {
+      setDeadline(e.target.value);
+      // Call the blur method to lose focus
+      deadlineInputRef.current.blur();
+    };
 
     const handleSubmit = async (e) => {
         e.preventDefault()
@@ -120,6 +127,10 @@ const CreateRfs = () => {
     }
 
     useEffect(() => {
+        let now = new Date();
+        now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+        const minDateTime = now.toISOString().slice(0,16);
+        deadlineInputRef.current.min = minDateTime;
         fetchTokenData()
     }, [])
 
@@ -166,8 +177,9 @@ const CreateRfs = () => {
                                 <FormControl isRequired className="flex flex-col my-5">
                                     <FormLabel className=" font-bold">Datetime deadline</FormLabel>
                                     <Input
+                                        ref={deadlineInputRef}
                                         value={deadline}
-                                        onChange={(e) => setDeadline(e.target.value)}
+                                        onChange={handleDeadlineChange}
                                         placeholder="Select Date and Time"
                                         size="md"
                                         type="datetime-local"
@@ -233,7 +245,7 @@ const CreateRfs = () => {
                                 </FormControl>
 
                                 <FormControl>
-                                    <RadioGroup onChange={setRfsType} value={rfsType}>
+                                    <RadioGroup onChange={(value) => {setRfsType(value); setTokensAccepted([]);}} value={rfsType}>
                                         <Stack direction="row">
                                             <Radio value="Dynamic">Dynamic</Radio>
                                             <Radio value="Fixed_Usd">Fixed Usd</Radio>
