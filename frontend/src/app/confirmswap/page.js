@@ -29,6 +29,7 @@ const ConfirmSwap = (
     const [searchTerm, setSearchTerm] = useState("")
     const [swapRate, setSwapRate] = useState("")
     const [rfs, setRfs] = useState(null)
+    const [error, setError] = useState("")
 
     const handlePctRangeChange = (event) => {
         const inputValue = event.target.value
@@ -44,8 +45,15 @@ const ConfirmSwap = (
         const convertedValue = value.replace(",", ".")
         const valid = /^-?\d*[.,]?\d*$/.test(convertedValue)
 
-        if (valid || e.target.value == "") setTokenTwoAmount(convertedValue * swapRate)
-        setTokenOneAmount(convertedValue)
+        if (valid || e.target.value == "") {
+            setTokenTwoAmount(convertedValue * swapRate)
+            setTokenOneAmount(convertedValue)
+        }
+        if (convertedValue > rfs.currentAmount0.toNumber()) {
+            setError("Amount exceeds the current available amount")
+        } else {
+            setError("")
+        }
     }
 
     const filteredTokens = tokenData.filter((e) =>
@@ -114,7 +122,6 @@ const ConfirmSwap = (
 
     const getCurrentSwapRate = async () => {
         const price = window.localStorage.getItem("currentSelectedPrice")
-        console.log(price)
         let swapRate
         if (price && price !== "N/A") {
             for (let i = 0; i < tokenData.length; i++) {
@@ -276,6 +283,13 @@ const ConfirmSwap = (
                                         {rfs.priceMultiplier}
                                     </p>
                                 </HStack>
+                            )}
+                            {error && (
+                                <div className="w-full flex justify-center mb-5 mt-5">
+                                    <p className="text-red-500 font-montserrat font-bold text-sm">
+                                        {error}
+                                    </p>
+                                </div>
                             )}
                             <div className="w-full flex justify-center mb-5 mt-5">
                                 <Button className="bg-blue-gradient rounded-xl h-fit w-fit py-2  px-16">
