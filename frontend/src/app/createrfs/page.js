@@ -61,6 +61,12 @@ const CreateRfs = () => {
       // Call the blur method to lose focus
       deadlineInputRef.current.blur();
     };
+    const resetRfsTypeDependentDate = (e) => {
+      setTokensAccepted([]);
+      setPriceMultiplier(0);
+      setUsdPrice(0);
+      setAmount1Requested(0);
+    };
 
     const handleSubmit = async (e) => {
         e.preventDefault()
@@ -142,7 +148,7 @@ const CreateRfs = () => {
           amount0Offered !== '' &&
           interactionType !== '' &&
           rfsType !== '' &&
-          ((rfsType === 'Dynamic' && tokensAccepted.length>0 && priceMultiplier>0) ||
+          ((rfsType === 'Dynamic' && tokensAccepted.length>0 && priceMultiplier!== '') ||
             (rfsType === 'Fixed_Usd' && tokensAccepted.length>0 && usdPrice>0) ||
             (rfsType === 'Fixed_Amount' && tokensAccepted.length>0 && amount1Requested>0))
         );
@@ -245,7 +251,7 @@ const CreateRfs = () => {
                                 </FormControl>
 
                                 <FormControl>
-                                    <RadioGroup onChange={(value) => {setRfsType(value); setTokensAccepted([]);}} value={rfsType}>
+                                    <RadioGroup onChange={(value) => {setRfsType(value); resetRfsTypeDependentDate();}} value={rfsType}>
                                         <Stack direction="row">
                                             <Radio value="Dynamic">Dynamic</Radio>
                                             <Radio value="Fixed_Usd">Fixed Usd</Radio>
@@ -268,7 +274,7 @@ const CreateRfs = () => {
                                             <Box p={4}>
                                                 <PercentageSlider
                                                     value={priceMultiplier}
-                                                    onChange={setPriceMultiplier}
+                                                    setPriceMultiplier={setPriceMultiplier}
                                                 />
                                             </Box>
                                         </FormControl>
