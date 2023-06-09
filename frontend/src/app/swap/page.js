@@ -1,5 +1,5 @@
 "use client"
-import React, { useState, useEffect,useCallback }  from "react"
+import React, { useState, useEffect, useCallback } from "react"
 import Sidebar from "@components/Sidebar"
 import CardComponent from "@components/CardComponent"
 import { CardData } from "@components/CardData"

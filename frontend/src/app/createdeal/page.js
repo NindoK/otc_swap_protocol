@@ -89,9 +89,9 @@ const CreateDeal = () => {
                 <div className={`${styles.boxWidth}`}>
                     <Navbar />
                 </div>
-                <div className="h-fit w-60 text-center bg-blue-gradient p-3 pl-4 -mr-50 rounded-xl z-30">
+              
                     <ConnectButton showBalance={false} />
-                </div>
+               
             </div>
             <div className="flex lg:h-screen w-full bg-black">
                 {/* gradient start */}
