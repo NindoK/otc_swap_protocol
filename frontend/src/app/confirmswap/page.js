@@ -277,10 +277,18 @@ const ConfirmSwap = (
                             {rfs.priceMultiplier != 0 && (
                                 <HStack className=" mb-5">
                                     <h2 className=" font-montserrat font-bold text-lg text-white">
-                                        Dynamic/Premium :
+                                        Discount/Premium :
                                     </h2>
-                                    <p className="font-montserrat font-medium text-sm text-white">
-                                        {rfs.priceMultiplier}
+                                    <p
+                                        className={`font-montserrat font-medium text-sm `}
+                                        style={{
+                                            color: rfs.priceMultiplier > 100 ? "#ff000" : "#00ff00",
+                                        }}
+                                    >
+                                        {rfs.priceMultiplier > 100
+                                            ? `+${rfs.priceMultiplier - 100}`
+                                            : `-${100 - rfs.priceMultiplier}`}
+                                        %
                                     </p>
                                 </HStack>
                             )}
