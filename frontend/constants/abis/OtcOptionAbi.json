@@ -1,5 +1,82 @@
 [
     {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "_underlyingToken",
+                "type": "address"
+            },
+            {
+                "internalType": "address",
+                "name": "_quoteToken",
+                "type": "address"
+            },
+            {
+                "internalType": "address",
+                "name": "_priceFeedAddress",
+                "type": "address"
+            }
+        ],
+        "name": "addPriceFeed",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "_underlyingToken",
+                "type": "address"
+            },
+            {
+                "internalType": "address",
+                "name": "_quoteToken",
+                "type": "address"
+            },
+            {
+                "internalType": "uint256",
+                "name": "_strike",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint256",
+                "name": "_maturity",
+                "type": "uint256"
+            },
+            {
+                "internalType": "bool",
+                "name": "_isCall",
+                "type": "bool"
+            },
+            {
+                "internalType": "uint256",
+                "name": "_amount",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint256",
+                "name": "_premium",
+                "type": "uint256"
+            },
+            {
+                "internalType": "bool",
+                "name": "_isMakerBuyer",
+                "type": "bool"
+            }
+        ],
+        "name": "createDeal",
+        "outputs": [
+            {
+                "internalType": "uint256",
+                "name": "",
+                "type": "uint256"
+            }
+        ],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
         "inputs": [],
         "name": "Option__DealExpired",
         "type": "error"
@@ -22,16 +99,6 @@
     {
         "inputs": [],
         "name": "Option__DealNotOpen",
-        "type": "error"
-    },
-    {
-        "inputs": [],
-        "name": "Option__DepositMarginFailed",
-        "type": "error"
-    },
-    {
-        "inputs": [],
-        "name": "Option__DepositPremiumFailed",
         "type": "error"
     },
     {
@@ -61,6 +128,11 @@
     },
     {
         "inputs": [],
+        "name": "Option__InvalidSettler",
+        "type": "error"
+    },
+    {
+        "inputs": [],
         "name": "Option__InvalidStrike",
         "type": "error"
     },
@@ -76,12 +148,12 @@
     },
     {
         "inputs": [],
-        "name": "Option__TransferMarginFailed",
+        "name": "Option__NotEnoughAllowance",
         "type": "error"
     },
     {
         "inputs": [],
-        "name": "Option__TransferPremiumFailed",
+        "name": "Option__TransferFailed",
         "type": "error"
     },
     {
@@ -127,6 +199,12 @@
                 "indexed": false,
                 "internalType": "uint256",
                 "name": "amount",
+                "type": "uint256"
+            },
+            {
+                "indexed": false,
+                "internalType": "uint256",
+                "name": "quoteAmount",
                 "type": "uint256"
             },
             {
@@ -224,22 +302,45 @@
     {
         "inputs": [
             {
-                "internalType": "address",
-                "name": "_underlyingToken",
-                "type": "address"
-            },
-            {
-                "internalType": "address",
-                "name": "_quoteToken",
-                "type": "address"
-            },
-            {
-                "internalType": "address",
-                "name": "_priceFeedAddress",
-                "type": "address"
+                "internalType": "uint256",
+                "name": "id",
+                "type": "uint256"
             }
         ],
-        "name": "addPriceFeed",
+        "name": "removeDeal",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "renounceOwnership",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "uint256",
+                "name": "id",
+                "type": "uint256"
+            }
+        ],
+        "name": "settleDeal",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "uint256",
+                "name": "id",
+                "type": "uint256"
+            }
+        ],
+        "name": "takeDeal",
         "outputs": [],
         "stateMutability": "nonpayable",
         "type": "function"
@@ -248,46 +349,18 @@
         "inputs": [
             {
                 "internalType": "address",
-                "name": "_underlyingToken",
+                "name": "newOwner",
                 "type": "address"
-            },
-            {
-                "internalType": "address",
-                "name": "_quoteToken",
-                "type": "address"
-            },
-            {
-                "internalType": "uint256",
-                "name": "_strike",
-                "type": "uint256"
-            },
-            {
-                "internalType": "uint256",
-                "name": "_maturity",
-                "type": "uint256"
-            },
-            {
-                "internalType": "bool",
-                "name": "_isCall",
-                "type": "bool"
-            },
-            {
-                "internalType": "uint256",
-                "name": "_amount",
-                "type": "uint256"
-            },
-            {
-                "internalType": "uint256",
-                "name": "_premium",
-                "type": "uint256"
-            },
-            {
-                "internalType": "bool",
-                "name": "_isMakerBuyer",
-                "type": "bool"
             }
         ],
-        "name": "createDeal",
+        "name": "transferOwnership",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "dealCounter",
         "outputs": [
             {
                 "internalType": "uint256",
@@ -295,7 +368,7 @@
                 "type": "uint256"
             }
         ],
-        "stateMutability": "nonpayable",
+        "stateMutability": "view",
         "type": "function"
     },
     {
@@ -343,6 +416,11 @@
                     {
                         "internalType": "uint256",
                         "name": "amount",
+                        "type": "uint256"
+                    },
+                    {
+                        "internalType": "uint256",
+                        "name": "quoteAmount",
                         "type": "uint256"
                     },
                     {
@@ -531,6 +609,40 @@
     {
         "inputs": [
             {
+                "internalType": "address",
+                "name": "_underlyingToken",
+                "type": "address"
+            },
+            {
+                "internalType": "address",
+                "name": "_quoteToken",
+                "type": "address"
+            },
+            {
+                "internalType": "uint256",
+                "name": "_amount",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint256",
+                "name": "_price",
+                "type": "uint256"
+            }
+        ],
+        "name": "getQuoteAmount",
+        "outputs": [
+            {
+                "internalType": "uint256",
+                "name": "",
+                "type": "uint256"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
                 "internalType": "uint256",
                 "name": "id",
                 "type": "uint256"
@@ -558,65 +670,6 @@
             }
         ],
         "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [
-            {
-                "internalType": "uint256",
-                "name": "id",
-                "type": "uint256"
-            }
-        ],
-        "name": "removeDeal",
-        "outputs": [],
-        "stateMutability": "nonpayable",
-        "type": "function"
-    },
-    {
-        "inputs": [],
-        "name": "renounceOwnership",
-        "outputs": [],
-        "stateMutability": "nonpayable",
-        "type": "function"
-    },
-    {
-        "inputs": [
-            {
-                "internalType": "uint256",
-                "name": "id",
-                "type": "uint256"
-            }
-        ],
-        "name": "settleDeal",
-        "outputs": [],
-        "stateMutability": "nonpayable",
-        "type": "function"
-    },
-    {
-        "inputs": [
-            {
-                "internalType": "uint256",
-                "name": "id",
-                "type": "uint256"
-            }
-        ],
-        "name": "takeDeal",
-        "outputs": [],
-        "stateMutability": "nonpayable",
-        "type": "function"
-    },
-    {
-        "inputs": [
-            {
-                "internalType": "address",
-                "name": "newOwner",
-                "type": "address"
-            }
-        ],
-        "name": "transferOwnership",
-        "outputs": [],
-        "stateMutability": "nonpayable",
         "type": "function"
     }
 ]
