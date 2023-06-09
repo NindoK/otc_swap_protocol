@@ -14,24 +14,16 @@ import {
 import dynamic from "next/dynamic"
 import Link from "next/link"
 
-import { useDispatch } from "react-redux"
-
 const OverlayOne = () => <ModalOverlay bg="none" backdropFilter="blur(10px) " />
 
 const CardComponent = (props) => {
-    const dispatch = useDispatch();
     const [overlay, setOverlay] = useState(<OverlayOne />)
     const { isOpen, onOpen, onClose } = useDisclosure()
     const dynamicStyle = {
         backgroundColor: props.condition ? "#A06D22" : "#348D8D",
     }
-    const data={icon:props.icon,title:props.title};
-    const handleClick = () => {
-        dispatch({ type: 'SET_DATA', payload: data });
-      };
-    console.log(props)
+    const data = { icon: props.icon, title: props.title }
     return (
-        
         <div className=" w-full flex justify-center mt-10 ">
             <div className="transition-all ease-out duration-500  hover:shadow-xl hover:scale-105  flex h-60 w-[56rem]  rounded-2xl relative bg-gray-950 bg-opacity-50 shadow-lg border-opacity-18">
                 <div
@@ -45,8 +37,6 @@ const CardComponent = (props) => {
                     onClick={() => {
                         setOverlay(<OverlayOne />)
                         onOpen()
-                        console.log(JSON.stringify(props.rfs))
-                        console.log(props.rfs.effectiveType)
                     }}
                 >
                     <div className="ml-24 mt-12">{props.icon}</div>
@@ -63,15 +53,15 @@ const CardComponent = (props) => {
                     align="stretch"
                     className="absolute top-10 right-32 font-montserrat text-md font-medium"
                 >
-                  {props.showDiscount && (
-                    <h3 className="text-white">
-                        Discount : <span className="text-red-500">{props.discount}</span>
-                    </h3>
+                    {props.showDiscount && (
+                        <h3 className="text-white">
+                            Discount : <span className="text-red-500">{props.discount}</span>
+                        </h3>
                     )}
                     {props.showPremium && (
-                    <h3 className="text-white">
-                        Discount : <span className="text-green-500">{props.premium}</span>
-                    </h3>
+                        <h3 className="text-white">
+                            Discount : <span className="text-green-500">{props.premium}</span>
+                        </h3>
                     )}
                     <h3 className="text-white">
                         Price : <span className="text-green-600">{props.price}</span>
@@ -84,7 +74,12 @@ const CardComponent = (props) => {
                     </h3>
                 </VStack>
                 <div className="absolute right-7 top-24 rounded-full hover:bg-gray-500 hover:cursor-pointer  h-14 w-14 ">
-                    <Link href={`/confirmswap?id=${props.rfs.id}`}>
+                    <Link
+                        href={`/confirmswap?id=${props.rfs.id}`}
+                        onClick={() => {
+                            window.localStorage.setItem("rfsIdSelected", props.rfs.id)
+                        }}
+                    >
                         <ArrowForwardIcon
                             className="mt-3 ml-3 hover:cursor-pointer "
                             w={8}
@@ -101,63 +96,98 @@ const CardComponent = (props) => {
                     <ModalCloseButton />
                     <ModalBody>
                         <p>
-                        You can get coin {props.rfs.token0Data.symbol} for the following coins: {props.rfs.tokensAcceptedData.map((token) => token.symbol).join(', ')}. You are free to fill only a part of the user’s request.
+                            You can get coin {props.rfs.token0Data.symbol} for the following coins:{" "}
+                            {props.rfs.tokensAcceptedData.map((token) => token.symbol).join(", ")}.
+                            You are free to fill only a part of the user’s request.
                         </p>
                         <p>
-                        <br/>
-                        Coin offered:
+                            <br />
+                            Coin offered:
                         </p>
                         <ul>
-                        <li>
-                        <img src={props.rfs.token0Data.logoURI} alt="" width="22" height="22" style={{display: "inline-block"}}/> &nbsp;
-                        {props.rfs.token0Data.symbol}&nbsp;&nbsp;
-                        <a target={'_blank'} href={'https://etherscan.io/token/'+props.rfs.token0Data.address}>{props.rfs.token0Data.address}</a>
-                        </li>
-                        </ul>
-                        <br/>
-                        <p>
-                        Coin accepted:
-                        </p>
-                        <ul>
-                          {props.rfs.tokensAcceptedData.map((token, index) => (
-                            <li key={index} name={token.name}>
-                                                    <img src={token.logoURI} alt="" width="20" height="20" style={{display: "inline-block"}}/>&nbsp;
-                                                    {token.symbol}&nbsp;&nbsp;
-                                                    <a target={'_blank'} href={'https://etherscan.io/token/'+token.address}>{token.address}</a>
+                            <li>
+                                <img
+                                    src={props.rfs.token0Data.logoURI}
+                                    alt=""
+                                    width="22"
+                                    height="22"
+                                    style={{ display: "inline-block" }}
+                                />{" "}
+                                &nbsp;
+                                {props.rfs.token0Data.symbol}&nbsp;&nbsp;
+                                <a
+                                    target={"_blank"}
+                                    href={
+                                        "https://etherscan.io/token/" + props.rfs.token0Data.address
+                                    }
+                                >
+                                    {props.rfs.token0Data.address}
+                                </a>
                             </li>
-                              ))}
                         </ul>
-                        <br/>
-                    {props.rfs.effectiveType === "DYNAMIC" && (
-                        <>
+                        <br />
+                        <p>Coin accepted:</p>
+                        <ul>
+                            {props.rfs.tokensAcceptedData.map((token, index) => (
+                                <li key={index} name={token.name}>
+                                    <img
+                                        src={token.logoURI}
+                                        alt=""
+                                        width="20"
+                                        height="20"
+                                        style={{ display: "inline-block" }}
+                                    />
+                                    &nbsp;
+                                    {token.symbol}&nbsp;&nbsp;
+                                    <a
+                                        target={"_blank"}
+                                        href={"https://etherscan.io/token/" + token.address}
+                                    >
+                                        {token.address}
+                                    </a>
+                                </li>
+                            ))}
+                        </ul>
+                        <br />
+                        {props.rfs.effectiveType === "DYNAMIC" && (
+                            <>
+                                <p>
+                                    The prices of coins fluctuates and are backed by market value of
+                                    this trading pair.
+                                </p>
+                                {props.showDiscount && props.rfs.priceMultiplier != 100 && (
+                                    <p>
+                                        The maker of the swap chose to discount this purchase with{" "}
+                                        {props.discount}% for you. It means you will pay for the
+                                        coin <b>below</b> market price
+                                    </p>
+                                )}
+                                {props.showPremium && (
+                                    <p>
+                                        The maker of the swap chose to demand {props.premium}%
+                                        premium for his/her coins. It means you will pay for the
+                                        coin <b>above</b> market price.
+                                    </p>
+                                )}
+                            </>
+                        )}
+                        {props.rfs.effectiveType === "FIXED_USD" && (
+                            <p>The price for each coin is fixed to ${props.rfs.usdPrice} </p>
+                        )}
+                        {props.rfs.effectiveType === "FIXED_AMOUNT" && (
                             <p>
-                                The prices of coins fluctuates and are backed by market value of this trading pair.
+                                The user chose to swap {props.rfs.initialAmount0} of{" "}
+                                {props.rfs.token0Data.symbol} to {props.rfs.amount1} of{" "}
+                                {props.rfs.tokensAcceptedData[0].symbol}.
+                                <br />
+                                (!) Note - you can swap a fraction of this request and you are free
+                                to fill the whole request.
                             </p>
-                            {props.showDiscount && props.rfs.priceMultiplier !=100 && (
-                                <p>
-                                    The maker of the swap chose to discount this purchase with {props.discount}%  for you. It means you will pay for the coin <b>below</b> market price
-                                </p>
-                            )}
-                            {props.showPremium  && (
-                                <p>
-                                    The maker of the swap chose to demand {props.premium}% premium  for his/her coins. It means you will pay for the coin <b>above</b> market price.
-                                </p>
-                            )}
-                        </>
-                    )}
-                    {props.rfs.effectiveType === "FIXED_USD" && (
-                        <p>The price for each coin is fixed to ${props.rfs.usdPrice} </p>
-                    )}
-                    {props.rfs.effectiveType === "FIXED_AMOUNT" && (
-                        <p>The user chose to swap {props.rfs.initialAmount0} of {props.rfs.token0Data.symbol} to {props.rfs.amount1} of {props.rfs.tokensAcceptedData[0].symbol}.
-                        <br/>
-                        (!) Note - you can swap a fraction of this request and you are free to fill the whole request.</p>
-                    )}
+                        )}
                     </ModalBody>
                 </ModalContent>
             </Modal>
         </div>
-        
     )
 }
 export default dynamic(() => Promise.resolve(CardComponent), { ssr: false })

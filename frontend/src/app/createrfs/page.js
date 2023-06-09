@@ -29,6 +29,7 @@ import MultipleTags from "@components/MultipleTags"
 import { ethers } from "ethers"
 import networkMapping from "@constants/networkMapping"
 import OtcNexusAbi from "@constants/abis/OtcNexusAbi"
+import coinGeckoCachedResponse from "@constants/coinGeckoCachedResponse"
 
 const CreateRfs = () => {
     const [tokenData, setTokenData] = useState([])
@@ -41,14 +42,22 @@ const CreateRfs = () => {
     const [amount1Requested, setAmount1Requested] = useState(0) //uint256
     const [deadline, setDeadline] = useState(0) //unix timestamp
     const [usdPrice, setUsdPrice] = useState(0) //uint256
-
+    const [chainId, setChainId] = useState(null)
     async function fetchTokenData() {
         try {
-            const response = await axios.get("https://tokens.coingecko.com/uniswap/all.json")
+            const provider = new ethers.providers.Web3Provider(window.ethereum)
+            const chainId = (await provider.getNetwork()).chainId
+            setChainId(chainId)
 
-            // Process the response data
-            const tokens = response.data.tokens
+            let tokens
+            if (coinGeckoCachedResponse) {
+                tokens = coinGeckoCachedResponse.tokens
+            } else {
+                const response = await axios.get("https://tokens.coingecko.com/uniswap/all.json")
 
+                // Process the response data
+                tokens = response.data.tokens
+            }
             setTokenData(tokens)
         } catch (error) {
             console.error("Error fetching token data:", error)
@@ -59,7 +68,6 @@ const CreateRfs = () => {
         e.preventDefault()
         const provider = new ethers.providers.Web3Provider(window.ethereum)
         const signer = provider.getSigner()
-        const chainId = (await provider.getNetwork()).chainId
         const otcNexus = new ethers.Contract(networkMapping[chainId].OtcNexus, OtcNexusAbi, signer)
         const interactionTypeSelected = interactionType === "Deposited" ? 0 : 1
         const deadlineInUnixtimestamp = new Date(deadline).getTime() / 1000
@@ -120,16 +128,16 @@ const CreateRfs = () => {
 
     const isFormValid = () => {
         return (
-         deadline !== '' &&
-          tokenOffered !== '' &&
-          amount0Offered !== '' &&
-          interactionType !== '' &&
-          rfsType !== '' &&
-          ((rfsType === 'Dynamic' && tokensAccepted !== '' && priceMultiplier !== '') ||
-            (rfsType === 'Fixed_Usd' && tokensAccepted !== '' && usdPrice !== '') ||
-            (rfsType === 'Fixed_Amount' && tokensAccepted !== '' && amount1Requested !== ''))
-        );
-      };
+            deadline !== "" &&
+            tokenOffered !== "" &&
+            amount0Offered !== "" &&
+            interactionType !== "" &&
+            rfsType !== "" &&
+            ((rfsType === "Dynamic" && tokensAccepted !== "" && priceMultiplier !== "") ||
+                (rfsType === "Fixed_Usd" && tokensAccepted !== "" && usdPrice !== "") ||
+                (rfsType === "Fixed_Amount" && tokensAccepted !== "" && amount1Requested !== ""))
+        )
+    }
 
     return (
         <>
@@ -339,12 +347,14 @@ const CreateRfs = () => {
                                 )}
 
                                 <div className="flex w-full justify-center">
-                                <Button isDisabled={!isFormValid()}
-                                    className="bg-blue-gradient rounded-xl py-2 px-4 top-5"
-                                    type="submit"
-                                >
-                                    Submit
-                                </Button></div>
+                                    <Button
+                                        isDisabled={!isFormValid()}
+                                        className="bg-blue-gradient rounded-xl py-2 px-4 top-5"
+                                        type="submit"
+                                    >
+                                        Submit
+                                    </Button>
+                                </div>
                             </div>
                         </div>
                     </form>

@@ -1,5 +1,5 @@
 "use client"
-import React, { useCallback} from "react"
+import React, { useCallback } from "react"
 import Sidebar from "@components/Sidebar"
 import { useState, useEffect } from "react"
 import { Input, Popover, Modal } from "antd"
@@ -11,13 +11,12 @@ import OtcNexusAbi from "@constants/abis/OtcNexusAbi"
 import { ethers } from "ethers"
 import networkMapping from "@constants/networkMapping"
 
-import { useRouter } from 'next/router'
-const ConfirmSwap = ({
-    rfsId = 2 /*rfs TODO we can consider just passing the rfs directly, since we already fetch it from the swap page and we have a list of rfs*/,
-}) => {
-    const router = useRouter();
-    const { id } = router.query;
-    console.log(id)
+import { useRouter } from "next/router"
+const ConfirmSwap = (
+    {
+        // rfsId = 2 /*rfs TODO we can consider just passing the rfs directly, since we already fetch it from the swap page and we have a list of rfs*/,
+    }
+) => {
     const [tokenData, setTokenData] = useState([])
     const [tokenOneAmount, setTokenOneAmount] = useState(null)
     const [tokenTwoAmount, setTokenTwoAmount] = useState(null)
@@ -28,7 +27,7 @@ const ConfirmSwap = ({
     const [searchTerm, setSearchTerm] = useState("")
     const [swapRate, setSwapRate] = useState("")
     const [rfs, setRfs] = useState(null)
-  
+
     const changeAmount = (e) => {
         const value = parseFloat(e.target.value)
         if (!isNaN(value)) {
@@ -82,6 +81,7 @@ const ConfirmSwap = ({
             OtcNexusAbi,
             provider
         )
+        const rfsId = window.localStorage.getItem("rfsIdSelected")
         const rfsObject = await otcNexus.getRfs(rfsId)
         console.log(rfsObject)
         setRfs(rfsObject)
@@ -234,7 +234,4 @@ const ConfirmSwap = ({
     )
 }
 
-
-
 export default ConfirmSwap
-
