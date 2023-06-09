@@ -23,7 +23,7 @@ function formatNumber(num) {
     } else if (Math.abs(num) >= 1.0e3) {
         return (Math.abs(num) / 1.0e3).toFixed(2) + "K"
     } else {
-        return Math.abs(num)
+        return Math.abs(num).toFixed(4)
     }
 }
 
@@ -49,7 +49,9 @@ const swap = () => {
         let maxId = await contract.rfsIdCounter()
         for (let i = 1; i < maxId; i++) {
             let rfs = await contract.getRfs(i)
-            if (!rfs.removed) {
+            console.log(rfs.id.toNumber() !== 0)
+            if (!rfs.removed && rfs.id.toNumber() !== 0) {
+                console.log("Adding rfs: ", rfs)
                 rfses.push(rfs)
             }
         }
@@ -59,6 +61,8 @@ const swap = () => {
     const assembleCardComponentData = async () => {
         function findTokenDataForAddress(address, tokens) {
             let tokensWithCriteria = tokens.filter((token) => token.address == address)
+            console.log(tokensWithCriteria)
+            console.log(address)
             if (tokensWithCriteria.length != 1) {
                 console.log("Wrong amount of tokens found" + tokensWithCriteria)
             }
@@ -131,13 +135,14 @@ const swap = () => {
                     const decimals = await contract.decimals()
                     const priceWithDecimals = await contract.latestAnswer()
                     price = priceWithDecimals.toNumber() / 10 ** decimals
-                    totalValue = price * rfs.currentAmount0.toNumber()
+                    totalValue =
+                        price * ethers.utils.formatUnits(rfs.currentAmount0, token0Data.decimals)
                 }
             }
 
             if (rfs.typeRfs === 0) {
-                price = price * rfs.priceMultiplier
-                totalValue = totalValue * rfs.priceMultiplier
+                price = (price * rfs.priceMultiplier) / 100
+                totalValue = (totalValue * rfs.priceMultiplier) / 100
             } else {
                 if (rfs.usdPrice > 0) {
                     price = rfs.usdPrice.toNumber()
@@ -159,7 +164,7 @@ const swap = () => {
                 premium: premium,
                 price: price !== undefined && price !== "N/A" ? `$ ${formatNumber(price)}` : "N/A",
                 rawPrice: price,
-                TTokens: rfs.currentAmount0.toNumber(),
+                TTokens: ethers.utils.formatUnits(rfs.currentAmount0, token0Data.decimals),
                 TValue:
                     totalValue !== undefined && totalValue !== "N/A"
                         ? `$ ${formatNumber(totalValue)}`

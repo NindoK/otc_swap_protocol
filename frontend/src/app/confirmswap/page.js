@@ -276,44 +276,94 @@ const ConfirmSwap = (
                                         <DownOutlined className="text-gray-300 font-bold mt-2" />
                                     </div>
 
-                                    <VStack align="start" className=" mb-5 mt-5">
-                                        <h2 className=" font-montserrat font-bold text-lg text-white te">
-                                            Current swap price :
-                                        </h2>
-                                        <p className="font-montserrat font-medium text-sm text-gray-400">
-                                            {`${swapRate} ${tokenTwo?.symbol}/${tokenOne?.symbol}`}
-                                        </p>
-                                    </VStack>
-                                    <VStack align="start" className=" mb-5 justify-start ">
-                                        <h2 className=" font-montserrat font-bold text-ml text-white">
-                                            Maker Address :
-                                        </h2>
-                                        <p className="font-montserrat font-medium text-sm text-gray-400">
-                                            {rfs.maker}
-                                        </p>
-                                    </VStack>
-                                    {rfs.priceMultiplier != 0 && (
-                                        <HStack className=" mb-5">
-                                            <h2 className=" font-montserrat font-bold text-lg text-white">
-                                                Dynamic/Premium :
-                                            </h2>
-                                            <p className="font-montserrat font-medium text-sm text-white">
-                                                {rfs.priceMultiplier}
-                                            </p>
-                                        </HStack>
-                                    )}
-                                    {error && (
-                                        <div className="w-full flex justify-center mb-5 mt-5">
-                                            <p className="text-red-500 font-montserrat font-bold text-sm">
-                                                {error}
-                                            </p>
-                                        </div>
-                                    )}
-                                    <div className="w-full flex justify-center mb-5 mt-5">
-                                        <Button className="bg-blue-gradient rounded-xl h-fit w-fit py-2  px-16">
-                                            Swap
-                                        </Button>
-                                    </div>
+                        <div className="relative mb-3">
+                            <Input
+                                type="text"
+                                placeholder="0"
+                                pattern="^-?\d*[.,]?\d*$"
+                                value={tokenOneAmount}
+                                onChange={changeAmount}
+                            />
+                            <Input
+                                type="text"
+                                placeholder="0"
+                                pattern="^-?\d*[.,]?\d*$"
+                                value={tokenTwoAmount}
+                                disabled={true}
+                            />
+                            <div className="absolute min-w-[80px] h-8 bg-[#3a4157] top-[30px] right-[20px] rounded-full flex justify-start align-middle gap-1 font-bold text-base pr-[8px]">
+                                {tokenOne && (
+                                    <>
+                                        <Image
+                                            src={tokenOne?.logoURI}
+                                            alt="assetlogoURI"
+                                            height={10}
+                                            width={30}
+                                            className="rounded-full mr-2 p-1"
+                                        />
+                                        <p className="text-gray-400  mt-1">{tokenOne?.symbol}</p>
+                                    </>
+                                )}
+                            </div>
+                            <div
+                                onClick={() => openModal(2)}
+                                className="hover:cursor-pointer  absolute min-w-[80px] h-8 bg-[#3a4157] top-[135px] right-[20px] rounded-full flex justify-start align-middle gap-1 font-bold text-base pr-[8px]"
+                            >
+                                {tokenTwo && (
+                                    <>
+                                        <Image
+                                            src={tokenTwo?.logoURI}
+                                            alt="assetlogoURI"
+                                            height={10}
+                                            width={30}
+                                            className="rounded-full mr-1 p-1"
+                                        />
+                                        <p className="text-gray-400  mt-1">{tokenTwo?.symbol}</p>
+                                    </>
+                                )}
+                                <DownOutlined className="text-gray-300 font-bold mt-2" />
+                            </div>
+
+                            <VStack align="start" className=" mb-5 mt-5">
+                                <h2 className=" font-montserrat font-bold text-lg text-white te">
+                                    Current swap price :
+                                </h2>
+                                <p className="font-montserrat font-medium text-sm text-gray-400">
+                                    {`${swapRate} ${tokenTwo?.symbol}/${tokenOne?.symbol}`}
+                                </p>
+                            </VStack>
+                            <VStack align="start" className=" mb-5 justify-start ">
+                                <h2 className=" font-montserrat font-bold text-ml text-white">
+                                    Maker Address :
+                                </h2>
+                                <p className="font-montserrat font-medium text-sm text-gray-400">
+                                    {rfs.maker}
+                                </p>
+                            </VStack>
+                            {rfs.priceMultiplier != 0 && (
+                                <HStack className=" mb-5">
+                                    <h2 className=" font-montserrat font-bold text-lg text-white">
+                                        Discount/Premium :
+                                    </h2>
+                                    <p
+                                        className={`font-montserrat font-medium text-sm `}
+                                        style={{
+                                            color: rfs.priceMultiplier > 100 ? "#ff000" : "#00ff00",
+                                        }}
+                                    >
+                                        {rfs.priceMultiplier > 100
+                                            ? `+${rfs.priceMultiplier - 100}`
+                                            : `-${100 - rfs.priceMultiplier}`}
+                                        %
+                                    </p>
+                                </HStack>
+                            )}
+                            {error && (
+                                <div className="w-full flex justify-center mb-5 mt-5">
+                                    <p className="text-red-500 font-montserrat font-bold text-sm">
+                                        {error}
+                                    </p>
+
                                 </div>
                             </div>
                         </div>

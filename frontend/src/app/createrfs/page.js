@@ -56,10 +56,18 @@ const CreateRfs = () => {
             let tokens
             if (coinGeckoCachedResponse) {
                 tokens = coinGeckoCachedResponse.tokens
+                tokens = tokens.sort((a, b) => {
+                    if (a.chainId === chainId && b.chainId !== chainId) {
+                        return -1
+                    }
+                    if (a.chainId !== chainId && b.chainId === chainId) {
+                        return 1
+                    }
+                    return 0
+                })
             } else {
                 const response = await axios.get("https://tokens.coingecko.com/uniswap/all.json")
 
-                // Process the response data
                 tokens = response.data.tokens
             }
             setTokenData(tokens)
@@ -70,7 +78,6 @@ const CreateRfs = () => {
 
     const handleDeadlineChange = (e) => {
         setDeadline(e.target.value)
-        // Call the blur method to lose focus
         deadlineInputRef.current.blur()
     }
     const resetRfsTypeDependentDate = (e) => {
@@ -89,12 +96,20 @@ const CreateRfs = () => {
         const deadlineInUnixtimestamp = new Date(deadline).getTime() / 1000
 
         let tx
+        console.log(
+            tokenOffered,
+            tokensAccepted,
+            ethers.utils.parseEther(amount0Offered),
+            priceMultiplier,
+            deadlineInUnixtimestamp,
+            interactionTypeSelected
+        )
         try {
             if (rfsType === "Dynamic") {
                 tx = await otcNexus.createDynamicRfs(
                     tokenOffered,
                     tokensAccepted,
-                    amount0Offered,
+                    ethers.utils.parseEther(amount0Offered),
                     priceMultiplier,
                     deadlineInUnixtimestamp,
                     interactionTypeSelected
@@ -103,7 +118,7 @@ const CreateRfs = () => {
                 tx = await otcNexus.createFixedRfs(
                     tokenOffered,
                     tokensAccepted,
-                    amount0Offered,
+                    ethers.utils.parseEther(amount0Offered),
                     0,
                     usdPrice,
                     deadlineInUnixtimestamp,
@@ -160,6 +175,17 @@ const CreateRfs = () => {
     }, [])
 
     const isFormValid = () => {
+        console.log(
+            deadline,
+            tokenOffered,
+            amount0Offered,
+            interactionType,
+            rfsType,
+            tokensAccepted,
+            priceMultiplier,
+            usdPrice,
+            amount1Requested
+        )
         return (
             deadline !== "" &&
             tokenOffered !== "" &&
@@ -234,10 +260,12 @@ const CreateRfs = () => {
                                     <FormLabel>Amount Offered</FormLabel>
                                     <NumberInput
                                         value={amount0Offered}
-                                        onChange={(e) => {
-                                            const value = parseInt(e, 10)
-                                            if (!isNaN(value)) {
-                                                setAmount0Offered(value)
+                                        onChange={(valueAsString, valueAsNumber) => {
+                                            const convertedValue = valueAsString.replace(",", ".")
+                                            const valid = /^-?\d*[.,]?\d*$/.test(convertedValue)
+
+                                            if (valid || valueAsString === "") {
+                                                setAmount0Offered(convertedValue)
                                             }
                                         }}
                                         defaultValue={15}

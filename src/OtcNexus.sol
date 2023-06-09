@@ -217,14 +217,14 @@ contract OtcNexus is Ownable {
         if (_tokensAccepted.length == 0 || _tokensAccepted.length > 5)
             revert OtcNexus__InvalidTokenAddresses();
         //Comment for easier local testing
-        // if (IERC20(_token0).allowance(msg.sender, address(this)) < _amount0)
-        //     revert OtcNexus__AllowanceToken0TooLow();
-        // if (_usdPrice != 0) {
-        //     for (uint i = 0; i < _tokensAccepted.length; i++) {
-        //         if (priceFeeds[_tokensAccepted[i]] == address(0))
-        //             revert OtcNexus__InvalidAggregatorAddress();
-        //     }
-        // }
+        if (IERC20(_token0).allowance(msg.sender, address(this)) < _amount0)
+            revert OtcNexus__AllowanceToken0TooLow();
+        if (_usdPrice != 0) {
+            for (uint i = 0; i < _tokensAccepted.length; i++) {
+                if (priceFeeds[_tokensAccepted[i]] == address(0))
+                    revert OtcNexus__InvalidAggregatorAddress();
+            }
+        }
         if (interactionType == TokenInteractionType.TOKEN_DEPOSITED) {
             // transfer sell token to contract
             bool success = IERC20(_token0).transferFrom(msg.sender, address(this), _amount0);
