@@ -32,6 +32,18 @@ const CreateDeal = () => {
         side: "",
     })
 
+    const tokenData = [
+        {
+            symbol: "mWETH",
+            address: "0xB4D7B61B19aa9b2F3f03B2892De317CB95Dcef92",
+        },
+        {
+            symbol: "mDAI",
+            address: "0x56c575fBf5Bc242b6086326b89f839063acd7fCb",
+        },
+    ]
+    // const tokenData = networkMapping[chainId]["mockTokens"]
+
     const handleUTInputChange = (e) => {
         setCreateDealFormData((prevData) => ({
             ...prevData,
@@ -95,6 +107,7 @@ const CreateDeal = () => {
 
         try {
             const info = createDealFormData
+
             const [ulyTokenDec, quoteTokenDec, priceFeedDec] = await otcOption.getDecimals(
                 info["underlyingToken"],
                 info["quoteToken"]
@@ -130,14 +143,12 @@ const CreateDeal = () => {
 
     return (
         <React.Fragment>
-        
             <div className={`${styles.paddingX} ${styles.flexCenter} bg-black`}>
                 <div className={`${styles.boxWidth}`}>
                     <Navbar />
                 </div>
-              
-                    <ConnectButton showBalance={false} />
-               
+
+                <ConnectButton showBalance={false} />
             </div>
             <div className="flex lg:h-screen w-full bg-black">
                 {/* gradient start */}
@@ -156,24 +167,32 @@ const CreateDeal = () => {
                         <div className="lg:flex gap-14 ">
                             <FormControl isRequired className="flex flex-col lg:my-5 my-3">
                                 <FormLabel className=" font-bold">Underlying Token</FormLabel>
-                                <Input
-                                    name="underlyingToken"
-                                    variant="flushed"
-                                    placeholder="Address"
+                                <Select
                                     value={createDealFormData.underlyingToken}
                                     onChange={handleUTInputChange}
-                                />
+                                    placeholder="-None-"
+                                >
+                                    {tokenData.map((token) => (
+                                        <option key={token.symbol} value={token.address}>
+                                            <span>{token.symbol}</span>
+                                        </option>
+                                    ))}
+                                </Select>
                             </FormControl>
 
                             <FormControl isRequired className="flex flex-col my-5">
                                 <FormLabel className=" font-bold">Quote Token</FormLabel>
-                                <Input
-                                    name="quoteToken"
-                                    variant="flushed"
-                                    placeholder="Address"
+                                <Select
                                     value={createDealFormData.quoteToken}
                                     onChange={handleQTInputChange}
-                                />
+                                    placeholder="-None-"
+                                >
+                                    {tokenData.map((token) => (
+                                        <option key={token.symbol} value={token.address}>
+                                            <span>{token.symbol}</span>
+                                        </option>
+                                    ))}
+                                </Select>
                             </FormControl>
                         </div>
 
@@ -209,7 +228,6 @@ const CreateDeal = () => {
                                     name="optionType"
                                     value={createDealFormData.optionType}
                                     onChange={handleOptionChange}
-                                    
                                 >
                                     <option>Call</option>
                                     <option>Put</option>

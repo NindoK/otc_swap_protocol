@@ -5,6 +5,16 @@
     },
     "80001": {
         "OtcNexus": "0x9a45b4A0EB5A5Aa015A751abAef0e6e92D8daFDE",
-        "OtcOption": "0x9c6EFA879Fac0B30e28f5736fF554963BEB4f286"
+        "OtcOption": "0x268A97F0029C5bF0b0Cead07651e0b80D1350d35",
+        "mockTokens": [
+            {
+                "symbol": "mWETH",
+                "address": "0xB4D7B61B19aa9b2F3f03B2892De317CB95Dcef92"
+            },
+            {
+                "symbol": "mDAI",
+                "address": "0x56c575fBf5Bc242b6086326b89f839063acd7fCb"
+            }
+        ]
     }
 }
