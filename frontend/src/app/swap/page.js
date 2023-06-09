@@ -15,7 +15,6 @@ import FeedAggregatorMumbaiAbi from "@constants/abis/FeedAggregatorMumbaiAbi"
 import mumbaiAddressesFeedAggregators from "@constants/mumbaiAddressesFeedAggregators"
 import { Avatar, AvatarGroup } from "@chakra-ui/react"
 
-
 function formatNumber(num) {
     if (Math.abs(num) >= 1.0e9) {
         return (Math.abs(num) / 1.0e9).toFixed(2) + "B"
@@ -158,7 +157,7 @@ const swap = () => {
                 showPremium: showPremium,
                 discount: discount,
                 premium: premium,
-                Price: price !== undefined && price !== "N/A" ? `$ ${price}` : "N/A",
+                Price: price !== undefined && price !== "N/A" ? `$ ${formatNumber(price)}` : "N/A",
 
                 TTokens: rfs.currentAmount0.toNumber(),
                 TValue:
