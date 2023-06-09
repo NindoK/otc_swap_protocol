@@ -13,13 +13,12 @@ import networkMapping from "@constants/networkMapping"
 import coingeckoCachedResponse from "@constants/coingeckoCachedResponse"
 import mumbaiAddressesFeedAggregators from "@constants/mumbaiAddressesFeedAggregators"
 import FeedAggregatorMumbaiAbi from "@constants/abis/FeedAggregatorMumbaiAbi"
+
 import { convert } from "encoding"
 
 import { Bars } from "react-loader-spinner"
 const ConfirmSwap = (
-    {
-        // rfsId = 2 /*rfs TODO we can consider just passing the rfs directly, since we already fetch it from the swap page and we have a list of rfs*/,
-    }
+
 ) => {
     
     const [tokenData, setTokenData] = useState([])
@@ -151,9 +150,7 @@ const ConfirmSwap = (
     }, [tokenData])
 
     useEffect(() => {
- 
         getRfsData()
-   
     }, [])
 
     return (
@@ -363,8 +360,12 @@ const ConfirmSwap = (
                                     <p className="text-red-500 font-montserrat font-bold text-sm">
                                         {error}
                                     </p>
-
                                 </div>
+                            )}
+                            <div className="w-full flex justify-center mb-5 mt-5">
+                                <Button className="bg-blue-gradient rounded-xl h-fit w-fit py-2  px-16">
+                                    Swap
+                                </Button>
                             </div>
                         </div>
                     )}

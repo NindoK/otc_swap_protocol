@@ -190,7 +190,11 @@ const CreateRfs = () => {
             deadline !== "" &&
             tokenOffered !== "" &&
             amount0Offered !== "" &&
-            interactionType !== ""
+            interactionType !== "" &&
+            rfsType !== "" &&
+            ((rfsType === "Dynamic" && tokensAccepted.length > 0 && priceMultiplier !== "") ||
+                (rfsType === "Fixed_Usd" && tokensAccepted.length > 0 && usdPrice > 0) ||
+                (rfsType === "Fixed_Amount" && tokensAccepted.length > 0 && amount1Requested > 0))
         )
     }
 
