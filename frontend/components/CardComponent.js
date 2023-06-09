@@ -146,7 +146,22 @@ const CardComponent = (props) => {
                     {props.rfs.effectiveType === "FIXED_AMOUNT" && (
                         <p>The user chose to swap {props.rfs.initialAmount0} of {props.rfs.token0Data.symbol} to {props.rfs.amount1} of {props.rfs.tokensAcceptedData[0].symbol}.
                         <br/>
+                        <br/>
                         (!) Note - you can swap a fraction of this request and you are free to fill the whole request.</p>
+                    )}
+                    <br/>
+                    <hr/>
+                    <br/>
+
+                    {props.rfs.interactionType === 0 && (
+                        <p>
+                        The creator of the swap request <b>deposited</b> his/ her coins. It means once you confirm the swap the coins will move.
+                        </p>
+                    )}
+                    {props.rfs.interactionType === 1 && (
+                        <p>
+                         (!) Note The creator of the swap request <b>approved</b> the contract to spend his/ her coins. It means you will need to pay some gas to try to move creator’s coins. It is possible that creator do not have those coins now and swapping will not succeed.
+                        </p>
                     )}
                     </ModalBody>
                 </ModalContent>
