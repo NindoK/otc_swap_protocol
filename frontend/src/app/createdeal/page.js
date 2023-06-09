@@ -15,12 +15,15 @@ import {
     NumberInput,
     NumberInputField,
     Select,
+   
 } from "@chakra-ui/react"
+import { useToast } from '@chakra-ui/react'
 import { BigNumber, ethers } from "ethers"
 import networkMapping from "@constants/networkMapping"
 import OtcOptionAbi from "@constants/abis/OtcOptionAbi"
 
 const CreateDeal = () => {
+    const toast=useToast();
     const [createDealFormData, setCreateDealFormData] = useState({
         underlyingToken: "",
         quoteToken: "",
@@ -136,8 +139,20 @@ const CreateDeal = () => {
             )
             const receipt = await tx.wait()
             console.log(receipt)
+            if(receipt)toast({
+                title: 'Deal created!',
+                status: 'success',
+                duration: 9000,
+                isClosable: true,
+              });
         } catch (error) {
             console.error(error)
+            toast({
+                title: 'There was some error!',
+                status: 'error',
+                duration: 9000,
+                isClosable: true,
+              });
         }
     }
 
