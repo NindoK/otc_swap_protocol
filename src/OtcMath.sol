@@ -13,4 +13,17 @@ library OtcMath {
             return (takerAmount1 * makerAmount0) / makerAmount1;
         }
     }
+
+    function getQuoteAmount(
+        uint ulyAmount,
+        uint price,
+        uint8 ulyDec,
+        uint8 quoteDec,
+        uint8 priceDec
+    ) external pure returns (uint) {
+        // amount = x * 10 ** 18 ETH
+        // price = y * 10 ** 8 USDT/ETH
+        // quoteAmount = (amount / 10**18) * (price / 10**8) * 10**6 = x * y / 10**(18 + 8 - 6)
+        return (ulyAmount * price) / 10 ** (ulyDec + quoteDec - priceDec);
+    }
 }

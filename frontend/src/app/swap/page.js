@@ -10,9 +10,11 @@ import CoingeckoCachedResponse from "@constants/coingeckoCachedResponse"
 import { ethers } from "ethers"
 import networkMapping from "@constants/networkMapping"
 import OtcNexusAbi from "@constants/abis/OtcNexusAbi"
+
 import FeedAggregatorMumbaiAbi from "@constants/abis/FeedAggregatorMumbaiAbi"
 import mumbaiAddressesFeedAggregators from "@constants/mumbaiAddressesFeedAggregators"
 import { Avatar, AvatarGroup } from "@chakra-ui/react"
+
 
 function formatNumber(num) {
     if (Math.abs(num) >= 1.0e9) {
