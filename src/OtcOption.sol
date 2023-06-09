@@ -68,7 +68,7 @@ contract OtcOption is Ownable {
 
     // status variables
     mapping(address => mapping(address => address)) private _priceFeeds; // underlying => (quote => feed)
-    uint private _dealCounter = 1;
+    uint public dealCounter = 1;
     mapping(uint => Deal) private _deals;
 
     function addPriceFeed(
@@ -129,12 +129,12 @@ contract OtcOption is Ownable {
         if (_maturity <= block.timestamp) revert Option__InvalidMaturity();
         if (_amount == 0) revert Option__InvalidAmount();
         if (_premium == 0) revert Option__InvalidPremium();
-        getPriceFeed(_underlyingToken, _quoteToken);
+        getPriceFeed(_underlyingToken, _quoteToken); // check price feed exists
 
         uint quoteAmount = getQuoteAmount(_underlyingToken, _quoteToken, _amount, _strike);
 
         Deal memory deal = Deal(
-            _dealCounter,
+            dealCounter,
             _underlyingToken,
             _quoteToken,
             _strike,
@@ -178,7 +178,7 @@ contract OtcOption is Ownable {
             deal.isMakerBuyer,
             msg.sender
         );
-        ++_dealCounter;
+        ++dealCounter;
 
         return deal.id;
     }

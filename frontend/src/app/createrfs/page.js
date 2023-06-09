@@ -29,7 +29,7 @@ import MultipleTags from "@components/MultipleTags"
 import { ethers } from "ethers"
 import networkMapping from "@constants/networkMapping"
 import OtcNexusAbi from "@constants/abis/OtcNexusAbi"
-import coinGeckoCachedResponse from "../../../constants/coingeckoCachedResponse.json"
+import coinGeckoCachedResponse from "@constants/coingeckoCachedResponse"
 
 const CreateRfs = () => {
     const [tokenData, setTokenData] = useState([])
@@ -42,8 +42,9 @@ const CreateRfs = () => {
     const [amount1Requested, setAmount1Requested] = useState(0) //uint256
     const [deadline, setDeadline] = useState(0) //unix timestamp
     const [usdPrice, setUsdPrice] = useState(0) //uint256
+    const deadlineInputRef = useRef()
+
     const [chainId, setChainId] = useState(null)
-    const deadlineInputRef = useRef();
     async function fetchTokenData() {
         try {
             const provider = new ethers.providers.Web3Provider(window.ethereum)
@@ -66,16 +67,16 @@ const CreateRfs = () => {
     }
 
     const handleDeadlineChange = (e) => {
-      setDeadline(e.target.value);
-      // Call the blur method to lose focus
-      deadlineInputRef.current.blur();
-    };
+        setDeadline(e.target.value)
+        // Call the blur method to lose focus
+        deadlineInputRef.current.blur()
+    }
     const resetRfsTypeDependentDate = (e) => {
-      setTokensAccepted([]);
-      setPriceMultiplier(0);
-      setUsdPrice(0);
-      setAmount1Requested(0);
-    };
+        setTokensAccepted([])
+        setPriceMultiplier(0)
+        setUsdPrice(0)
+        setAmount1Requested(0)
+    }
 
     const handleSubmit = async (e) => {
         e.preventDefault()
@@ -97,9 +98,6 @@ const CreateRfs = () => {
                     interactionTypeSelected
                 )
             } else if (rfsType === "Fixed_Usd") {
-            console.log("Fixed_Usd")
-            console.log(tokensAccepted);
-
                 tx = await otcNexus.createFixedRfs(
                     tokenOffered,
                     tokensAccepted,
@@ -110,8 +108,6 @@ const CreateRfs = () => {
                     interactionTypeSelected
                 )
             } else if (rfsType === "Fixed_Amount") {
-            console.log("Fixed_Amount")
-            console.log(tokensAccepted);
                 tx = await otcNexus.createFixedRfs(
                     tokenOffered,
                     tokensAccepted,
@@ -141,24 +137,23 @@ const CreateRfs = () => {
     }
 
     useEffect(() => {
-        let now = new Date();
-        now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
-        const minDateTime = now.toISOString().slice(0,16);
-        deadlineInputRef.current.min = minDateTime;
+        let now = new Date()
+        now.setMinutes(now.getMinutes() - now.getTimezoneOffset())
+        const minDateTime = now.toISOString().slice(0, 16)
+        deadlineInputRef.current.min = minDateTime
         fetchTokenData()
     }, [])
 
     const isFormValid = () => {
-    console.log(tokensAccepted);
         return (
             deadline !== "" &&
             tokenOffered !== "" &&
             amount0Offered !== "" &&
             interactionType !== "" &&
             rfsType !== "" &&
-            ((rfsType === "Dynamic" && tokensAccepted !== "" && priceMultiplier !== "") ||
-                (rfsType === "Fixed_Usd" && tokensAccepted !== "" && usdPrice !== "") ||
-                (rfsType === "Fixed_Amount" && tokensAccepted !== "" && amount1Requested !== ""))
+            ((rfsType === "Dynamic" && tokensAccepted.length > 0 && priceMultiplier !== "") ||
+                (rfsType === "Fixed_Usd" && tokensAccepted.length > 0 && usdPrice > 0) ||
+                (rfsType === "Fixed_Amount" && tokensAccepted.length > 0 && amount1Requested > 0))
         )
     }
 
@@ -259,7 +254,13 @@ const CreateRfs = () => {
                                 </FormControl>
 
                                 <FormControl>
-                                    <RadioGroup onChange={(value) => {setRfsType(value); resetRfsTypeDependentDate();}} value={rfsType}>
+                                    <RadioGroup
+                                        onChange={(value) => {
+                                            setRfsType(value)
+                                            resetRfsTypeDependentDate()
+                                        }}
+                                        value={rfsType}
+                                    >
                                         <Stack direction="row">
                                             <Radio value="Dynamic">Dynamic</Radio>
                                             <Radio value="Fixed_Usd">Fixed Usd</Radio>
