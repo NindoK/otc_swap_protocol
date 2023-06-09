@@ -1,0 +1,87 @@
+[
+    { "inputs": [], "stateMutability": "nonpayable", "type": "constructor" },
+    { "inputs": [], "name": "Receiver__TransactionAndSignatureLengthMismatch", "type": "error" },
+    {
+        "anonymous": false,
+        "inputs": [
+            { "indexed": true, "internalType": "uint256", "name": "amount", "type": "uint256" },
+            { "indexed": false, "internalType": "string", "name": "reason", "type": "string" }
+        ],
+        "name": "TransactionInvalidAmount",
+        "type": "event"
+    },
+    {
+        "anonymous": false,
+        "inputs": [
+            { "indexed": true, "internalType": "uint256", "name": "nonce", "type": "uint256" },
+            { "indexed": false, "internalType": "string", "name": "reason", "type": "string" }
+        ],
+        "name": "TransactionInvalidNonce",
+        "type": "event"
+    },
+    {
+        "anonymous": false,
+        "inputs": [
+            { "indexed": true, "internalType": "address", "name": "target", "type": "address" },
+            { "indexed": false, "internalType": "string", "name": "reason", "type": "string" }
+        ],
+        "name": "TransactionInvalidSigner",
+        "type": "event"
+    },
+    {
+        "anonymous": false,
+        "inputs": [
+            { "indexed": true, "internalType": "address", "name": "target", "type": "address" },
+            { "indexed": true, "internalType": "address", "name": "signer", "type": "address" }
+        ],
+        "name": "TransactionProcessed",
+        "type": "event"
+    },
+    { "stateMutability": "payable", "type": "fallback" },
+    {
+        "inputs": [
+            { "internalType": "bytes[]", "name": "transactions", "type": "bytes[]" },
+            { "internalType": "bytes[]", "name": "signatures", "type": "bytes[]" }
+        ],
+        "name": "executeMetaTransaction",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "getDomainSeparator",
+        "outputs": [{ "internalType": "bytes32", "name": "", "type": "bytes32" }],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [{ "internalType": "address", "name": "user", "type": "address" }],
+        "name": "nonceOf",
+        "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "owner",
+        "outputs": [{ "internalType": "address", "name": "", "type": "address" }],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "relayer",
+        "outputs": [{ "internalType": "address", "name": "", "type": "address" }],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [{ "internalType": "address", "name": "_relayer", "type": "address" }],
+        "name": "setRelayer",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    { "stateMutability": "payable", "type": "receive" }
+]

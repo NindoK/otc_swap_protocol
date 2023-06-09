@@ -1,20 +1,21 @@
 {
-    "31337": {
-        "OtcNexus": "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0",
-        "OtcOption": "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9"
-    },
-    "80001": {
-        "OtcNexus": "0x8C15c02B310810C32f935627098ddc56c9e5Bd6A",
-        "OtcOption": "0xdf0Cf8362A5982d1171080163eA1Ee9F7E729DD8",
-        "mockTokens": [
-            {
-                "symbol": "mWETH",
-                "address": "0xB4D7B61B19aa9b2F3f03B2892De317CB95Dcef92"
-            },
-            {
-                "symbol": "mDAI",
-                "address": "0x56c575fBf5Bc242b6086326b89f839063acd7fCb"
-            }
-        ]
-    }
+  "31337": {
+    "OtcNexus": "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0",
+    "OtcOption": "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9"
+  },
+  "80001": {
+    "receiver": "0x2Fbb1d067D2Dd3f5D8a0B9b31D0f08F9d48B28aa",
+    "OtcNexus": "0x9A2Ea0b2193F95e06d404D5ec86B6EE0847EaE8F",
+    "OtcOption": "0xf9a25BeD41A96Ab6A1196a00ADFc8AcD48522cf7",
+    "mockTokens": [
+      {
+        "symbol": "mWETH",
+        "address": "0xB4D7B61B19aa9b2F3f03B2892De317CB95Dcef92"
+      },
+      {
+        "symbol": "mDAI",
+        "address": "0x56c575fBf5Bc242b6086326b89f839063acd7fCb"
+      }
+    ]
+  }
 }
