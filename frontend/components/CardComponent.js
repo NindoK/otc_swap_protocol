@@ -13,20 +13,25 @@ import {
 } from "@chakra-ui/react"
 import dynamic from "next/dynamic"
 import Link from "next/link"
-import { useRouter } from "next/router"
+
+import { useDispatch } from "react-redux"
 
 const OverlayOne = () => <ModalOverlay bg="none" backdropFilter="blur(10px) " />
 
 const CardComponent = (props) => {
+    const dispatch = useDispatch();
     const [overlay, setOverlay] = useState(<OverlayOne />)
     const { isOpen, onOpen, onClose } = useDisclosure()
     const dynamicStyle = {
         backgroundColor: props.condition ? "#A06D22" : "#348D8D",
     }
-
-
-
+    const data={icon:props.icon,title:props.title};
+    const handleClick = () => {
+        dispatch({ type: 'SET_DATA', payload: data });
+      };
+    console.log(props)
     return (
+        
         <div className=" w-full flex justify-center mt-10 ">
             <div className="transition-all ease-out duration-500  hover:shadow-xl hover:scale-105  flex h-60 w-[56rem]  rounded-2xl relative bg-gray-950 bg-opacity-50 shadow-lg border-opacity-18">
                 <div
@@ -79,7 +84,7 @@ const CardComponent = (props) => {
                     </h3>
                 </VStack>
                 <div className="absolute right-7 top-24 rounded-full hover:bg-gray-500 hover:cursor-pointer  h-14 w-14 ">
-                    <Link href="/confirmswap">
+                    <Link href={`/confirmswap?id=${props.rfs.id}`}>
                         <ArrowForwardIcon
                             className="mt-3 ml-3 hover:cursor-pointer "
                             w={8}
@@ -152,6 +157,7 @@ const CardComponent = (props) => {
                 </ModalContent>
             </Modal>
         </div>
+        
     )
 }
 export default dynamic(() => Promise.resolve(CardComponent), { ssr: false })

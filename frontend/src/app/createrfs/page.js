@@ -137,11 +137,11 @@ const CreateRfs = () => {
                 <div className={`${styles.boxWidth}`}>
                     <Navbar />
                 </div>
-                <div className="h-fit w-60 text-center bg-blue-gradient p-3 pl-4 -mr-50 rounded-xl z-30">
+                <div className="h-fit w-60 text-center -mr-50 rounded-xl z-30">
                     <ConnectButton showBalance={false} />
                 </div>
             </div>
-            <div className="flex h-fit w-full bg-black">
+            <div className="flex min-h-screen w-full bg-black">
                 {/* gradient start */}
                 <div className="absolute z-[0] w-[40%] h-[35%] top-0 right-0 pink__gradient" />
                 <div className="absolute z-[0] w-[40%] h-[50%] rounded-full right-0 white__gradient bottom-40" />

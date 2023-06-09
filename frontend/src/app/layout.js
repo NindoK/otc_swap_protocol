@@ -4,10 +4,11 @@ import "./globals.css"
 import { ChakraProvider } from "@chakra-ui/react"
 import { Montserrat } from "@next/font/google"
 import "@rainbow-me/rainbowkit/styles.css"
-import { getDefaultWallets, RainbowKitProvider, darkTheme } from "@rainbow-me/rainbowkit"
+import { getDefaultWallets, RainbowKitProvider, darkTheme,lightTheme } from "@rainbow-me/rainbowkit"
 import { configureChains, createConfig, WagmiConfig } from "wagmi"
 import { arbitrum, goerli, mainnet, optimism, polygon, polygonMumbai} from "wagmi/chains"
 import { publicProvider } from "wagmi/providers/public"
+import ReduxProvider from "@components/store"
 
 const { chains, publicClient, webSocketPublicClient } = configureChains(
     [
@@ -43,10 +44,16 @@ const montserrat = Montserrat({
 export default function RootLayout({ children }) {
     return (
         <html lang="en">
+        <ReduxProvider>
             <CacheProvider>
                 <ChakraProvider>
                     <WagmiConfig config={wagmiConfig}>
-                        <RainbowKitProvider theme={darkTheme()} coolMode chains={chains}>
+                        <RainbowKitProvider theme={lightTheme({
+                            accentColor: '#623485',  //color of wallet  try #703844
+                            accentColorForeground: 'white', //color of text
+                            borderRadius: 'large', //rounded edges
+                            fontStack: 'system',  
+                          })} coolMode chains={chains}>
                             <body className={`${montserrat.variable} font-montserrat`}>
                                 {children}
                             </body>
@@ -54,6 +61,7 @@ export default function RootLayout({ children }) {
                     </WagmiConfig>
                 </ChakraProvider>
             </CacheProvider>
+            </ReduxProvider>
         </html>
     )
 }
