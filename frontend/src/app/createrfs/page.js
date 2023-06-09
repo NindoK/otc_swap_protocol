@@ -29,7 +29,7 @@ import MultipleTags from "@components/MultipleTags"
 import { ethers } from "ethers"
 import networkMapping from "@constants/networkMapping"
 import OtcNexusAbi from "@constants/abis/OtcNexusAbi"
-import coinGeckoCachedResponse from "@constants/coinGeckoCachedResponse"
+import coinGeckoCachedResponse from "../../../constants/coingeckoCachedResponse.json"
 
 const CreateRfs = () => {
     const [tokenData, setTokenData] = useState([])

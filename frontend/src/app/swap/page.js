@@ -154,10 +154,7 @@ const swap = () => {
             <Sidebar />
 
 
-            <div className="w-full flex flex-row justify-end">
-                <ConnectButton />
-            </div>
-
+           
             <ul className="mt-36 ml-40">
                 {cardComponentData.map((val, key) => {
                     return (
