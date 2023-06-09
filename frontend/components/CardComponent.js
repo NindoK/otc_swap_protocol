@@ -22,7 +22,8 @@ const CardComponent = (props) => {
     const dynamicStyle = {
         backgroundColor: props.condition ? "#A06D22" : "#348D8D",
     }
-    const data = { icon: props.icon, title: props.title }
+    console.log(props.icon.props.src);
+
     return (
         <div className=" w-full flex justify-center mt-10 ">
             <div className="transition-all ease-out duration-500  hover:shadow-xl hover:scale-105  flex h-60 w-[56rem]  rounded-2xl relative bg-gray-950 bg-opacity-50 shadow-lg border-opacity-18">

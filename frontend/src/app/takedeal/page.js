@@ -6,6 +6,7 @@ import React, { useState } from "react"
 import { BigNumber, ethers } from "ethers"
 import networkMapping from "@constants/networkMapping"
 import OtcOptionAbi from "@constants/abis/OtcOptionAbi"
+import { ConnectButton } from "@rainbow-me/rainbowkit"
 
 const page = () => {
     const [searchTerm, setSearchTerm] = useState("")
@@ -68,6 +69,10 @@ const page = () => {
             <Sidebar />
 
             <div className="w-full flex flex-col ">
+
+               <div className="w-full flex justify-end py-3 pr-2 z-10">
+               <ConnectButton/>
+               </div>
                 <div className=" w-full flex justify-start">
                     <input
                         type="text"
