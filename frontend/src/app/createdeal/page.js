@@ -15,16 +15,15 @@ import {
     NumberInput,
     NumberInputField,
     Select,
-   
 } from "@chakra-ui/react"
-import { useToast } from '@chakra-ui/react'
+import { useToast } from "@chakra-ui/react"
 import { BigNumber, ethers } from "ethers"
 import networkMapping from "@constants/networkMapping"
 import OtcOptionAbi from "@constants/abis/OtcOptionAbi"
 import Sidebar from "@components/Sidebar"
 
 const CreateDeal = () => {
-    const toast=useToast();
+    const toast = useToast()
     const [createDealFormData, setCreateDealFormData] = useState({
         underlyingToken: "",
         quoteToken: "",
@@ -44,6 +43,10 @@ const CreateDeal = () => {
         {
             symbol: "mDAI",
             address: "0x56c575fBf5Bc242b6086326b89f839063acd7fCb",
+        },
+        {
+            symbol: "mLINK",
+            address: "0xf69b85646d86db95023A6C2df4327251e35F2C84",
         },
     ]
     // const tokenData = networkMapping[chainId]["mockTokens"]
@@ -140,20 +143,21 @@ const CreateDeal = () => {
             )
             const receipt = await tx.wait()
             console.log(receipt)
-            if(receipt)toast({
-                title: 'Deal created!',
-                status: 'success',
-                duration: 9000,
-                isClosable: true,
-              });
+            if (receipt)
+                toast({
+                    title: "Deal created!",
+                    status: "success",
+                    duration: 9000,
+                    isClosable: true,
+                })
         } catch (error) {
             console.error(error)
             toast({
-                title: 'There was some error!',
-                status: 'error',
+                title: "There was some error!",
+                status: "error",
                 duration: 9000,
                 isClosable: true,
-              });
+            })
         }
     }
 

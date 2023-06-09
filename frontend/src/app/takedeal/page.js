@@ -1,7 +1,7 @@
 "use client"
 import Sidebar from "@components/Sidebar"
 import TakeDealCard from "@components/TakeDealCard"
-import React, { useState } from "react"
+import React, { useState, useEffect } from "react"
 import { BigNumber, ethers } from "ethers"
 import networkMapping from "@constants/networkMapping"
 import OtcOptionAbi from "@constants/abis/OtcOptionAbi"
@@ -18,6 +18,14 @@ const page = () => {
     const tokenAddressToSymbol = {
         "0xB4D7B61B19aa9b2F3f03B2892De317CB95Dcef92": "mWETH",
         "0x56c575fBf5Bc242b6086326b89f839063acd7fCb": "mDAI",
+        "0xf69b85646d86db95023A6C2df4327251e35F2C84": "mLINK",
+    }
+
+    const dealStateMap = {
+        0: "Open",
+        1: "Taken",
+        2: "Removed",
+        3: "Settled",
     }
 
     const convertIntToFloatString = (n, decimals) => {
@@ -35,6 +43,10 @@ const page = () => {
         res = res.replace(/\.0*$/, ".0")
         return res
     }
+
+    useEffect(() => {
+        handleRefresh()
+    }, [])
 
     const handleRefresh = async (e) => {
         const provider = new ethers.providers.Web3Provider(window.ethereum)
@@ -85,7 +97,7 @@ const page = () => {
                     optionType: dealInfo.isCall ? "Call" : "Put",
                     amount: convertIntToFloatString(dealInfo.amount, ulyTokenDec),
                     premium: convertIntToFloatString(dealInfo.premium, quoteTokenDec),
-                    status: dealInfo.status,
+                    status: dealStateMap[dealInfo.status],
                     buyer: dealInfo.isMakerBuyer ? dealInfo.maker : dealInfo.taker,
                     seller: dealInfo.isMakerBuyer ? dealInfo.taker : dealInfo.maker,
                 }
