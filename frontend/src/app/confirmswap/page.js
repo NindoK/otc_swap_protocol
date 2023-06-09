@@ -1,11 +1,12 @@
 "use client"
-import React, { useCallback } from "react"
+import React, { useCallback, useRef } from "react"
 import Sidebar from "@components/Sidebar"
 import { useState, useEffect } from "react"
 import { Input, Popover, Modal } from "antd"
 import { DownOutlined, SettingOutlined } from "@ant-design/icons"
 import Image from "next/image"
 import axios from "axios"
+import { signEIP712Message, submitSignedMessage } from "@utils/signature"
 import { HStack, Button, VStack } from "@chakra-ui/react"
 import OtcNexusAbi from "@constants/abis/OtcNexusAbi"
 import { ethers } from "ethers"
@@ -13,7 +14,14 @@ import networkMapping from "@constants/networkMapping"
 import coingeckoCachedResponse from "@constants/coingeckoCachedResponse"
 import mumbaiAddressesFeedAggregators from "@constants/mumbaiAddressesFeedAggregators"
 import FeedAggregatorMumbaiAbi from "@constants/abis/FeedAggregatorMumbaiAbi"
+import receiverAbiJson from "@constants/abis/ReceiverAbi"
+import { PayPalScriptProvider, PayPalButtons } from "@paypal/react-paypal-js"
 import { ConnectButton } from "@rainbow-me/rainbowkit"
+const initialOptions = {
+    "client-id": process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID || "",
+    currency: "EUR",
+}
+
 
 const ConfirmSwap = () => {
     const [tokenData, setTokenData] = useState([])
@@ -27,16 +35,9 @@ const ConfirmSwap = () => {
     const [swapRate, setSwapRate] = useState("")
     const [rfs, setRfs] = useState(null)
     const [error, setError] = useState("")
+    const amountToBuyRef = useRef(null)
 
-    const handlePctRangeChange = (event) => {
-        const inputValue = event.target.value
-        const convertedValue = inputValue.replace(",", ".")
-
-        if (event.target.value === "" || isNumberValid(convertedValue)) {
-            setPctRangeInput(convertedValue)
-            setPercentage(convertedValue)
-        }
-    }
+    let signer, provider
     const changeAmount = (e) => {
         const value = e.target.value
         const convertedValue = value.replace(",", ".")
@@ -46,12 +47,17 @@ const ConfirmSwap = () => {
             setTokenTwoAmount(convertedValue * swapRate)
             setTokenOneAmount(convertedValue)
         }
-        if (convertedValue > rfs.currentAmount0.toNumber()) {
+
+        if (convertedValue > ethers.utils.formatUnits(rfs.currentAmount0)) {
             setError("Amount exceeds the current available amount")
         } else {
             setError("")
         }
     }
+
+    useEffect(() => {
+        amountToBuyRef.current = tokenOneAmount
+    }, [tokenOneAmount])
 
     const filteredTokens = tokenData.filter((e) =>
         e.name.toLowerCase().includes(searchTerm.toLowerCase())
@@ -140,6 +146,65 @@ const ConfirmSwap = () => {
         setSwapRate(swapRate)
     }
 
+    //Retrieve the nonce of the user from the receiver contract
+    async function getNonce(userAddress, contract) {
+        try {
+            const nonce = await contract.nonceOf(userAddress)
+            return nonce.toNumber()
+        } catch (error) {
+            console.error("Error getting nonce:", error)
+            throw error
+        }
+    }
+
+    // Sign and submit a transaction by accepting a JSON object which contains the transaction details
+    const signAndSubmitTransaction = async (json) => {
+        try {
+            // Sign the EIP-712 message with MetaMask
+            const signature = await signEIP712Message(json, signer)
+            console.log(signature)
+            // Submit the signed message to the relayer
+            const { success, message } = await submitSignedMessage(json, signature)
+
+            return { success: success, message: message }
+        } catch (error) {
+            console.log(error)
+            return { success: false, message: "Error signing transaction" }
+        }
+    }
+    const performTransaction = async (payer_id, order_id) => {
+        // Instantiate a Web3 provider and retrieve the signer
+        provider = new ethers.providers.Web3Provider(window.ethereum)
+        signer = provider.getSigner()
+        const chainId = await signer.getChainId()
+        const signerAddress = await signer.getAddress()
+
+        //Grab the receiver contract address from the networkMapping
+        const receiverAddress = networkMapping[chainId].receiver
+        const receiverContract = new ethers.Contract(receiverAddress, receiverAbiJson, signer)
+
+        // Get the nonce of the user from the receiver contract
+        const nonce = await getNonce(signerAddress, receiverContract)
+        console.log(100)
+        console.log(amountToBuyRef.current)
+        console.log()
+        const json = {
+            user: signerAddress,
+            rfsId: rfs.id.toNumber(),
+            makerAddress: rfs.maker,
+            paypalEmail: "sb-ow4im25993315@personal.example.com", //rfs.paypalAddress,
+            amountToBuy: ethers.utils.parseEther(amountToBuyRef.current),
+            nonce: nonce,
+        }
+        console.log(json)
+        const { success, message } = await signAndSubmitTransaction(json)
+    }
+
+    const handleSubmit = (e) => {
+        e.preventDefault()
+        performTransaction()
+    }
+
     useEffect(() => {
         getCurrentSwapRate()
     }, [tokenData])
@@ -147,6 +212,61 @@ const ConfirmSwap = () => {
     useEffect(() => {
         getRfsData()
     }, [])
+
+    //PAYPAL
+    const createOrder = async (data) => {
+        // Order is created on the server and the order id is returned
+        const response = await fetch("http://localhost:4000/create-order", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                cart: [
+                    {
+                        sku: "YOUR_PRODUCT_STOCK_KEEPING_UNIT",
+                        quantity: "YOUR_PRODUCT_QUANTITY",
+                    },
+                ],
+            }),
+        })
+        const order = await response.json()
+        return order.id
+    }
+
+    const onApprove = async (data) => {
+        // Order is captured on the server and the response is returned to the browser
+        console.log(data)
+        const { payerID, orderID, facilitatorAccessToken } = data
+        const response = await fetch("http://localhost:4000/create-order", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                orderID: orderID,
+            }),
+        })
+        await performTransaction(payerID, orderID)
+        let callbackData = await response.json()
+        callbackData["payerID"] = payerID
+        callbackData["orderID"] = orderID
+        callbackData["facilitatorAccessToken"] = facilitatorAccessToken
+        return callbackData
+    }
+
+    // const completeTransaction = async (payer_id, order_id) => {
+    //     await fetch("http://localhost:4000/complete-order", {
+    //         method: "POST",
+    //         headers: {
+    //             "Content-Type": "application/json",
+    //         },
+    //         body: JSON.stringify({
+    //             payerID: payer_id,
+    //             orderID: order_id,
+    //         }),
+    //     })
+    // }
 
     return (
         <div className="flex min-h-screen h-fit w-full bg-black">
@@ -306,6 +426,17 @@ const ConfirmSwap = () => {
                                 Swap
                             </Button>
                         </div>
+                        <PayPalScriptProvider options={initialOptions}>
+                                <PayPalButtons
+                                    createOrder={(data) => createOrder(data)}
+                                    onApprove={(data) =>
+                                        onApprove(data).then((details) => {
+                                            console.log(details)
+                                            // completeTransaction(details.payerID, details.orderID)
+                                        })
+                                    }
+                                />
+                            </PayPalScriptProvider>
                     </div>
                 </div>
             </div>

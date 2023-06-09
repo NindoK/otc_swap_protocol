@@ -3,6 +3,7 @@
 .vscode
 
 package-lock.json
+yarn-lock.json
 
 # hardhat
 artifacts
@@ -14,6 +15,7 @@ coverage.json
 
 # don't push the environment vars!
 .env
+.env.enc
 
 # Built application files
 .DS*
