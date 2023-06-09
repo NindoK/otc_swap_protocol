@@ -1,6 +1,6 @@
 "use client"
 import React, { useState } from "react"
-import { ArrowForwardIcon,WarningIcon } from "@chakra-ui/icons"
+import { ArrowForwardIcon, WarningIcon } from "@chakra-ui/icons"
 import {
     Modal,
     ModalBody,
@@ -78,6 +78,7 @@ const CardComponent = (props) => {
                         href={`/confirmswap?id=${props.rfs.id}`}
                         onClick={() => {
                             window.localStorage.setItem("rfsIdSelected", props.rfs.id)
+                            window.localStorage.setItem("currentSelectedPrice", props.rawPrice)
                         }}
                     >
                         <ArrowForwardIcon
@@ -181,36 +182,30 @@ const CardComponent = (props) => {
                                 {props.rfs.tokensAcceptedData[0].symbol}.
                                 <br />
                                 <br />
-                                <WarningIcon
-                                    className="mr-3"
-                                    w={4}
-                                    h={4}
-                                    color="lightskyblue"
-                                />
-                                Note - you can swap a fraction of this request and you are free
-                                to fill the whole request.
+                                <WarningIcon className="mr-3" w={4} h={4} color="lightskyblue" />
+                                Note - you can swap a fraction of this request and you are free to
+                                fill the whole request.
                             </p>
                         )}
-                    <br/>
-                    <hr/>
-                    <br/>
+                        <br />
+                        <hr />
+                        <br />
 
-                    {props.rfs.interactionType === 0 && (
-                        <p>
-                        The creator of the swap request <b>deposited</b> his/ her coins. It means once you confirm the swap the coins will move.
-                        </p>
-                    )}
-                    {props.rfs.interactionType === 1 && (
-                        <p>
-                       <WarningIcon
-                           className="mr-3"
-                           w={4}
-                           h={4}
-                           color="lightskyblue"
-                       />
-                         Note The creator of the swap request <b>approved</b> the contract to spend his/ her coins. It means you will need to pay some gas to try to move creator’s coins. It is possible that creator do not have those coins now and swapping will not succeed.
-                        </p>
-                    )}
+                        {props.rfs.interactionType === 0 && (
+                            <p>
+                                The creator of the swap request <b>deposited</b> his/ her coins. It
+                                means once you confirm the swap the coins will move.
+                            </p>
+                        )}
+                        {props.rfs.interactionType === 1 && (
+                            <p>
+                                <WarningIcon className="mr-3" w={4} h={4} color="lightskyblue" />
+                                Note The creator of the swap request <b>approved</b> the contract to
+                                spend his/ her coins. It means you will need to pay some gas to try
+                                to move creator’s coins. It is possible that creator do not have
+                                those coins now and swapping will not succeed.
+                            </p>
+                        )}
                     </ModalBody>
                 </ModalContent>
             </Modal>
