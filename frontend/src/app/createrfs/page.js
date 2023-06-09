@@ -29,6 +29,7 @@ import PercentageSlider from "@components/PercentageSlider"
 import MultipleTags from "@components/MultipleTags"
 import { ethers } from "ethers"
 import networkMapping from "@constants/networkMapping"
+import IERC20Abi from "@constants/abis/IERC20Abi"
 import OtcNexusAbi from "@constants/abis/OtcNexusAbi"
 import coinGeckoCachedResponse from "@constants/coingeckoCachedResponse"
 import Sidebar from "@components/Sidebar"
@@ -88,6 +89,24 @@ const CreateRfs = () => {
         setAmount1Requested(0)
     }
 
+    const handleApprove = async (e) => {
+        e.preventDefault()
+        const provider = new ethers.providers.Web3Provider(window.ethereum)
+        const signer = provider.getSigner()
+        const erc20 = new ethers.Contract(tokenOffered, IERC20Abi, signer)
+        let tx = await erc20.approve(
+            networkMapping[chainId].OtcNexus,
+            ethers.utils.parseEther(amount0Offered)
+
+        )
+        const receipt = await tx.wait()
+        if(receipt)toast({
+            title: 'erc20 approved!',
+            status: 'success',
+            duration: 9000,
+            isClosable: true,
+          });
+    }
     const handleSubmit = async (e) => {
         e.preventDefault()
         const provider = new ethers.providers.Web3Provider(window.ethereum)
@@ -129,8 +148,8 @@ const CreateRfs = () => {
                 tx = await otcNexus.createFixedRfs(
                     tokenOffered,
                     tokensAccepted,
-                    amount0Offered,
-                    parseFloat(amount1Requested),
+                    ethers.utils.parseEther(amount0Offered),
+                    ethers.utils.parseEther(amount1Requested),
                     0,
                     deadlineInUnixtimestamp,
                     interactionTypeSelected
@@ -417,6 +436,14 @@ const CreateRfs = () => {
                            )}
 
                            <div className="flex w-full justify-center">
+                               <Button
+                                   isDisabled={!tokenOffered || !amount0Offered}
+                                   className="bg-blue-gradient rounded-xl py-2 px-4 top-5"
+                                   onClick={handleApprove}
+                                   style={{marginRight : "15px"}}
+                               >
+                                   Approve
+                               </Button>
                                <Button
                                    isDisabled={!isFormValid()}
                                    className="bg-blue-gradient rounded-xl py-2 px-4 top-5"
