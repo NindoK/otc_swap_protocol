@@ -12,18 +12,18 @@ const TakeDealCard = (props) => {
                 />
                 <div class="absolute top-8 flex-col flex items-center justify-center text-gray-black z-10 font-montserrat font-bold">
                     <h3>Deal ID: {props.id}</h3>
-                    <h3>Underlying token: {props.underlyingtoken}</h3>
-                    <h3>Quote token: {props.quotetoken}</h3>
+                    <h3>Underlying token: {props.underlyingtoken.substring(0, 6)}....</h3>
+                    <h3>Quote token: {props.quotetoken.substring(0, 6)}....</h3>
                 </div>
             </div>
-            <div class=" flex-row flex justify-between gap-3 text-gray-400 z-10 font-montserrat font-semibold text-sm">
-                <VStack className="text-start">
+            <div class=" flex-row flex justify-between gap-3 mt-1 text-gray-400 z-10 font-montserrat font-semibold text-sm">
+                <VStack className="flex text-center">
                     <h4>Strike: {props.strike}</h4>
                     <h4>Maturity: {props.maturity}</h4>
                     <h4>Option Type: {props.optioncall}</h4>
                     <h4>Buyer: {props.buyer}</h4>
                 </VStack>
-                <VStack>
+                <VStack className="flex text-center">
                     <h4>Amount: {props.amount}</h4>
                     <h4>Premium: {props.premium}</h4>
                     <h4>Status: {props.status}</h4>

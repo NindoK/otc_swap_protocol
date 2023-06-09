@@ -11,10 +11,7 @@ const page = () => {
     const [searchTerm, setSearchTerm] = useState("")
     const [cardData, setCardData] = useState([])
 
-    // Filter the cards based on the search term
-    // const filteredCards = CardData.filter((card) => {
-    //     return card.dealId.toString().includes(searchTerm)
-    // })
+    
     const filteredCards = cardData.filter((card) => {
         return card.id.toString().includes(searchTerm)
     })
