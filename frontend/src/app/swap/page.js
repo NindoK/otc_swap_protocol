@@ -202,7 +202,7 @@ const swap = () => {
     }, [rfsDataAll])
 
     return (
-        <div className="flex h-fit w-full bg-black">
+        <div className="flex min-h-screen h-fit w-full bg-black">
             {/* gradient start */}
             <div className="absolute z-[0] w-[40%] h-[35%] top-0 right-0 pink__gradient" />
             <div className="absolute z-[0] w-[40%] h-[50%] rounded-full right-0 white__gradient bottom-40" />
@@ -210,7 +210,11 @@ const swap = () => {
             {/* gradient end */}
             <Sidebar />
 
-            <ul className="mt-36 ml-40">
+            <div className="w-full flex flex-col ">
+            <div className="w-full flex justify-end py-3 pr-2 z-10">
+               <ConnectButton/></div>
+
+            <ul className="mt-36 ml-30">
                 {cardComponentData.map((val, key) => {
                     return (
                         <li>
@@ -235,6 +239,9 @@ const swap = () => {
                     )
                 })}
             </ul>
+            </div>
+
+               
         </div>
     )
 }

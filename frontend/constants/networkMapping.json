@@ -6,7 +6,7 @@
   "80001": {
     "receiver": "0x2Fbb1d067D2Dd3f5D8a0B9b31D0f08F9d48B28aa",
     "OtcNexus": "0x9A2Ea0b2193F95e06d404D5ec86B6EE0847EaE8F",
-    "OtcOption": "0xf9a25BeD41A96Ab6A1196a00ADFc8AcD48522cf7",
+    "OtcOption": "0x116835647CE63506867DD9f86d609511A9E8d3d2",
     "mockTokens": [
       {
         "symbol": "mWETH",

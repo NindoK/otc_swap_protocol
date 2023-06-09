@@ -6,8 +6,8 @@ import dynamic from "next/dynamic"
 import Feature1 from "@components/Feature1"
 import Navbar from "@components/Navbar"
 import Hero from "@components/Hero"
-import Stats from "@components/Stats"
-import Feature3 from "@components/Feature3"
+
+
 import Feature2 from "@components/Feature2"
 import Devs from "@components/Devs"
 import Service from "@components/Service"
@@ -34,10 +34,10 @@ export default function Home() {
 
             <div className={`bg-black ${styles.paddingX} ${styles.flexCenter}`}>
                 <div className={`${styles.boxWidth}`}>
-                    <Stats />
+                  
                     <Feature1 />
                     <Feature2 />
-                    <Feature3 />
+                    
                     <Devs />
                     <Service />
                     <Footer />

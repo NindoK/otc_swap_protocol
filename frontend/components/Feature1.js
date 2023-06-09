@@ -10,21 +10,16 @@ export const features = [
     {
         id: "feature-1",
         icon: star,
-        title: "Lorem Ipsum",
-        content: "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+        title: "Chainlink Powered",
+        
     },
     {
         id: "feature-2",
         icon: shield,
-        title: "Lorem Ipsum",
-        content: "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+        title: "Counterparty Risk Free",
+        
     },
-    {
-        id: "feature-3",
-        icon: send,
-        title: "Lorem Ipsum",
-        content: "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-    },
+    
 ]
 
 const FeatureCard = ({ icon, title, content, index }) => (
@@ -33,16 +28,14 @@ const FeatureCard = ({ icon, title, content, index }) => (
             index !== features.length - 1 ? "mb-6" : "mb-0"
         } feature-card cursor-pointer`}
     >
-        <div className={`w-[64px] h-[64px] rounded-full ${styles.flexCenter} bg-dimBlue`}>
-            <Image src={icon} alt="star" className="w-[50%] h-[50%] object-contain" />
+        <div className={`w-[64px] h-[64px]  rounded-full ${styles.flexCenter} bg-dimBlue`}>
+            <Image src={icon} alt="star" className="w-[50%] mb-8 h-[50%] object-contain" />
         </div>
         <div className="flex-1 flex flex-col ml-3">
-            <h4 className="font-montserrat font-semibold text-white text-[18px] leading-[23.4px] mb-1">
+            <h4 className="font-montserrat font-semibold text-white align-middle text-[18px] leading-[23.4px] mb-1">
                 {title}
             </h4>
-            <p className="font-montserrat font-normal text-gray-500 text-[16px] leading-[24px]">
-                {content}
-            </p>
+            
         </div>
     </div>
 )
@@ -52,17 +45,13 @@ const Feature1 = () => {
         <section id="features" className={`${layout.section} lg:pl-24`}>
             <div className={layout.sectionInfo}>
                 <h2 className={styles.heading2}>
-                    Lorem ipsum dolor sit, <br className="sm:block hidden" /> consectetur adipiscing
-                    elit.
+                Simple. Secure. Swift. <br className="sm:block hidden" /> 
                 </h2>
                 <p className={`${styles.paragraph} max-w-[470px] mt-5`}>
-                    Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer volutpat
-                    consectetur risus, id consectetur sem dictum quis. Nullam vulputate placerat
-                    mauris, vitae ultrices quam. Praesent malesuada nisi nec nibh pulvinar
-                    dignissim.
+                Experience the future of token swaps with our user-friendly protocol. Integrated with PayPal and powered by Chainlink Functions, we ensure seamless off-chain payments. Trade ERC-20 tokens effortlessly without cumbersome deposit processes. Enjoy a simplified, secure, and swift way to exchange tokens directly on the blockchain.
                 </p>
 
-                <Button styles={`mt-10`} />
+               
             </div>
 
             <div className={`${layout.sectionImg} flex-col`}>
