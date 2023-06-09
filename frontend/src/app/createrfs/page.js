@@ -29,7 +29,7 @@ import MultipleTags from "@components/MultipleTags"
 import { ethers } from "ethers"
 import networkMapping from "@constants/networkMapping"
 import OtcNexusAbi from "@constants/abis/OtcNexusAbi"
-import coinGeckoCachedResponse from "@constants/coinGeckoCachedResponse"
+import coinGeckoCachedResponse from "@constants/coingeckoCachedResponse"
 
 const CreateRfs = () => {
     const [tokenData, setTokenData] = useState([])
@@ -42,7 +42,7 @@ const CreateRfs = () => {
     const [amount1Requested, setAmount1Requested] = useState(0) //uint256
     const [deadline, setDeadline] = useState(0) //unix timestamp
     const [usdPrice, setUsdPrice] = useState(0) //uint256
-    const deadlineInputRef = useRef();
+    const deadlineInputRef = useRef()
 
     const [chainId, setChainId] = useState(null)
     async function fetchTokenData() {
@@ -54,10 +54,18 @@ const CreateRfs = () => {
             let tokens
             if (coinGeckoCachedResponse) {
                 tokens = coinGeckoCachedResponse.tokens
+                tokens = tokens.sort((a, b) => {
+                    if (a.chainId === chainId && b.chainId !== chainId) {
+                        return -1
+                    }
+                    if (a.chainId !== chainId && b.chainId === chainId) {
+                        return 1
+                    }
+                    return 0
+                })
             } else {
                 const response = await axios.get("https://tokens.coingecko.com/uniswap/all.json")
 
-                // Process the response data
                 tokens = response.data.tokens
             }
             setTokenData(tokens)
@@ -67,16 +75,15 @@ const CreateRfs = () => {
     }
 
     const handleDeadlineChange = (e) => {
-      setDeadline(e.target.value);
-      // Call the blur method to lose focus
-      deadlineInputRef.current.blur();
-    };
+        setDeadline(e.target.value)
+        deadlineInputRef.current.blur()
+    }
     const resetRfsTypeDependentDate = (e) => {
-      setTokensAccepted([]);
-      setPriceMultiplier(0);
-      setUsdPrice(0);
-      setAmount1Requested(0);
-    };
+        setTokensAccepted([])
+        setPriceMultiplier(0)
+        setUsdPrice(0)
+        setAmount1Requested(0)
+    }
 
     const handleSubmit = async (e) => {
         e.preventDefault()
@@ -87,12 +94,20 @@ const CreateRfs = () => {
         const deadlineInUnixtimestamp = new Date(deadline).getTime() / 1000
 
         let tx
+        console.log(
+            tokenOffered,
+            tokensAccepted,
+            ethers.utils.parseEther(amount0Offered),
+            priceMultiplier,
+            deadlineInUnixtimestamp,
+            interactionTypeSelected
+        )
         try {
             if (rfsType === "Dynamic") {
                 tx = await otcNexus.createDynamicRfs(
                     tokenOffered,
                     tokensAccepted,
-                    amount0Offered,
+                    ethers.utils.parseEther(amount0Offered),
                     priceMultiplier,
                     deadlineInUnixtimestamp,
                     interactionTypeSelected
@@ -101,7 +116,7 @@ const CreateRfs = () => {
                 tx = await otcNexus.createFixedRfs(
                     tokenOffered,
                     tokensAccepted,
-                    amount0Offered,
+                    ethers.utils.parseEther(amount0Offered),
                     0,
                     usdPrice,
                     deadlineInUnixtimestamp,
@@ -137,25 +152,36 @@ const CreateRfs = () => {
     }
 
     useEffect(() => {
-        let now = new Date();
-        now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
-        const minDateTime = now.toISOString().slice(0,16);
-        deadlineInputRef.current.min = minDateTime;
+        let now = new Date()
+        now.setMinutes(now.getMinutes() - now.getTimezoneOffset())
+        const minDateTime = now.toISOString().slice(0, 16)
+        deadlineInputRef.current.min = minDateTime
         fetchTokenData()
     }, [])
 
     const isFormValid = () => {
+        console.log(
+            deadline,
+            tokenOffered,
+            amount0Offered,
+            interactionType,
+            rfsType,
+            tokensAccepted,
+            priceMultiplier,
+            usdPrice,
+            amount1Requested
+        )
         return (
-         deadline !== '' &&
-          tokenOffered !== '' &&
-          amount0Offered !== '' &&
-          interactionType !== '' &&
-          rfsType !== '' &&
-          ((rfsType === 'Dynamic' && tokensAccepted.length>0 && priceMultiplier!== '') ||
-            (rfsType === 'Fixed_Usd' && tokensAccepted.length>0 && usdPrice>0) ||
-            (rfsType === 'Fixed_Amount' && tokensAccepted.length>0 && amount1Requested>0))
-        );
-      };
+            deadline !== "" &&
+            tokenOffered !== "" &&
+            amount0Offered !== "" &&
+            interactionType !== "" &&
+            rfsType !== "" &&
+            ((rfsType === "Dynamic" && tokensAccepted.length > 0 && priceMultiplier !== "") ||
+                (rfsType === "Fixed_Usd" && tokensAccepted.length > 0 && usdPrice > 0) ||
+                (rfsType === "Fixed_Amount" && tokensAccepted.length > 0 && amount1Requested > 0))
+        )
+    }
 
     return (
         <>
@@ -223,10 +249,12 @@ const CreateRfs = () => {
                                     <FormLabel>Amount Offered</FormLabel>
                                     <NumberInput
                                         value={amount0Offered}
-                                        onChange={(e) => {
-                                            const value = parseInt(e, 10)
-                                            if (!isNaN(value)) {
-                                                setAmount0Offered(value)
+                                        onChange={(valueAsString, valueAsNumber) => {
+                                            const convertedValue = valueAsString.replace(",", ".")
+                                            const valid = /^-?\d*[.,]?\d*$/.test(convertedValue)
+
+                                            if (valid || valueAsString === "") {
+                                                setAmount0Offered(convertedValue)
                                             }
                                         }}
                                         defaultValue={15}
@@ -254,7 +282,13 @@ const CreateRfs = () => {
                                 </FormControl>
 
                                 <FormControl>
-                                    <RadioGroup onChange={(value) => {setRfsType(value); resetRfsTypeDependentDate();}} value={rfsType}>
+                                    <RadioGroup
+                                        onChange={(value) => {
+                                            setRfsType(value)
+                                            resetRfsTypeDependentDate()
+                                        }}
+                                        value={rfsType}
+                                    >
                                         <Stack direction="row">
                                             <Radio value="Dynamic">Dynamic</Radio>
                                             <Radio value="Fixed_Usd">Fixed Usd</Radio>
