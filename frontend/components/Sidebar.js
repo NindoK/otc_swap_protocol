@@ -34,7 +34,7 @@ const Sidebar = () => {
                     Create rfs
                 </li>
             </Link>
-            <Link href="/createdeal">
+            <Link href="/takedeal">
                 <li className="border-b pb-4 text-white text-xl font-bold tracking-wider font-montserrat pl-6 hover:cursor-pointer ">
                     Take Deal
                 </li>
