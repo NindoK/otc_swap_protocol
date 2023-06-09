@@ -55,12 +55,6 @@ User A pays with Paypal => Sign EIP-712 meta-txn => It gets sent to the relayer 
 - Maker: the address that creates the RFS, and wants to swap x token0 for y token1.
 - Taker: the address that fills the RFS, and wants to swap y token1 for x token0.
 - Swap: fill partially or completely RFS
-- Option: A financial derivative that gives the holder the right, but not the obligation, to buy or sell an asset at a specified price within a certain period.
-- Put Option: A financial contract that gives the holder the right to sell an asset at a specified price within a specific timeframe.
-- Strike: The predetermined price at which an option can be exercised, either to buy (call option) or sell (put option).
-- Take Deal: Accepting the terms and conditions of an existing deal or contract.
-- Create Deal: Setting up new terms and conditions for a potential deal or contract.
-- Call Option: A financial contract that gives the holder the right to buy an asset at a specified price within a specific timeframe.
 
 ### Use case documentation
 
@@ -72,8 +66,6 @@ User connects his/ her wallet. The user can:
   - user can accept token1, token2 ... etc. at their current price but fix the price of offered tokens in USD (fixed USD RFS type)
   - user can accept payments in fiat via PayPal
 - swap - ie. fill RFS
-- create deal - option
-- take deal - option
 
 Therefore we have the following RFS types. In this context Listed Altcoins are altcoins whose price feeds are available by ChainLink Oracles; non-listed altcoins - whose price feeds are not:
 
@@ -85,6 +77,19 @@ Therefore we have the following RFS types. In this context Listed Altcoins are a
 | Fixed USD RFS - Token(s) Accepted    | Yes                 | Yes                       | Yes                   |
 | Fixed Amount RFS - Token Offered     | No                  | Yes                       | Yes                   |
 | Fixed Amount RFS - Token(s) Accepted | No                  | Yes                       | Yes                   |
+
+## OTC Option
+
+### Definitions
+
+- Option: a financial derivative that gives the buyer the right, but not the obligation, to buy or sell an asset at a specified price within a certain period.
+- Put Option: a type of option that gives the buyer the right to sell an asset at a specified price within a specific timeframe.
+- Call Option: a type of option that gives the buyer the right to buy an asset at a specified price within a specific timeframe.
+- Deal: equivalent of a RFS for options.
+- Maker: the address that creates a deal. The maker will determine all the deal parameters
+- Taker: the address that accepts a deal and will be the counterparty of the maker.
+- Strike: the predetermined price at which an option can be exercised, either to buy (call option) or sell (put option).
+- Maturity: time after which the deal expires and can be settled.
 
 
 ## Developer's guide
