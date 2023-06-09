@@ -10,25 +10,29 @@ import CoingeckoCachedResponse from "@constants/coingeckoCachedResponse"
 import { ethers } from "ethers"
 import networkMapping from "@constants/networkMapping"
 import OtcNexusAbi from "@constants/abis/OtcNexusAbi"
-import {
-    Avatar,
-    AvatarGroup,
-    Button,
-    Drawer,
-    DrawerBody,
-    DrawerCloseButton,
-    DrawerContent,
-    DrawerFooter,
-    DrawerHeader,
-    DrawerOverlay,
-    Input,
-    useDisclosure,
-} from "@chakra-ui/react"
+
+import FeedAggregatorMumbaiAbi from "@constants/abis/FeedAggregatorMumbaiAbi"
+import mumbaiAddressesFeedAggregators from "@constants/mumbaiAddressesFeedAggregators"
+import { Avatar, AvatarGroup } from "@chakra-ui/react"
+
+
+function formatNumber(num) {
+    if (Math.abs(num) >= 1.0e9) {
+        return (Math.abs(num) / 1.0e9).toFixed(2) + "B"
+    } else if (Math.abs(num) >= 1.0e6) {
+        return (Math.abs(num) / 1.0e6).toFixed(2) + "M"
+    } else if (Math.abs(num) >= 1.0e3) {
+        return (Math.abs(num) / 1.0e3).toFixed(2) + "K"
+    } else {
+        return Math.abs(num)
+    }
+}
 
 const swap = () => {
     const [tokenData, setTokenData] = useState([])
     const [rfsDataAll, setRfsDataAll] = useState([])
     const [cardComponentData, setCardComponentData] = useState([])
+    const [chainId, setChainId] = useState(0)
 
     async function fetchTokenData() {
         //            const response = await axios.get("https://tokens.coingecko.com/uniswap/all.json")
@@ -40,6 +44,7 @@ const swap = () => {
         const provider = new ethers.providers.Web3Provider(window.ethereum)
         const signer = provider.getSigner()
         const chainId = (await provider.getNetwork()).chainId
+        setChainId(chainId)
         const contract = new ethers.Contract(networkMapping[chainId].OtcNexus, OtcNexusAbi, signer)
         let rfses = []
         let maxId = await contract.rfsIdCounter()
@@ -85,7 +90,8 @@ const swap = () => {
             return trimmedRfs
         }
         let cards = []
-        rfsDataAll.forEach((rfs) => {
+
+        const cardPromises = rfsDataAll.map(async (rfs) => {
             let trimmedRfs = trimRfs(rfs)
             let token0Data = findTokenDataForAddress(rfs.token0.toLowerCase(), tokenData)
             let tokensAcceptedData = rfs.tokensAccepted.map((address) =>
@@ -111,7 +117,39 @@ const swap = () => {
                     premium = `${rfs.priceMultiplier - 100}%`
                 }
             }
-            cards.push({
+            let price = 0
+            let totalValue = 0
+            if (chainId === 80001) {
+                const provider = new ethers.providers.Web3Provider(window.ethereum)
+                const signer = provider.getSigner()
+
+                if (mumbaiAddressesFeedAggregators[token0Data.address]) {
+                    const contract = new ethers.Contract(
+                        mumbaiAddressesFeedAggregators[token0Data.address],
+                        FeedAggregatorMumbaiAbi,
+                        signer
+                    )
+                    const decimals = await contract.decimals()
+                    const priceWithDecimals = await contract.latestAnswer()
+                    price = priceWithDecimals.toNumber() / 10 ** decimals
+                    totalValue = price * rfs.currentAmount0.toNumber()
+                }
+            }
+
+            if (rfs.typeRfs === 0) {
+                price = price * rfs.priceMultiplier
+                totalValue = totalValue * rfs.priceMultiplier
+            } else {
+                if (rfs.usdPrice > 0) {
+                    price = rfs.usdPrice.toNumber()
+                    totalValue = rfs.usdPrice * rfs.currentAmount0
+                } else {
+                    totalValue = totalValue > 0 ? totalValue.toFixed(2) : "N/A"
+                    price = price > 0 ? price : "N/A"
+                }
+            }
+
+            return {
                 condition: true,
                 label: rfs.typeRfs === 0 ? "Dynamic" : "Fixed",
                 icon: <img src={token0Data.logoURI} alt="" width="70" height="70" />,
@@ -120,9 +158,13 @@ const swap = () => {
                 showPremium: showPremium,
                 discount: discount,
                 premium: premium,
-                Price: "0.1621",
+                Price: price !== undefined && price !== "N/A" ? `$ ${price}` : "N/A",
+
                 TTokens: rfs.currentAmount0.toNumber(),
-                TValue: "1.3M",
+                TValue:
+                    totalValue !== undefined && totalValue !== "N/A"
+                        ? `$ ${formatNumber(totalValue)}`
+                        : "N/A",
                 assets: (
                     <AvatarGroup spacing={"0.5rem"} size="sm" max={tokensAcceptedData.length}>
                         {tokensAcceptedData.map((token, index) => (
@@ -131,8 +173,10 @@ const swap = () => {
                     </AvatarGroup>
                 ),
                 rfs: trimmedRfs,
-            })
+            }
         })
+
+        cards = await Promise.all(cardPromises)
         setCardComponentData(cards)
     }
 
