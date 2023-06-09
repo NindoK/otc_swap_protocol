@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useEffect, useState } from "react"
+import React, { useEffect, useState, useRef } from "react"
 import Navbar from "@components/Navbar"
 import styles from "../style"
 import axios from "axios"
@@ -32,15 +32,16 @@ import OtcNexusAbi from "@constants/abis/OtcNexusAbi"
 
 const CreateRfs = () => {
     const [tokenData, setTokenData] = useState([])
-    const [interactionType, setInteractionType] = useState("0")
+    const [interactionType, setInteractionType] = useState("")
     const [rfsType, setRfsType] = useState("")
     const [priceMultiplier, setPriceMultiplier] = useState(0)
     const [tokenOffered, setTokenOffered] = useState("") //address
-    const [tokensAccepted, setTokensAccepted] = useState("") //address[]
+    const [tokensAccepted, setTokensAccepted] = useState([]) //address[]
     const [amount0Offered, setAmount0Offered] = useState(0) //uint256
     const [amount1Requested, setAmount1Requested] = useState(0) //uint256
     const [deadline, setDeadline] = useState(0) //unix timestamp
     const [usdPrice, setUsdPrice] = useState(0) //uint256
+    const deadlineInputRef = useRef();
 
     async function fetchTokenData() {
         try {
@@ -54,6 +55,18 @@ const CreateRfs = () => {
             console.error("Error fetching token data:", error)
         }
     }
+
+    const handleDeadlineChange = (e) => {
+      setDeadline(e.target.value);
+      // Call the blur method to lose focus
+      deadlineInputRef.current.blur();
+    };
+    const resetRfsTypeDependentDate = (e) => {
+      setTokensAccepted([]);
+      setPriceMultiplier(0);
+      setUsdPrice(0);
+      setAmount1Requested(0);
+    };
 
     const handleSubmit = async (e) => {
         e.preventDefault()
@@ -76,6 +89,9 @@ const CreateRfs = () => {
                     interactionTypeSelected
                 )
             } else if (rfsType === "Fixed_Usd") {
+            console.log("Fixed_Usd")
+            console.log(tokensAccepted);
+
                 tx = await otcNexus.createFixedRfs(
                     tokenOffered,
                     tokensAccepted,
@@ -86,6 +102,8 @@ const CreateRfs = () => {
                     interactionTypeSelected
                 )
             } else if (rfsType === "Fixed_Amount") {
+            console.log("Fixed_Amount")
+            console.log(tokensAccepted);
                 tx = await otcNexus.createFixedRfs(
                     tokenOffered,
                     tokensAccepted,
@@ -115,19 +133,24 @@ const CreateRfs = () => {
     }
 
     useEffect(() => {
+        let now = new Date();
+        now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+        const minDateTime = now.toISOString().slice(0,16);
+        deadlineInputRef.current.min = minDateTime;
         fetchTokenData()
     }, [])
 
     const isFormValid = () => {
+    console.log(tokensAccepted);
         return (
          deadline !== '' &&
           tokenOffered !== '' &&
           amount0Offered !== '' &&
           interactionType !== '' &&
           rfsType !== '' &&
-          ((rfsType === 'Dynamic' && tokensAccepted !== '' && priceMultiplier !== '') ||
-            (rfsType === 'Fixed_Usd' && tokensAccepted !== '' && usdPrice !== '') ||
-            (rfsType === 'Fixed_Amount' && tokensAccepted !== '' && amount1Requested !== ''))
+          ((rfsType === 'Dynamic' && tokensAccepted.length>0 && priceMultiplier!== '') ||
+            (rfsType === 'Fixed_Usd' && tokensAccepted.length>0 && usdPrice>0) ||
+            (rfsType === 'Fixed_Amount' && tokensAccepted.length>0 && amount1Requested>0))
         );
       };
 
@@ -160,8 +183,9 @@ const CreateRfs = () => {
                                 <FormControl isRequired className="flex flex-col my-5">
                                     <FormLabel className=" font-bold">Datetime deadline</FormLabel>
                                     <Input
+                                        ref={deadlineInputRef}
                                         value={deadline}
-                                        onChange={(e) => setDeadline(e.target.value)}
+                                        onChange={handleDeadlineChange}
                                         placeholder="Select Date and Time"
                                         size="md"
                                         type="datetime-local"
@@ -214,7 +238,7 @@ const CreateRfs = () => {
                                     </NumberInput>
                                 </FormControl>
 
-                                <FormControl>
+                                <FormControl isRequired>
                                     <RadioGroup
                                         onChange={setInteractionType}
                                         value={interactionType}
@@ -227,7 +251,7 @@ const CreateRfs = () => {
                                 </FormControl>
 
                                 <FormControl>
-                                    <RadioGroup onChange={setRfsType} value={rfsType}>
+                                    <RadioGroup onChange={(value) => {setRfsType(value); resetRfsTypeDependentDate();}} value={rfsType}>
                                         <Stack direction="row">
                                             <Radio value="Dynamic">Dynamic</Radio>
                                             <Radio value="Fixed_Usd">Fixed Usd</Radio>
@@ -250,7 +274,7 @@ const CreateRfs = () => {
                                             <Box p={4}>
                                                 <PercentageSlider
                                                     value={priceMultiplier}
-                                                    onChange={setPriceMultiplier}
+                                                    setPriceMultiplier={setPriceMultiplier}
                                                 />
                                             </Box>
                                         </FormControl>
@@ -327,6 +351,7 @@ const CreateRfs = () => {
                                                 defaultValue={15}
                                                 precision={4}
                                                 step={0.2}
+                                                min={0}
                                             >
                                                 <NumberInputField />
                                                 <NumberInputStepper>
