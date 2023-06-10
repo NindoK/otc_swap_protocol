@@ -160,7 +160,7 @@ async function createOrder() {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "PayPal-Request-Id": "1100000-0001-1106-0e48-1d132050476a",
+      "PayPal-Request-Id": "1100000-0001-1106-0e40-00130050476a",
       Authorization: `Bearer ${access_token}`,
     },
     body: JSON.stringify({

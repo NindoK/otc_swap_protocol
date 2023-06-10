@@ -15,6 +15,7 @@ import coingeckoCachedResponse from "@constants/coingeckoCachedResponse"
 import mumbaiAddressesFeedAggregators from "@constants/mumbaiAddressesFeedAggregators"
 import FeedAggregatorMumbaiAbi from "@constants/abis/FeedAggregatorMumbaiAbi"
 import receiverAbiJson from "@constants/abis/ReceiverAbi"
+import IERC20Abi from "@constants/abis/IERC20Abi"
 import { PayPalScriptProvider, PayPalButtons } from "@paypal/react-paypal-js"
 import { ConnectButton } from "@rainbow-me/rainbowkit"
 const initialOptions = {
@@ -148,8 +149,9 @@ const ConfirmSwap = () => {
     e.preventDefault()
     const provider = new ethers.providers.Web3Provider(window.ethereum)
     const signer = provider.getSigner()
-    const erc20 = new ethers.Contract(tokenOffered, IERC20Abi, signer)
-    let tx = await erc20.approve(networkMapping[chainId].OtcNexus, ethers.utils.parseEther(amount0Offered))
+    const chainId = (await provider.getNetwork()).chainId
+    const erc20 = new ethers.Contract(tokenOne.address, IERC20Abi, signer)
+    let tx = await erc20.approve(networkMapping[chainId].OtcNexus, ethers.utils.parseEther(amountToBuyRef.current))
     const receipt = await tx.wait()
     if (receipt)
       toast({
@@ -172,37 +174,6 @@ const ConfirmSwap = () => {
     } else {
       tx = await otcNexus.takeFixedRfs(rfs.id, ethers.utils.parseUnits(amountToBuyRef.current), index)
     }
-
-    console.log(tx)
-    // /**
-    //  * @notice take a fixed price RFS
-    //  * @param _id id of the RFS
-    //  * @param _paymentTokenAmount amount of tokens used to pay for the RFS
-    //  * @param index index of the token used to buy
-    //  * @return success
-    //  */
-    // function takeFixedRfs(
-    //     uint256 _id,
-    //     uint256 _paymentTokenAmount,
-    //     uint256 index
-    // ) external returns (bool success) {
-    //     return takeRfs(_id, _paymentTokenAmount, index, RfsType.FIXED);
-    // }
-
-    // /**
-    //  * @notice take a dynamic price RFS
-    //  * @param _id id of the RFS
-    //  * @param _paymentTokenAmount amount of tokens used to pay for the RFS
-    //  * @param index index of the token used to buy
-    //  * @return success
-    //  */
-    // function takeDynamicRfs(
-    //     uint256 _id,
-    //     uint256 _paymentTokenAmount,
-    //     uint256 index
-    // ) external returns (bool success) {
-    //     return takeRfs(_id, _paymentTokenAmount, index, RfsType.DYNAMIC);
-    // }
   }
   // Sign and submit a transaction by accepting a JSON object which contains the transaction details
   const signAndSubmitTransaction = async (json) => {

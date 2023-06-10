@@ -13,11 +13,11 @@ const contract = new ethers.Contract(CONTRACT_ADDRESS, ABI, wallet)
 
 const id = process.argv[2]
 
-const token0Bought = 100
+const token0Bought = "0.01"
 const takerAddress = "0x5103e399eaa2d0851dba00ad2c026cf75cc062ab"
 
 async function sendTransaction() {
-  const tx = await contract.takeDynamicRfsPaypal(id, token0Bought, takerAddress)
+  const tx = await contract.takeDynamicRfsPaypal(id, ethers.utils.parseEther(token0Bought), takerAddress)
   console.log("Transaction hash: ", tx.hash)
 
   const receipt = await tx.wait()

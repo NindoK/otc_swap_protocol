@@ -5,8 +5,9 @@
 
 **Our primary goal is to add a layer of easiness to embark new users into web3 with PayPal integration.**
 
-Our vision is to transform the web3 experience by infusing it with an unprecedented level of simplicity and user-friendliness. We believe that by integrating functionalities akin to widely-used platforms like PayPal, we can significantly accelerate user adoption. This innovative approach positions us to truly excel and redefine success in the web3 landscape.
+Our vision is to revolutionize the web3 experience by seamlessly infusing it with an unparalleled level of simplicity and user-friendliness. We are confident that by integrating features akin to widely-used platforms such as PayPal, we can significantly boosts user adoption. Retailers need a swift and uncomplicated gateway to the web3 infrastructure, but the multitude of transactions required in web3 for sending money globally can pose challenges.
 
+By enabling retailers to make simple payments using PayPal - a platform they are already familiar with - alongside having only a Metamask wallet, we create a straightforward pathway for them to purchase their preferred tokens. This convergence of traditional payment methods and blockchain technology is our way of bridging the gap between the existing retail market and the burgeoning world of web3.
 
 
 ### How you’ve addressed the problem
@@ -15,7 +16,7 @@ Technically we implemented the call to ChainkLink Functions to perform offchaink
 
 Alongside we built the OTC Swap protocol with small innovation - the user can swap tokens without depositing them into smart contract but only approving them.
 
-The fundamental idea is to allow on-chain peer-to-peer trading of ERC-20 tokens without using an exchange. One The advantage is mainly for those who need to trade relatively big size that would cause large slippage and sandwich attacks on DEX. Another advantage is to create an on-chain market for exotic products - here: options on altcoins - that are usually traded OTC, thus avoiding counterparty risk and/or the need for a 3rd party.
+The fundamental idea is to allow on-chain peer-to-peer trading of ERC-20 tokens without using an exchange, allowing whales exit liquidity without impacting charts. This will allow them to trade their big sizes, avoiding sandwich attacks on DEX. Another advantage is to create an on-chain market for exotic products - here: options on altcoins - that are usually traded OTC, thus avoiding counterparty risk and/or the need for a 3rd party.
 
 ### Which technologies you used to do so
 
@@ -35,14 +36,17 @@ Relayer refers to an entity (usually a server or service) that broadcasts transa
 
 ##### Process:
 
-The user A wants to perform swap (ie. buy altcoin) using PayPal account. The maker B had made his/ her PayPal account known to smart contract while creating RFS.
+User A wants to perform a swap (ie. buy altcoin) using PayPal account and create a payment order. The maker B had made his/her PayPal account known to smart contract while creating RFS.
 
-A process, known as a meta-transaction, is initiated where a relayer (a third-party service) conducts the transaction on behalf of the user A. The relayer invokes a function via Chainlink that interfaces with PayPal's source code and API to verify if the payment has been approved. If the payment is indeed authorized, it's then captured.
+User A is requested to sign a meta-transaction (EIP-712 signed message) is initiated where a relayer (a third-party service) conducts the transaction on behalf of the user A. The relayer invokes a function via Chainlink that sends the JS source code to call Paypal's API to verify if the payment has been approved. If the payment is indeed authorized, it's then captured.
 
-After the payment is successfully captured, the relayer triggers a transaction to transfer the desired tokens from the otcnexus protocol to User A's account. Note that these tokens must be pre-deposited within the contract.
+After the payment is successfully captured, the relayer triggers a transaction to transfer the desired tokens from the OtcNexus protocol to User A's account. Note that these tokens must be pre-deposited within the contract.
 
 Following the successful token transfer, a final payment is issued to User B via PayPal, again utilizing Chainlink's functions. The ultimate aim is to create a seamless experience for the user to purchase tokens directly with their PayPal account from a smart contract.
 
+The flow can be schematized as follow:
+
+User A pays with Paypal => Sign EIP-712 meta-txn => It gets sent to the relayer => Relayer perform the txn calling chainlink functions with Paypal API => First payment order is settled => On the callback the swap is performed (user gets his token) => Final payment is made using Paypal API and seller gets his money
 
 ### Definitions
 
@@ -77,10 +81,10 @@ Therefore we have the following RFS types. In this context Listed Altcoins are a
 |--------------------------------------|---------------------|---------------------------|-----------------------|
 | Dynamic RFS- Token Offered           | No                  | No                        | Yes                   |
 | Dynamic RFS - Token(s) Accepted      | Yes                 | No                        | Yes                   |
-| Fixed USD RFS - Token Offered        | No                 | Yes                       | Yes                   |
-| Fixed USD RFS - Token(s) Accepted    | Yes               | Yes                       | Yes                   |
-| Fixed Amount RFS - Token Offered     | No              | Yes                       | Yes                   |
-| Fixed Amount RFS - Token(s) Accepted | No             | Yes                       | Yes                   |
+| Fixed USD RFS - Token Offered        | No                  | Yes                       | Yes                   |
+| Fixed USD RFS - Token(s) Accepted    | Yes                 | Yes                       | Yes                   |
+| Fixed Amount RFS - Token Offered     | No                  | Yes                       | Yes                   |
+| Fixed Amount RFS - Token(s) Accepted | No                  | Yes                       | Yes                   |
 
 
 ## Developer's guide
@@ -158,11 +162,11 @@ export pk=0xac097(...)
 ```
 Deploy smart contracts for the first time:
 ```
-forge script ./script/DeployLocal.sol:DeployLocal --fork-url http://localhost:8545 --private-key $pk --broadcast --resume
+forge script ./script/DeployLocal.sol:DeployLocal --fork-url http://localhost:8545 --private-key $pk --broadcast
 ```
 Deploy smart contracts - later runs:
 ```
-forge script ./script/DeployLocal.sol:DeployLocal --fork-url http://localhost:8545 --private-key $pk --broadcast
+forge script ./script/DeployLocal.sol:DeployLocal --fork-url http://localhost:8545 --private-key $pk --broadcast --resume
 ```
 After deployment two directories will be created:
 - /out -> where you have ABIs to your smart contracts
