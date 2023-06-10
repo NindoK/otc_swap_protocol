@@ -80,6 +80,8 @@ Therefore we have the following RFS types. In this context Listed Altcoins are a
 
 ## OTC Option
 
+The OtcOption contract allows to trade OTC options with physical delivery.
+
 ### Definitions
 
 - Option: a financial derivative that gives the buyer the right, but not the obligation, to buy or sell an asset at a specified price within a certain period.
@@ -88,9 +90,28 @@ Therefore we have the following RFS types. In this context Listed Altcoins are a
 - Deal: equivalent of a RFS for options.
 - Maker: the address that creates a deal. The maker will determine all the deal parameters
 - Taker: the address that accepts a deal and will be the counterparty of the maker.
+- Underlying token: base token to exchange.
+- Quote token: token that is used to price the underlying token.
 - Strike: the predetermined price at which an option can be exercised, either to buy (call option) or sell (put option).
 - Maturity: time after which the deal expires and can be settled.
+- Premium: amount of quote token that the buyer is willing to pay for the option.
 
+### Process
+
+- A maker creates a new deal. Depending on the option type and whether the maker is a buyer or seller (side), the maker will deposit a certain amount of underlying token or quote token.
+- A taker decides to accept the deal. Depending on the option type and side, the taker deposit a certain amount of underlying token or quote token.
+- The deal expires.
+- The Chainlink pricefeed is used to determine whether the deal is in the money (ITM) or out of the money (OTM). In particular:
+  - The deal is in the money if it is a call and the current price is above the strike price, or if it is a put and the current price is below the strike price.
+  - The deal is out of the money otherwise.
+- Three cases can happen:
+  - The deal is exercisable (ITM) and the buyer can settle it.
+  - The deal is not exercisable (OTM) and the seller can settle it.
+  - 24 hours have passed since the maturity date time, and the deal is removed. This feature is used to allow the seller to recover their margin in case the option is ITM but the buyer never exercised it.
+
+### Flowchart
+
+![Options Flowchart](./options_flowchart.jpg)
 
 ## Developer's guide
 
