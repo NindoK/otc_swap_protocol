@@ -432,7 +432,7 @@ contract OtcNexus is Ownable {
         RFS memory rfs = getRfs(_id);
 
         // sanity checks
-        if (rfs.interactionType == TokenInteractionType.TOKEN_DEPOSITED)
+        if (rfs.interactionType != TokenInteractionType.TOKEN_DEPOSITED)
             revert OtcNexus__InvalidInteractionTypeForPaypal();
         if (rfs.removed || rfs.id == 0) revert OtcNexus__RfsRemoved();
         if (rfs.typeRfs != expectedRfsType) revert OtcNexus__InvalidRfsType();
