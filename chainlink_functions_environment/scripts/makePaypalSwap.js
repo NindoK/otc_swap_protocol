@@ -1,6 +1,6 @@
 const ethers = require("ethers")
 require("dotenv").config()
-const OtcNexusAbi = require("../frontend/constants/abis/OtcNexusAbi")
+const OtcNexusAbi = require("../../frontend/constants/abis/OtcNexusAbi")
 const PRIVATE_KEY = process.env.PRIVATE_KEY
 const provider = new ethers.providers.JsonRpcProvider(process.env.MUMBAI_RPC_URL)
 
