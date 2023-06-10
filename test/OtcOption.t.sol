@@ -415,7 +415,6 @@ contract OtcOptionTest is Test {
         vm.prank(taker);
         vm.expectRevert(Option__NotDealMaker.selector);
         otcOption.removeDeal(dealId);
-
         // maker can remove
         vm.startPrank(maker);
         otcOption.removeDeal(dealId);
@@ -435,7 +434,7 @@ contract OtcOptionTest is Test {
                 assertEq(ERC20(quoteToken).balanceOf(address(maker)), deal.quoteAmount);
             }
         }
-
+        vm.stopPrank();
         // the deal is no longer open and cannot be taken
         vm.prank(taker);
         vm.expectRevert(Option__DealNotOpen.selector);
