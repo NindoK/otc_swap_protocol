@@ -55,12 +55,6 @@ User A pays with Paypal => Sign EIP-712 meta-txn => It gets sent to the relayer 
 - Maker: the address that creates the RFS, and wants to swap x token0 for y token1.
 - Taker: the address that fills the RFS, and wants to swap y token1 for x token0.
 - Swap: fill partially or completely RFS
-- Option: A financial derivative that gives the holder the right, but not the obligation, to buy or sell an asset at a specified price within a certain period.
-- Put Option: A financial contract that gives the holder the right to sell an asset at a specified price within a specific timeframe.
-- Strike: The predetermined price at which an option can be exercised, either to buy (call option) or sell (put option).
-- Take Deal: Accepting the terms and conditions of an existing deal or contract.
-- Create Deal: Setting up new terms and conditions for a potential deal or contract.
-- Call Option: A financial contract that gives the holder the right to buy an asset at a specified price within a specific timeframe.
 
 ### Use case documentation
 
@@ -72,8 +66,6 @@ User connects his/ her wallet. The user can:
   - user can accept token1, token2 ... etc. at their current price but fix the price of offered tokens in USD (fixed USD RFS type)
   - user can accept payments in fiat via PayPal
 - swap - ie. fill RFS
-- create deal - option
-- take deal - option
 
 Therefore we have the following RFS types. In this context Listed Altcoins are altcoins whose price feeds are available by ChainLink Oracles; non-listed altcoins - whose price feeds are not:
 
@@ -86,6 +78,40 @@ Therefore we have the following RFS types. In this context Listed Altcoins are a
 | Fixed Amount RFS - Token Offered     | No                  | Yes                       | Yes                   |
 | Fixed Amount RFS - Token(s) Accepted | No                  | Yes                       | Yes                   |
 
+## OTC Option
+
+The OtcOption contract allows to trade OTC options with physical delivery.
+
+### Definitions
+
+- Option: a financial derivative that gives the buyer the right, but not the obligation, to buy or sell an asset at a specified price within a certain period.
+- Put Option: a type of option that gives the buyer the right to sell an asset at a specified price within a specific timeframe.
+- Call Option: a type of option that gives the buyer the right to buy an asset at a specified price within a specific timeframe.
+- Deal: equivalent of a RFS for options.
+- Maker: the address that creates a deal. The maker will determine all the deal parameters
+- Taker: the address that accepts a deal and will be the counterparty of the maker.
+- Underlying token: base token to exchange.
+- Quote token: token that is used to price the underlying token.
+- Strike: the predetermined price at which an option can be exercised, either to buy (call option) or sell (put option).
+- Maturity: time after which the deal expires and can be settled.
+- Premium: amount of quote token that the buyer is willing to pay for the option.
+
+### Process
+
+- A maker creates a new deal. Depending on the option type and whether the maker is a buyer or seller (side), the maker will deposit a certain amount of underlying token or quote token.
+- A taker decides to accept the deal. Depending on the option type and side, the taker deposit a certain amount of underlying token or quote token.
+- The deal expires.
+- The Chainlink pricefeed is used to determine whether the deal is in the money (ITM) or out of the money (OTM). In particular:
+  - The deal is in the money if it is a call and the current price is above the strike price, or if it is a put and the current price is below the strike price.
+  - The deal is out of the money otherwise.
+- Three cases can happen:
+  - The deal is exercisable (ITM) and the buyer can settle it.
+  - The deal is not exercisable (OTM) and the seller can settle it.
+  - 24 hours have passed since the maturity date time, and the deal is removed. This feature is used to allow the seller to recover their margin in case the option is ITM but the buyer never exercised it.
+
+### Flowchart
+
+![Options Flowchart](./options_flowchart.jpg)
 
 ## Developer's guide
 
