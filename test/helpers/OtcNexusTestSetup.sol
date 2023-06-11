@@ -14,6 +14,7 @@ contract OtcNexusTestSetup is Test {
     address public deployer = address(new TestAddress());
     address public maker = address(new TestAddress());
     address public taker = address(new TestAddress());
+    address public relayer = address(new TestAddress());
     OtcNexus public otcNexus;
     OtcToken public token0;
     OtcToken public token1;
@@ -22,6 +23,8 @@ contract OtcNexusTestSetup is Test {
     uint public supplyToken1 = 1_000_000 * 1e6 * 1e18;
     uint public supplyOtcFeeToken = 1_000 * 1e18;
     address[] _tokensAcceptedToken1;
+    uint amount0 = supplyToken0 / 100;
+    uint amount1 = supplyToken1 / 100;
 
     function setUp() public {
         vm.startPrank(deployer);
@@ -29,6 +32,7 @@ contract OtcNexusTestSetup is Test {
         token1 = new OtcToken("Test DAI", "DAI", supplyToken1, 6);
         otcFeeToken = new OtcToken("Test Fee Token", "OTCFEE", supplyOtcFeeToken, 18);
         otcNexus = new OtcNexus(address(otcFeeToken));
+        otcNexus.setRelayerAddress(relayer);
         _tokensAcceptedToken1 = new address[](1);
         _tokensAcceptedToken1[0] = address(token1);
 
@@ -124,7 +128,7 @@ contract OtcNexusTestSetup is Test {
         assertEq(token0.balanceOf(maker), startBalance - amount0);
     }
     
-    function createFixedApprovedRfs(
+    function createFixedAmountApprovedRfs(
         uint amount0,
         uint amount1,
         uint deadline
@@ -158,7 +162,7 @@ contract OtcNexusTestSetup is Test {
         assertEq(token0.allowance(maker, address(otcNexus)), amount0);
     }
     
-    function createFixedDepositedRfs(
+    function createFixedAmountDepositedRfs(
         uint amount0,
         uint amount1,
         uint deadline
@@ -182,6 +186,72 @@ contract OtcNexusTestSetup is Test {
             amount0,
             amount1,
             0,
+            deadline,
+            OtcNexus.TokenInteractionType.TOKEN_DEPOSITED
+        );
+        vm.stopPrank();
+        
+        // check final balance
+        assertEq(token0.balanceOf(maker), startBalance - amount0);
+    }
+    function createFixedUsdApprovedRfs(
+        uint amount0,
+        uint usdPrice,
+        uint deadline
+    ) public returns (uint rfsId) {
+        vm.assume(0 < amount0 && amount0 <= supplyToken0 / 100);
+        vm.assume(0 < usdPrice);
+        vm.assume(deadline >= block.timestamp);
+        
+        vm.prank(deployer);
+        token0.transfer(maker, amount0);
+        
+        vm.startPrank(maker);
+        token0.approve(address(otcNexus), amount0);
+        
+        uint startBalance = token0.balanceOf(maker);
+        
+        // create RFS
+        rfsId = otcNexus.createFixedRfs(
+            address(token0),
+            _tokensAcceptedToken1,
+            amount0,
+            0,
+                usdPrice,
+            deadline,
+            OtcNexus.TokenInteractionType.TOKEN_APPROVED
+        );
+        vm.stopPrank();
+        
+        // check final balance
+        assertEq(token0.balanceOf(maker), startBalance);
+        assertEq(token0.allowance(maker, address(otcNexus)), amount0);
+    }
+    
+    function createFixedUsdDepositedRfs(
+        uint amount0,
+        uint usdPrice,
+        uint deadline
+    ) public returns (uint rfsId) {
+        vm.assume(0 < amount0 && amount0 <= supplyToken0 / 100);
+        vm.assume(0 < usdPrice && usdPrice <10); // to not exceed balance
+        vm.assume(deadline >= block.timestamp);
+        
+        vm.prank(deployer);
+        token0.transfer(maker, amount0);
+        
+        vm.startPrank(maker);
+        token0.approve(address(otcNexus), amount0);
+        
+        uint startBalance = token0.balanceOf(maker);
+        
+        // create RFS
+        rfsId = otcNexus.createFixedRfs(
+            address(token0),
+            _tokensAcceptedToken1,
+            amount0,
+            0,
+                usdPrice,
             deadline,
             OtcNexus.TokenInteractionType.TOKEN_DEPOSITED
         );

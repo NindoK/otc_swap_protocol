@@ -8,9 +8,11 @@ import "./helpers/OtcNexusTestSetup.sol";
 
 contract OtcNexusCreateRfsTest is OtcNexusTestSetup {
     
-    function test_createRfs_allKinds(uint amount0, uint amount1, uint deadline) public {
-        createFixedDepositedRfs(amount0, amount1, deadline);
-        createFixedApprovedRfs(amount0, amount1, deadline);
+    function test_createRfs_allKinds(uint amount0, uint amount1, uint deadline, uint usd) public {
+        createFixedAmountDepositedRfs(amount0, usd, deadline);
+        createFixedAmountApprovedRfs(amount0, amount1, deadline);
+        createFixedUsdDepositedRfs(amount0, usd, deadline);
+        createFixedUsdApprovedRfs(amount0, amount1, deadline);
         createDynamicDepositedRfs(amount0, amount1, deadline);
         createDynamicApprovedRfs(amount0, amount1, deadline);
     }
@@ -200,7 +202,7 @@ contract OtcNexusCreateRfsTest is OtcNexusTestSetup {
     function test_createRfs_success(uint amount0, uint amount1, uint deadline, uint8 n) public {
         vm.assume(0 < n && n < 32);
         for (uint8 i = 1; i < n; ++i) {
-            uint rfsId = createFixedDepositedRfs(amount0, amount1, deadline);
+            uint rfsId = createFixedAmountDepositedRfs(amount0, amount1, deadline);
             require(rfsId == i);
             OtcNexus.RFS memory rfs = otcNexus.getRfs(rfsId);
             assertEq(rfs.token0, address(token0));
@@ -212,7 +214,7 @@ contract OtcNexusCreateRfsTest is OtcNexusTestSetup {
     }
 
     function test_removeRfs_failNotMaker(uint amount0, uint amount1, uint deadline) public {
-        uint rfsId = createFixedDepositedRfs(amount0, amount1, deadline);
+        uint rfsId = createFixedAmountDepositedRfs(amount0, amount1, deadline);
         vm.prank(address(new TestAddress()));
         vm.expectRevert(OtcNexus__NotMaker.selector);
         otcNexus.removeRfs(rfsId, false);
@@ -220,7 +222,7 @@ contract OtcNexusCreateRfsTest is OtcNexusTestSetup {
     }
 
     function test_removeRfs_success(uint amount0, uint amount1, uint deadline) public {
-        uint rfsId = createFixedDepositedRfs(amount0, amount1, deadline);
+        uint rfsId = createFixedAmountDepositedRfs(amount0, amount1, deadline);
         uint startBalance = token0.balanceOf(maker);
         assertEq(token0.balanceOf(maker), 0);
         vm.prank(address(otcNexus));
