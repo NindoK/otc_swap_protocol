@@ -198,7 +198,33 @@ contract OtcNexusCreateRfsTest is OtcNexusTestSetup {
         );
         vm.stopPrank();
     }
-
+    function test_createRfs_failTooManyAcceptanceTokens(uint amount0, uint usdPrice, uint deadline) public {
+        vm.assume(amount0 > 0);
+        vm.assume(0 < usdPrice && usdPrice <10); // to not exceed balance
+        vm.assume(deadline >= block.timestamp);
+        vm.startPrank(maker);
+        token0.approve(address(otcNexus), amount0);
+        
+        address[] memory tokensAccepted = new address[](6);
+        tokensAccepted[0] = address(token1);
+        tokensAccepted[1] = address(new TestAddress());
+        tokensAccepted[2] = address(new TestAddress());
+        tokensAccepted[3] = address(new TestAddress());
+        tokensAccepted[4] = address(new TestAddress());
+        tokensAccepted[5] = address(new TestAddress());
+        vm.expectRevert(OtcNexus__InvalidTokenAddresses.selector);
+        otcNexus.createFixedRfs(
+            address(token0),
+            tokensAccepted,
+            amount0,
+            0,
+            usdPrice,
+            deadline,
+            OtcNexus.TokenInteractionType.TOKEN_DEPOSITED
+        );
+        vm.stopPrank();
+    }
+    
     function test_createRfs_success(uint amount0, uint amount1, uint deadline, uint8 n) public {
         vm.assume(0 < n && n < 32);
         for (uint8 i = 1; i < n; ++i) {
