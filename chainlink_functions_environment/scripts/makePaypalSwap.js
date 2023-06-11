@@ -6,7 +6,7 @@ const provider = new ethers.providers.JsonRpcProvider(process.env.MUMBAI_RPC_URL
 
 const wallet = new ethers.Wallet(PRIVATE_KEY, provider)
 
-const CONTRACT_ADDRESS = "0xbF40Cbb12e0Aef9c2700fCb0C698e992161C5362"
+const CONTRACT_ADDRESS = process.env.OTC_NEXUS_ADDRESS
 const ABI = OtcNexusAbi
 
 const contract = new ethers.Contract(CONTRACT_ADDRESS, ABI, wallet)
@@ -14,7 +14,7 @@ const contract = new ethers.Contract(CONTRACT_ADDRESS, ABI, wallet)
 const id = process.argv[2]
 
 const token0Bought = "0.01"
-const takerAddress = "0x5103e399eAA2D0851DbA00ad2c026cf75cC062AB"
+const takerAddress = process.env.TAKER_ADDRESS
 
 async function sendTransaction() {
   const tx = await contract.takeDynamicRfsPaypal(id, ethers.utils.parseEther(token0Bought), takerAddress)

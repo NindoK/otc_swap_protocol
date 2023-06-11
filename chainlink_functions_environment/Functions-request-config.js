@@ -31,7 +31,6 @@ const requestConfig = {
   // String containing the source code to be executed
   // source: fs.readFileSync("./paypal_approve_payment.js").toString(),
   source: fs.readFileSync("./paypal_send_money.js").toString(),
-  //source: fs.readFileSync('./API-request-example.js').toString(),
   // Secrets can be accessed within the source code with `secrets.varName` (ie: secrets.apiKey). The secrets object can only contain string values.
   secrets: { clientId: process.env.PAYPAL_CLIENT_ID ?? "", clientSecret: process.env.PAYPAL_CLIENT_SECRET ?? "" },
   // Per-node secrets objects assigned to each DON member. When using per-node secrets, nodes can only use secrets which they have been assigned.
@@ -39,8 +38,8 @@ const requestConfig = {
   // ETH wallet key used to sign secrets so they cannot be accessed by a 3rd party
   walletPrivateKey: process.env.PRIVATE_KEY,
   // Args (string only array) can be accessed within the source code with `args[index]` (ie: args[0]).
-  // args: ["99791347JT784071N"],
-  args: ["sb-ow4im25993315@personal.example.com", "100.00", "EUR"],
+  // args: [$ORDER_ID_TO_BE_FILLED],
+  args: [$PAYPAL_EMAIL, $AMOUNT, $CURRENCY],
   // Expected type of the returned value
   expectedReturnType: ReturnType.string,
   // Redundant URLs which point to encrypted off-chain secrets

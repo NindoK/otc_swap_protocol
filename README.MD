@@ -145,9 +145,7 @@ https://github.com/NindoK/otc_swap_protocol/blob/main/frontend/constants/network
 
 Run on L2:
 ```
-cd ./frontend
-npm install
-npm run dev
+(cd ./frontend) && npm install && npm run dev
 ```
 
 ### Run on local chain
@@ -161,7 +159,7 @@ forge install
 
 Now in `lib/` all the required packages should be available.
 
-ENV file - run the following:
+ENV file - run the following for root directory, `frontend` and `chainlink_functions_environment/relayer`:
 ```
 mv .env.example .env
 ```
@@ -182,17 +180,22 @@ forge coverage
 ```
 anvil
 ```
-Export private key from anvil's addresses listed in console out:
+Export private key from anvil's addresses listed in console out and then save it in .env file:
 ```
-export pk=0xac097(...)
+PRIVATE_KEY=0x4d9x...cdc912
 ```
+Then run in terminal:
+```
+source .env
+```
+
 Deploy smart contracts for the first time:
 ```
-forge script ./script/DeployLocal.sol:DeployLocal --fork-url http://localhost:8545 --private-key $pk --broadcast
+forge script ./script/DeployLocal.sol:DeployLocal --fork-url http://localhost:8545 --broadcast
 ```
 Deploy smart contracts - later runs:
 ```
-forge script ./script/DeployLocal.sol:DeployLocal --fork-url http://localhost:8545 --private-key $pk --broadcast --resume
+forge script ./script/DeployLocal.sol:DeployLocal --fork-url http://localhost:8545 --broadcast --resume
 ```
 After deployment two directories will be created:
 - /out -> where you have ABIs to your smart contracts
@@ -225,3 +228,91 @@ Connect wallet with network:
 - restart anvil
 - redeploy forge script
 - rerun frontend
+
+### Paypal setup
+
+To be able to perform the Paypal transactions using the relayer first install the dependencies:
+
+```
+cd chainlink_functions_environment/relayer && yarn
+```
+
+Create the `.env`file and populate the variables:
+
+```
+mv .env.example .env
+```
+
+From the root project run with anvil a local node by making sure to deploy only the `ReceiverStable.sol`:
+
+```
+cd ../../ && anvil
+```
+
+And run in another terminal:
+
+```
+forge script ./script/DeployLocal.sol:DeployLocal --fork-url http://localhost:8545 --broadcast
+```
+
+Now that the relayer is up and running, we just need to start our backend by using:
+
+```
+cd chainlink_functions_environment/relayer && yarn start
+```
+
+Now we can sign EIP712 messages and the batches are sent to the relayer.
+
+#### Frontend
+To be able to make Paypal transaction we need to set the environment variables to pass the `CLIENT_ID` and `CLIENT_SECRET` for Paypal:
+
+```
+cd frontend && mv .env.example .env
+```
+
+Populate the respective field and the app is ready to go.
+
+#### Chainlink functions simulation
+
+Due to lack of time and technological problems we weren't able to provide a flow that was able to perform everything in one transaction, thus we had to split everything in small steps.
+
+##### Paypal capture order
+
+After the user have made a payment from the frontend, we can capture that payment running the `paypal_approve_payment.js` script inside the chainlink nodes by using `npx hardhat functions-simulate`.
+
+Make sure that the following line is uncommented:
+
+```
+source: fs.readFileSync("./paypal_approve_payment.js").toString(),
+```
+
+And fill the order_id found in the console of the frontend:
+```
+args: [$ORDER_ID_TO_BE_FILLED],
+```
+
+##### Perform the swap
+
+To perform the swap and send the tokens from the contract to the taker, first be sure to have filled all the correct data in the `.env` file.
+
+Then run the following command, where `$RFS_ID` should be an integer referring to the id of the RFS:
+
+```
+node makePaypalSwap.js $RFS_ID
+```
+
+##### Paypal paying the seller
+
+After the swap have been performed, the only thing left is to pay the seller by sending the script `paypal_send_money.js` to the chainlink nodes.
+
+Make sure that the following line is uncommented:
+
+```
+source: fs.readFileSync("./paypal_send_money.js").toString(),
+```
+
+And fill `$PAYPAL_EMAIL`, `$AMOUNT`, `$CURRENCY` which are, respectively, the paypal email of the seller, the amount he should be payed and the currency used.
+
+```
+args: [$PAYPAL_EMAIL, $AMOUNT, $CURRENCY],
+```

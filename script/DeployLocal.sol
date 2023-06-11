@@ -7,6 +7,7 @@ import "../src/OtcNexus.sol";
 import "../src/OtcOption.sol";
 import "../src/OtcToken.sol";
 import "../src/Receiver.sol";
+import "../src/ReceiverStable.sol";
 
 ///@notice Script to deploy contracts to local blockchain
 /*
@@ -34,6 +35,7 @@ contract DeployLocal is Script {
         OtcToken otcToken = new OtcToken("Test WETH", "tWETH", 1_000 * 1e18, 18);
         OtcNexus otcNexus = new OtcNexus(address(otcToken));
         // Receiver receiver = new Receiver();
+        // ReceiverStable receiver = new ReceiverStable();
         OtcOption otcOption = new OtcOption();
         //        MockV3Aggregator mockChainlinkAggregator = new MockV3Aggregator(8, 2000*(10**8));
         // address[] memory tokensAccepted = new address[](1);
