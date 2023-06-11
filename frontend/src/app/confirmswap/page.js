@@ -7,7 +7,7 @@ import { DownOutlined, SettingOutlined } from "@ant-design/icons"
 import Image from "next/image"
 import axios from "axios"
 import { signEIP712Message, submitSignedMessage } from "@utils/signature"
-import { HStack, Button, VStack } from "@chakra-ui/react"
+import { HStack, Button, VStack, useToast } from "@chakra-ui/react"
 import OtcNexusAbi from "@constants/abis/OtcNexusAbi"
 import { ethers } from "ethers"
 import networkMapping from "@constants/networkMapping"
@@ -24,6 +24,7 @@ const initialOptions = {
 }
 
 const ConfirmSwap = () => {
+    const toast=useToast();
     const [tokenData, setTokenData] = useState([])
     const [tokenOneAmount, setTokenOneAmount] = useState(null)
     const [tokenTwoAmount, setTokenTwoAmount] = useState(null)
@@ -164,7 +165,7 @@ const ConfirmSwap = () => {
         const provider = new ethers.providers.Web3Provider(window.ethereum)
         const signer = provider.getSigner()
         const chainId = (await provider.getNetwork()).chainId
-        const erc20 = new ethers.Contract(tokenOne.address, IERC20Abi, signer)
+        const erc20 = new ethers.Contract(tokenTwo.address, IERC20Abi, signer)
         let tx = await erc20.approve(
             networkMapping[chainId].OtcNexus,
             ethers.utils.parseEther(amountToBuyWithRef.current.toString().slice(0, 18))
@@ -186,18 +187,35 @@ const ConfirmSwap = () => {
         const otcNexus = new ethers.Contract(networkMapping[chainId].OtcNexus, OtcNexusAbi, signer)
         const index = tokenData.findIndex((e) => e.address === tokenTwo.address)
         let tx
+        let receipt
         if (rfs.typeRfs === 0) {
             tx = await otcNexus.takeDynamicRfs(
                 rfs.id,
                 ethers.utils.parseUnits(amountToBuyWithRef.current.toString().slice(0, 18)),
                 index
             )
+        receipt = await tx.wait()
+        if (receipt)
+            toast({
+                title: "swap succeeded!",
+                status: "success",
+                duration: 9000,
+                isClosable: true,
+            })
         } else {
             tx = await otcNexus.takeFixedRfs(
                 rfs.id,
                 ethers.utils.parseUnits(amountToBuyWithRef.current.toString().slice(0, 18)),
                 index
             )
+          receipt = await tx.wait()
+          if (receipt)
+              toast({
+                  title: "swap succeeded!",
+                  status: "success",
+                  duration: 9000,
+                  isClosable: true,
+              })
         }
     }
     // Sign and submit a transaction by accepting a JSON object which contains the transaction details
@@ -469,17 +487,19 @@ const ConfirmSwap = () => {
                                 )}
                                 <div className="w-full flex justify-center mb-5 mt-5">
                                     <Button
+                                        onClick={handleApprove}
+                                        className="bg-blue-gradient rounded-xl h-fit w-fit py-2  px-14"
+                                        style={{ marginRight: "15px" }}
+                                    >
+                                        Approve
+                                    </Button>
+                                    <Button
                                         onClick={handleSwap}
                                         className="bg-blue-gradient rounded-xl h-fit w-fit py-2  px-16"
                                     >
                                         Swap
                                     </Button>
-                                    <Button
-                                        onClick={handleApprove}
-                                        className="bg-blue-gradient rounded-xl h-fit w-fit py-2  px-14"
-                                    >
-                                        Approve
-                                    </Button>
+
                                 </div>
                                 <PayPalScriptProvider options={initialOptions}>
                                     <PayPalButtons
