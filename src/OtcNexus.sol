@@ -620,7 +620,7 @@ contract OtcNexus is Ownable {
     }
 
     /**
-     * @notice compute the amount0 to be sent to the taker
+     * @notice compute the amount0 to be sent to the taker; visible for testing
      * @param _id id of the RFS
      * @param _paymentTokenAmount amount of tokens used to pay for the RFS
      * @param index index of the token used to buy
@@ -633,7 +633,7 @@ contract OtcNexus is Ownable {
         uint256 _paymentTokenAmount,
         uint256 index,
         RfsType expectedRfsType
-    ) internal view returns (uint256 _amount0) {
+    ) public view returns (uint256 _amount0) {
         RFS memory rfs = getRfs(_id);
 
         if (expectedRfsType == RfsType.FIXED) {
