@@ -192,6 +192,18 @@ contract OtcOptionTest is Test {
         bool isMakerBuyer = true;
 
         vm.startPrank(maker);
+        vm.expectRevert(Option__NotEnoughAllowance.selector);
+        otcOption.createDeal(
+            address(underlyingToken),
+            address(quoteToken),
+            strike,
+            maturity,
+            isCall,
+            amount,
+            premium,
+            isMakerBuyer
+        );
+
         quoteToken.approve(address(otcOption), premium);
         vm.expectRevert("ERC20: transfer amount exceeds balance");
         otcOption.createDeal(
@@ -523,6 +535,12 @@ contract OtcOptionTest is Test {
         // forward
         vm.warp(_maturity);
 
+        // only maker or taker can settle
+        address otherAddress = address(new TestAddress());
+        vm.prank(otherAddress);
+        vm.expectRevert(Option__InvalidSettler.selector);
+        otcOption.settleDeal(dealId);
+
         // the deal is expired and cannot be taken
         vm.prank(taker);
         vm.expectRevert(Option__DealExpired.selector);
@@ -571,11 +589,16 @@ contract OtcOptionTest is Test {
         uint settlePrice = _settlePrice * 10 ** mockAggregator.decimals();
         mockAggregator.updateAnswer(int256(settlePrice));
 
-        // buyer can settle
         address buyer = otcOption.getDealBuyer(dealId);
-        address settler = (maker == buyer) ? maker : taker;
+        address seller = otcOption.getDealSeller(dealId);
 
-        vm.startPrank(settler);
+        // seller cannot settle
+        vm.prank(seller);
+        vm.expectRevert(Option__InvalidSettler.selector);
+        otcOption.settleDeal(dealId);
+
+        // buyer can settle
+        vm.startPrank(buyer);
         if (deal.isCall) {
             quoteToken.mint(deal.quoteAmount);
             quoteToken.approve(address(otcOption), deal.quoteAmount);
@@ -586,7 +609,6 @@ contract OtcOptionTest is Test {
         otcOption.settleDeal(dealId);
         vm.stopPrank();
 
-        address seller = otcOption.getDealSeller(dealId);
         if (deal.isCall) {
             // call is exercised: buyer received the underlying token
             assertEq(ERC20(underlyingToken).balanceOf(buyer), deal.amount);
@@ -637,11 +659,16 @@ contract OtcOptionTest is Test {
         uint settlePrice = _settlePrice * 10 ** mockAggregator.decimals();
         mockAggregator.updateAnswer(int256(settlePrice));
 
-        // seller can settle
+        address buyer = otcOption.getDealBuyer(dealId);
         address seller = otcOption.getDealSeller(dealId);
-        address settler = (maker == seller) ? maker : taker;
 
-        vm.prank(settler);
+        // buyer cannot settle
+        vm.prank(buyer);
+        vm.expectRevert(Option__InvalidSettler.selector);
+        otcOption.settleDeal(dealId);
+
+        // seller can settle
+        vm.prank(seller);
         otcOption.settleDeal(dealId);
 
         if (_isCall) {

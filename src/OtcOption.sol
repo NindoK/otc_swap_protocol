@@ -235,14 +235,14 @@ contract OtcOption is Ownable {
         if (!isDealExpired(id)) revert Option__DealNotExpired();
         Deal memory deal = getDeal(id);
 
+        // only maker or taker can settle
+        if (msg.sender != deal.maker && msg.sender != deal.taker) revert Option__InvalidSettler();
+
         // if there is no taker or was not exercised after 24h, remove deal
         if (deal.taker == address(0) || block.timestamp - deal.maturity >= 24 hours) {
             _removeDeal(id);
             return;
         }
-
-        // only maker or taker can settle
-        if (msg.sender != deal.maker && msg.sender != deal.taker) revert Option__InvalidSettler();
 
         // check if exercisable
         uint price = getPrice(deal.underlyingToken, deal.quoteToken);
