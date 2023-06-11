@@ -24,7 +24,7 @@ const initialOptions = {
 }
 
 const ConfirmSwap = () => {
-    const toast=useToast();
+    const toast = useToast()
     const [tokenData, setTokenData] = useState([])
     const [tokenOneAmount, setTokenOneAmount] = useState(null)
     const [tokenTwoAmount, setTokenTwoAmount] = useState(null)
@@ -194,28 +194,28 @@ const ConfirmSwap = () => {
                 ethers.utils.parseUnits(amountToBuyWithRef.current.toString().slice(0, 18)),
                 index
             )
-        receipt = await tx.wait()
-        if (receipt)
-            toast({
-                title: "swap succeeded!",
-                status: "success",
-                duration: 9000,
-                isClosable: true,
-            })
+            receipt = await tx.wait()
+            if (receipt)
+                toast({
+                    title: "swap succeeded!",
+                    status: "success",
+                    duration: 9000,
+                    isClosable: true,
+                })
         } else {
             tx = await otcNexus.takeFixedRfs(
                 rfs.id,
                 ethers.utils.parseUnits(amountToBuyWithRef.current.toString().slice(0, 18)),
                 index
             )
-          receipt = await tx.wait()
-          if (receipt)
-              toast({
-                  title: "swap succeeded!",
-                  status: "success",
-                  duration: 9000,
-                  isClosable: true,
-              })
+            receipt = await tx.wait()
+            if (receipt)
+                toast({
+                    title: "swap succeeded!",
+                    status: "success",
+                    duration: 9000,
+                    isClosable: true,
+                })
         }
     }
     // Sign and submit a transaction by accepting a JSON object which contains the transaction details
@@ -250,7 +250,9 @@ const ConfirmSwap = () => {
             rfsId: rfs.id.toNumber(),
             makerAddress: rfs.maker,
             paypalEmail: "sb-ow4im25993315@personal.example.com", //rfs.paypalAddress,
-            amountToBuy: ethers.utils.parseEther(amountToBuyWithRef.current),
+            amountToBuy: ethers.utils.parseEther(
+                amountToBuyWithRef.current.toString().slice(0, 18)
+            ),
             nonce: nonce,
         }
         const { success, message } = await signAndSubmitTransaction(json)
@@ -287,6 +289,7 @@ const ConfirmSwap = () => {
             }),
         })
         const order = await response.json()
+        console.log(order)
         return order.id
     }
 
@@ -499,7 +502,6 @@ const ConfirmSwap = () => {
                                     >
                                         Swap
                                     </Button>
-
                                 </div>
                                 <PayPalScriptProvider options={initialOptions}>
                                     <PayPalButtons

@@ -160,31 +160,17 @@ async function createOrder() {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "PayPal-Request-Id": "1100000-0001-1106-0e40-00130050476a",
+      "PayPal-Request-Id": "1100000-0001-1106-0e40-00030050476a",
       Authorization: `Bearer ${access_token}`,
     },
     body: JSON.stringify({
       intent: "CAPTURE",
       purchase_units: [
         {
-          reference_id: "f9f80740-38f0-11e8-a467-0ed5f89f718a",
+          reference_id: "f9f80340-38f0-11e8-a467-0ed5f89f718a",
           amount: { currency_code: "EUR", value: "100.00" },
         },
       ],
-      // payment_source: {
-      //     paypal: {
-      //         experience_context: {
-      //             payment_method_preference: "IMMEDIATE_PAYMENT_REQUIRED",
-      //             payment_method_selected: "PAYPAL",
-      //             brand_name: "EXAMPLE INC",
-      //             locale: "en-US",
-      //             landing_page: "LOGIN",
-      //             user_action: "PAY_NOW",
-      //             return_url: "https://example.com/returnUrl",
-      //             cancel_url: "https://example.com/cancelUrl",
-      //         },
-      //     },
-      // },
     }),
   })
   return await response.json()
@@ -214,18 +200,9 @@ async function getBalance() {
   })
 
   const responseData = await response.json()
-  console.log(responseData)
 
   const eurBalance = responseData.balances[0]
   const usdBalance = responseData.balances[1]
-
-  console.log("EUR Total Balance:", eurBalance.total_balance.value)
-  console.log("EUR Available Balance:", eurBalance.available_balance.value)
-  console.log("EUR Withheld Balance:", eurBalance.withheld_balance.value)
-
-  console.log("USD Total Balance:", usdBalance.total_balance.value)
-  console.log("USD Available Balance:", usdBalance.available_balance.value)
-  console.log("USD Withheld Balance:", usdBalance.withheld_balance.value)
 }
 
 //[POST] Submit route for adding messages to the batch
