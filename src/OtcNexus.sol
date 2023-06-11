@@ -313,7 +313,7 @@ contract OtcNexus is Ownable {
 
         // sanity checks
         if (rfs.removed || rfs.id == 0) revert OtcNexus__RfsRemoved();
-//        if (rfs.deadline < block.timestamp) revert OtcNexus__InvalidDeadline();
+        if (rfs.deadline < block.timestamp) revert OtcNexus__InvalidDeadline();
         if (rfs.typeRfs != expectedRfsType) revert OtcNexus__InvalidRfsType();
         if (_paymentTokenAmount == 0) revert OtcNexus__InvalidTokenAmount();
         if (index >= rfs.tokensAccepted.length) revert OtcNexus__InvalidTokenIndex();
@@ -436,7 +436,7 @@ contract OtcNexus is Ownable {
         if (rfs.interactionType != TokenInteractionType.TOKEN_DEPOSITED)
             revert OtcNexus__InvalidInteractionTypeForPaypal();
         if (rfs.removed || rfs.id == 0) revert OtcNexus__RfsRemoved();
-//        if (rfs.deadline < block.timestamp) revert OtcNexus__InvalidDeadline();
+        if (rfs.deadline < block.timestamp) revert OtcNexus__InvalidDeadline();
         if (rfs.typeRfs != expectedRfsType) revert OtcNexus__InvalidRfsType();
         if (_token0Bought == 0) revert OtcNexus__InvalidTokenAmount();
         if (rfs.typeRfs == RfsType.FIXED && rfs.usdPrice == 0)
